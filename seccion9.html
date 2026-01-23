@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sección 9: Servicios</title>
+    
+    <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
+    <link rel="stylesheet" href="css/encuesta.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary: #7c1225; /* Tu color vino */
+            --bg-body: #f4f6f9;
+            --text-main: #333;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 0; 
+            overflow: hidden; 
+            margin: 0 auto;
+        }
+
+        /* --- BARRA ROJA INTERNA --- */
+        .card-header {
+            background-color: var(--primary);
+            color: #ffffff; 
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-logo {
+            width: 200px;
+            height: 40px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            margin-left: 10px;
+            padding: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header-center { text-align: center; }
+        
+        .header-section-title { 
+            margin: 0; 
+            font-size: 1.1em; 
+            font-weight: 700; 
+            letter-spacing: 0.5px; 
+            text-transform: uppercase;
+            color: #ffffff !important;
+        }
+        
+        .header-progress { 
+            font-size: 0.8em; 
+            opacity: 0.9; 
+            margin: 2px 0 0 0; 
+            color: #ffffff !important;
+            font-weight: 400;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: flex; align-items: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: rgba(255,255,255,0.3); }
+
+        .card-body {
+            padding: 40px; 
+        }
+
+        /* --- NAVEGACIÓN INFERIOR (Botones separados) --- */
+        .footer-navegacion {
+            display: flex;
+            justify-content: space-between; /* CLAVE: Separa extremos */
+            align-items: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0; 
+        }
+
+        .btn-guardar {
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 12px 35px;
+            font-size: 16px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            box-shadow: 0 4px 6px rgba(124, 18, 37, 0.2); 
+            transition: transform 0.2s;
+        }
+        .btn-guardar:hover { transform: translateY(-2px); opacity: 0.95; }
+
+        @media (max-width: 600px) {
+            .card-header { flex-direction: column; gap: 15px; text-align: center; padding: 20px; }
+            .header-center { order: 2; margin-bottom: 10px; }
+            .btn-logout { order: 3; width: 100%; justify-content: center; }
+            .card-body { padding: 20px; }
+            
+            .footer-navegacion { flex-direction: column-reverse; gap: 15px; }
+            .btn-guardar { width: 100%; }
+            #areaBotonRegresar { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="card-header">
+            <div>
+                <img src="Imagenes/logo.png" alt="Logo" class="header-logo">
+            </div>
+
+            <div class="header-center">
+                <h2 class="header-section-title" style="margin-right: 60px;">Sección 9</h2>
+                <p class="header-progress" style="margin-right: 60px;">Progreso: 9 de 9</p>
+            </div>
+
+            <div>
+                <button type="button" id="btnCerrarSesion" class="btn-logout">
+                    Salir <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.6em;">
+                9. Servicios
+            </h2>
+            
+            <div id="mensajeBienvenida" class="bienvenida-box" style="display: none;"></div>
+
+            <form id="formularioDinamico">
+                <div id="contenedorPreguntas">
+                    <p style="text-align:center; color:#666;">Cargando preguntas...</p>
+                </div>
+
+                <div class="footer-navegacion">
+                    
+                    <div id="areaBotonRegresar"></div>
+
+                    <div>
+                        <button type="submit" class="btn-guardar">
+                            Finalizar Encuesta
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <script src="js/seccion9.js"></script> 
+    <script>
+        // Importante: Este nombre debe coincidir con el definido en tu JS
+        window.NOMBRE_SECCION = "9. Servicios";
+    </script>
+    <script src="js/encuesta.js"></script>
+
+</body>
+</html>

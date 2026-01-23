@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen de Resultados</title>
+    <link rel="stylesheet" href="css/resumen.css"> 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+     <link rel="icon" href="Imagenes/logo.jpg" type="image/png"> </head>
+<body>
+
+    <div class="resumen-container">
+        
+        <div class="header-resumen">
+            <img src="Imagenes/logo.png" alt="Logo" class="logo" />
+            <div style="margin-left: 230px;"> 
+                <h1>📊 Resultados del Diagnóstico</h1>
+                <p class="intro">Desglose detallado de la evaluación institucional.</p>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            
+            <div class="dashboard-left">
+                <div id="cardPuntaje" class="card-puntaje">
+                    <p class="titulo-score">Puntaje Total</p>
+                    
+                    <div class="big-number">
+                        <span id="lblPuntaje">--</span>
+                        <span id="lblMaximo"></span>
+                    </div>
+                    
+                    <div class="nivel-label" id="lblNivel">Cargando...</div>
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 0;">
+                    <p class="mensaje-score" id="lblMensaje">Calculando resultados...</p>
+                </div>
+
+                <div class="actions-panel">
+                    <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir Reporte</button>
+                    <a href="login.html" class="link-salir">Salir</a>
+                </div>
+            </div>
+
+            <div class="dashboard-right">
+                <h3 class="titulo-seccion">Desglose por Sección</h3>
+                <div class="tabla-container">
+                    <table class="tabla-desglosada">
+                        <thead>
+                            <tr>
+                                <th>Sección</th>
+                                <th style="text-align: right;">Puntos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div> </div>
+
+    <script>
+
+        const API_URL = 'http://172.17.175.137:3005';
+
+        async function cargarResumen() {
+            const idUsuario = localStorage.getItem('idUsuario');
+            if(!idUsuario) { alert("No hay sesión activa."); window.location.href = 'login.html'; return; }
+
+            try {
+                const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
+                const data = await response.json();
+
+                if(data.error) { alert(data.error); return; }
+
+                // ANIMACIONES Y DATOS
+                animarNumero('lblPuntaje', 0, data.total, 1500);
+                document.getElementById('lblMaximo').innerText = `/ ${data.maximo}`;
+                document.getElementById('lblNivel').innerText = `${data.nivel} (${data.porcentaje}%)`;
+                document.getElementById('lblMensaje').innerText = data.mensaje;
+                document.getElementById('cardPuntaje').style.background = data.color;
+
+                // TABLA
+                const tbody = document.getElementById('tablaBody');
+                tbody.innerHTML = '';
+                
+                const nombresSecciones = {
+                    1: "Identificación",
+                    2: "Gestión Institucional",
+                    3: "Caracterización del Acervo",
+                    4: "Inventario, catalogación y documentación",
+                    5: "Gestión de información y software",
+                    6: "Recursos Humanos",
+                    7: "Infraestructura Tecnológica",
+                    8: "Procesos de gestión de colecciones",
+                    9: "Servicios"
+                };
+
+                Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
+                    if(sec === 'Otra' && data.secciones[sec] === 0) return;
+                    const tr = document.createElement('tr');
+                    const nombreSec = nombresSecciones[sec] || 'General';
+                    tr.innerHTML = `
+                        <td>
+                            <div style="font-weight:bold; color:#2c3e50;">${sec}. ${nombreSec}</div>
+                        </td>
+                        <td class="col-puntos">${data.secciones[sec]}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (error) { console.error(error); }
+        }
+
+        function animarNumero(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
+        }
+        document.addEventListener('DOMContentLoaded', cargarResumen);
+    </script>
+</body>
+</html>

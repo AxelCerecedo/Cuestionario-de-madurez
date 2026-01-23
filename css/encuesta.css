@@ -1,0 +1,96 @@
+body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 20px; }
+.container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+
+h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+
+/* Cajas de Preguntas */
+.pregunta-box { margin-bottom: 25px; padding: 15px; border: 1px solid #eee; border-radius: 6px; background: #fff; }
+.pregunta-box:hover { border-color: #b3d7ff; }
+
+label.titulo-pregunta { display: block; font-weight: bold; margin-bottom: 8px; color: #2c3e50; font-size: 1.05em; }
+small.texto-ayuda { display: block; color: #7f8c8d; margin-bottom: 8px; font-size: 0.85em; font-style: italic; }
+
+/* Inputs */
+input[type="text"], input[type="number"], select, textarea {
+    width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px;
+}
+input:focus, select:focus, textarea:focus { border-color: #007bff; outline: none; }
+
+/* Checkboxes y Radios */
+.opcion-item { margin-bottom: 5px; display: block; }
+.opcion-item input { margin-right: 10px; }
+
+/* Botones */
+.btn-guardar { background-color: #28a745; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 20px; }
+.btn-guardar:hover { background-color: #218838; }
+
+.bienvenida-box { background-color: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
+
+/* ===========
+   TABLA 46 
+   =========== */
+
+#matriz_46 {
+    table-layout: fixed !important; /* Obliga al navegador a respetar los anchos exactos */
+    width: 100% !important;         /* Ocupa solo el ancho disponible */
+    min-width: 0 !important;        /* ⚠️ ESTO ELIMINA EL DESLIZAMIENTO */
+}
+
+/* --- Ajuste de Celdas Generales --- */
+#matriz_46 th, 
+#matriz_46 td {
+    word-wrap: break-word;          /* Rompe palabras si son muy largas */
+    overflow-wrap: break-word;
+    white-space: normal !important; /* Permite saltos de línea (texto en varios renglones) */
+    vertical-align: middle;         /* Centrado vertical */
+}
+
+/* --- 1. PRIMERA COLUMNA (PREGUNTA) --- */
+/* Le damos poco espacio (20%) para que las opciones tengan lugar */
+#matriz_46 th:first-child, 
+#matriz_46 td:first-child {
+    width: 25% !important;   
+    text-align: left;
+    padding: 5px;
+    font-size: 0.85em;       /* Texto un poco más pequeño para que quepa */
+    line-height: 1.2;
+}
+
+/* --- 2. COLUMNAS DE OPCIONES (RESPUESTAS) --- */
+/* Dividimos el 80% restante entre 5 columnas = 16% cada una */
+#matriz_46 th:not(:first-child), 
+#matriz_46 td:not(:first-child) {
+    width: 16% !important;
+    text-align: center;
+    padding: 2px;            /* Padding mínimo para aprovechar espacio */
+    font-size: 0.8em;        /* Letra compacta */
+}
+
+/* --- 3. AJUSTE SOLO PARA CELULARES (Girar texto si es necesario) --- */
+@media (max-width: 600px) {
+    /* Si la pantalla es MUY chica, giramos los títulos de arriba */
+    #matriz_46 thead th:not(:first-child) {
+        height: 120px;
+        writing-mode: vertical-rl; /* Texto vertical */
+        transform: rotate(180deg);
+        white-space: nowrap !important;
+    }
+}
+
+/* =========================================
+   CORRECCIÓN PARA SWEETALERT
+   (Evita que herede la línea azul de los h2 globales)
+   ========================================= */
+.swal2-popup h2, 
+.swal2-title {
+    border-bottom: none !important;   /* Quita la línea azul */
+    padding-bottom: 0 !important;     /* Quita el relleno extra */
+    margin-bottom: 0.5em !important;  /* Ajusta el margen para que se vea bien */
+}
+
+/* =========================================
+   PERSONALIZAR BARRA DE TIEMPO SWEETALERT
+   ========================================= */
+.swal2-timer-progress-bar {
+    background-color: #007bff !important; /* Tu azul institucional */
+}

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control</title>
+    <link rel="stylesheet" href="css/admin.css"> 
+    <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+
+    <div id="splashScreen">
+        <div class="splash-content">
+            <img src="Imagenes/logo.png" alt="Logo" class="splash-logo">
+            <h2 class="splash-title">Panel de Administración</h2>
+            <p>Cargando sistema de auditoría...</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
+    <header class="main-header">
+        <div class="header-left">
+            <img src="Imagenes/logo.png" alt="Logo" class="header-logo">
+        </div>
+
+        <div class="header-center">
+            <h1 class="header-title">Panel de Auditoría y Resultados</h1> 
+            <p class="header-subtitle">Cuestionario de evaluación de madurez en gestión de acervos fotográficos</p>
+        </div>
+
+        <div class="header-right">
+            <a href="login.html" class="btn-logout">
+                <span>Cerrar Sesión</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </a>
+        </div>
+    </header>
+
+
+    <div class="app-shell">
+        
+        <aside class="sidebar">
+            <div class="sidebar-actions">
+                <h3 class="sidebar-section-title">Instituciones Evaluadas</h3>
+
+                <button class="btn-ver-global" onclick="mostrarVistaGlobal()">
+                   🌎 Página Global 
+                </button>
+
+                <div style="position: relative; margin-top: 15px;">
+                    <input type="text" id="inputBusqueda" placeholder="Buscar institución..." 
+                           style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Inter'; font-size: 0.9em; box-sizing: border-box;">
+                    
+                    <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #999;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                </div>
+
+            <ul class="user-list" id="listaUsuarios">
+                </ul>
+        </aside>
+
+        <main class="main-content">
+            <div id="vistaGlobal" class="view-section active">
+                <div class="dashboard-header">
+                    <div>
+                        <span class="global-badge">Reporte Agregado</span>
+                        <h1 class="dashboard-title">Panorama General</h1>
+                        <p class="dashboard-subtitle">Métricas consolidadas de todas las instituciones evaluadas.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <span class="kpi-val" id="g_totalInst">0</span>
+                        <span class="kpi-label">Instituciones</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-val" id="g_promedio">0</span>
+                        <span class="kpi-label">Promedio General (Pts)</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-val" id="g_nivelTop">--</span>
+                        <span class="kpi-label">Nivel Predominante</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 25px;">
+                    <div class="chart-card">
+                        <div class="chart-title-sm">Distribución de Niveles</div>
+                        <div style="height: 300px;"><canvas id="chartPieGlobal"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title-sm">Promedio por Sección (Todas las instituciones)</div>
+                        <div style="height: 300px;"><canvas id="chartBarGlobal"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vistaInstitucion" class="view-section">
+                <div class="dashboard-header">
+                    <div>
+                        <h1 class="dashboard-title" id="instTitulo">Nombre Institución</h1>
+                        <p class="dashboard-subtitle">Seleccione una sección para auditar sus respuestas.</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="kpi-val" id="instPuntaje" style="color: var(--primary);">0</span>
+                        <span id="instNivel" style="font-weight: bold; padding: 5px 10px; background: #eee; border-radius: 10px;">--</span>
+                    </div>
+                </div>
+
+                <div class="chart-card" style="margin-bottom: 30px;">
+                    <div class="chart-title-sm">Comparativa: Esta Institución vs Promedio Global </div>
+                    <div style="height: 250px;"><canvas id="chartComparativoInst"></canvas></div>
+                </div>
+
+                <h3 style="color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">Auditar por Sección</h3>
+                
+                <div id="gridSecciones" class="sections-nav-grid">
+                </div>
+            </div>
+
+            <div id="vistaDetalleSeccion" class="view-section">
+                <div class="dashboard-header">
+                    <div>
+                        <button class="btn-back" onclick="volverADashboardInst()">
+                            ⬅ Volver al Resumen
+                        </button>
+                        <h1 class="dashboard-title" id="secTitulo" style="margin-top: 15px;">Sección X</h1>
+                        <p class="dashboard-subtitle">Detalle de respuestas gráficas.</p>
+                    </div>
+                </div>
+
+                <div id="contenedorGraficasDetalle">
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
