@@ -2,6 +2,7 @@
 const CONFIG_SECCION = {
     seccion: "9. Servicios",
     siguiente: "resumen.html", 
+    es_final: true,
     anterior: "seccion8.html", 
 
     preguntas: [
@@ -11,7 +12,7 @@ const CONFIG_SECCION = {
             texto: "Oferta de servicios y accesibilidad:",
             ayuda: "Seleccione los servicios que ofrece su institución:",
             tipo: "catalogo_tabla", 
-            estilo_tabla: "desplegable", // <--- Con tu código actual, esto activa el estilo con checkbox padre
+            estilo_tabla: "desplegable", 
             obligatorio: true,
             graficar: true,
             encabezados: ["Categoría", "Opciones Disponibles"],
