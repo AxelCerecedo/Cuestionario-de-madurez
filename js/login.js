@@ -1,3 +1,6 @@
+
+const API_URL = 'https://api-cuestionario.onrender.com/auth/login';  
+
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -6,14 +9,13 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const errorDiv = document.getElementById('mensajeError');
     const btn = document.querySelector('.btn-login');
 
-    // Limpiar errores previos
+    // Limpiar errores previos y estado visual de carga
     errorDiv.style.display = 'none';
     btn.disabled = true;
     btn.textContent = 'Verificando...';
 
     try {
-        // Asegúrate de que la IP sea la correcta
-        const response = await fetch('https://api-cuestionario.onrender.com/auth/login', {
+        const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -26,23 +28,35 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         if (response.ok) {
             // --- LOGIN CORRECTO ---
             
-            // 1. Guardar datos básicos
+            // 1. Guardar datos básicos de identidad
             localStorage.setItem('nombreUsuario', data.nombre);
             localStorage.setItem('idUsuario', data.userId);
-            
-            // 2. Guardar bandera de admin (útil para proteger admin.html)
+
+            // 2. Guardar estatus de finalizado (CRUCIAL PARA EL CANDADO)
+            // Si data.finalizado es 1, encuesta.js bloqueará la edición.
+            localStorage.setItem('encuestaFinalizada', data.finalizado); 
+
+            // 3. Guardar bandera de admin
             if (data.esAdmin) {
                 localStorage.setItem('esAdmin', 'true');
             } else {
-                localStorage.removeItem('esAdmin'); // Limpiar por seguridad
+                localStorage.removeItem('esAdmin');
             }
 
-            // 3. Redirigir (El servidor decide a dónde: admin.html o seccion1.html)
-            console.log("Redirigiendo a:", data.redirect);
-            window.location.href = data.redirect; 
+            // 4. Lógica de Redirección Inteligente
+            console.log("Estado Finalizado:", data.finalizado);
+            console.log("Redirigiendo por defecto a:", data.redirect);
+            
+            // SI ya finalizó Y NO es administrador -> Forzar a Sección 1 (Modo Lectura)
+            if (data.finalizado === 1 && !data.esAdmin) {
+                window.location.href = 'seccion1.html';
+            } else {
+                // SI no ha finalizado O es admin -> Ir a donde diga el servidor (seccion1 o admin)
+                window.location.href = data.redirect; 
+            }
 
         } else {
-            // Error (contraseña mal, usuario no existe)
+            // Error de credenciales
             errorDiv.textContent = data.error;
             errorDiv.style.display = 'block';
         }
@@ -52,6 +66,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         errorDiv.textContent = 'Error de conexión con el servidor.';
         errorDiv.style.display = 'block';
     } finally {
+        // Restaurar botón
         btn.disabled = false;
         btn.textContent = 'Ingresar';
     }
