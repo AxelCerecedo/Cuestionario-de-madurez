@@ -1,4 +1,4 @@
-const API_URL = 'http://172.17.175.137:3005'; 
+const API_URL = 'https://api-cuestionario.onrender.com'; 
 
 // COLORES
 const COLOR_PRIMARY = '#7c1225'; 
