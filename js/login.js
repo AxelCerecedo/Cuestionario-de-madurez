@@ -1,5 +1,5 @@
 
-const API_URL = 'https://api-cuestionario.onrender.com/auth/login';  
+const API_URL = 'https://api-cuestionario.onrender.com';
 
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
