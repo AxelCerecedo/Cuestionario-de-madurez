@@ -61,7 +61,6 @@ pool.getConnection((err, conn) => {
   conn.release();
 });
 
-
 // ==========================
 // 4. RUTAS
 // ==========================
@@ -534,33 +533,40 @@ app.post('/auth/registro', async (req, res) => {
     }
 });
 
-// RUTA C: LOGIN
+// RUTA C: LOGIN (CORREGIDA)
 app.post('/auth/login', async (req, res) => {
     const { email, password } = req.body;
     console.log(`🔑 [LOGIN] Intento de acceso: ${email}`);
 
     try {
-        const sql = 'SELECT * FROM usuarios_registrados WHERE email = ? AND password = ?';
+        // 🛑 CAMBIO IMPORTANTE EN LA CONSULTA SQL:
+        // Unimos usuarios con instituciones para obtener el campo 'finalizado'
+        const sql = `
+            SELECT U.id, U.nombre_completo, U.email, U.password, I.finalizado 
+            FROM usuarios_registrados U 
+            LEFT JOIN instituciones I ON U.id = I.id_usuario 
+            WHERE U.email = ? AND U.password = ?
+        `;
+        
         const [users] = await db.query(sql, [email, password]);
 
         if (users.length > 0) {
             const usuario = users[0];
-            console.log(`   ✅ [LOGIN] Bienvenido ${usuario.nombre_completo}`);
+            console.log(`   ✅ [LOGIN] Bienvenido ${usuario.nombre_completo} (Finalizado: ${usuario.finalizado})`);
             
-            // --- LÓGICA DE ADMINISTRADOR ---
-            // Verificamos si el correo está en la lista VIP
             const esAdmin = ADMIN_EMAILS.includes(email);
-
-            // Si es admin, va a admin.html, si no, a la encuesta normal
             const rutaDestino = esAdmin ? 'admin.html' : 'seccion1.html'; 
-            // NOTA: Ajusta 'admin.html' si está dentro de carpetas, ej: '/encuesta/Programa/admin.html'
 
             res.json({ 
                 message: 'Bienvenido', 
-                redirect: rutaDestino,  // <--- REDIRECCIÓN DINÁMICA
+                redirect: rutaDestino,
                 nombre: usuario.nombre_completo,
                 userId: usuario.id,
-                esAdmin: esAdmin // <--- Enviamos esto por si el front lo necesita
+                esAdmin: esAdmin,
+                
+                // 🛑 IMPORTANTE: Enviamos el estado al frontend
+                // Si es null (primera vez que entra), lo ponemos en 0
+                finalizado: usuario.finalizado || 0 
             });
 
         } else {
@@ -975,6 +981,40 @@ app.get('/admin/detalle-graficas/:idInstitucion', async (req, res) => {
     }
 });
 
+// RUTA: FINALIZAR CUESTIONARIO (CANDADO)
+app.post('/finalizar-cuestionario', async (req, res) => {
+    const { id_usuario } = req.body;
+    console.log(`🔒 [FINALIZAR] Cerrando cuestionario para usuario ID: ${id_usuario}`);
+
+    try {
+        // Actualizamos la bandera 'finalizado' a 1
+        const sql = 'UPDATE instituciones SET finalizado = 1 WHERE id_usuario = ?';
+        await db.query(sql, [id_usuario]);
+
+        res.json({ mensaje: 'Cuestionario finalizado correctamente' });
+    } catch (error) {
+        console.error("❌ [ERROR FINALIZAR]:", error);
+        res.status(500).json({ error: 'Error al finalizar el cuestionario' });
+    }
+});
+
+// RUTA: FINALIZAR CUESTIONARIO (CANDADO)
+app.post('/finalizar-cuestionario', async (req, res) => {
+    const { id_usuario } = req.body;
+    console.log(`🔒 [FINALIZAR] Cerrando cuestionario para usuario ID: ${id_usuario}`);
+
+    try {
+        // Actualizamos la bandera 'finalizado' a 1
+        const sql = 'UPDATE instituciones SET finalizado = 1 WHERE id_usuario = ?';
+        await db.query(sql, [id_usuario]);
+
+        res.json({ mensaje: 'Cuestionario finalizado correctamente' });
+    } catch (error) {
+        console.error("❌ [ERROR FINALIZAR]:", error);
+        res.status(500).json({ error: 'Error al finalizar el cuestionario' });
+    }
+});
+
 
 // ==========================
 // 5. INICIAR SERVIDOR
@@ -983,3 +1023,4 @@ app.listen(PORT, () => {
     console.log(`✅ Servidor corriendo en http://172.17.175.137:${PORT}`);
     console.log(`   Esperando peticiones...`);
 });
+
