@@ -23,7 +23,6 @@ app.use(session({
 
 // ==========================
 // LOGS GLOBALES (NUEVO)
-// Esto imprimirá en la consola CADA petición que llegue
 // ==========================
 app.use((req, res, next) => {
     console.log(`\n🔔 [PETICIÓN RECIBIDA] Método: ${req.method} | URL: ${req.url}`);
