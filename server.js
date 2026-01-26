@@ -31,19 +31,25 @@ app.use((req, res, next) => {
     next(); // Deja pasar la petición a las siguientes rutas
 });
 
+
 // ==========================
-// 3. Conexión a MySQL (MODO PROMESA)
+// 3. Conexión a MySQL (MODO HÍBRIDO: NUBE + LOCAL)
 // ==========================
 const pool = mysql.createPool({
-  host: '127.0.0.1',
-  user: 'encuesta-dev',
-  password: '3YPmrkEdB4e7lctiqXR6',
-  database: 'Encuesta',
+  host: process.env.DB_HOST || '127.0.0.1',       // Si no hay variable de nube, usa local
+  user: process.env.DB_USER || 'encuesta-dev',    // Tu usuario local
+  password: process.env.DB_PASSWORD || '3YPmrkEdB4e7lctiqXR6', // Tu pass local
+  database: process.env.DB_NAME || 'Encuesta',    // Tu base local
+  port: process.env.DB_PORT || 3306,              // Puerto default
+  
+  // Configuración vital para la nube (Aiven cierra conexiones inactivas)
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  ssl: {
+      rejectUnauthorized: false // Obligatorio para Aiven
+  }
 });
-
 const db = pool.promise();
 
 // Probar conexión
@@ -55,6 +61,7 @@ pool.getConnection((err, conn) => {
   console.log('✅ [DB] Conexión exitosa a MySQL');
   conn.release();
 });
+
 
 // ==========================
 // 4. RUTAS
