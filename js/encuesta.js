@@ -2,7 +2,7 @@
 
 const API_URL_SAVE = 'https://api-cuestionario.onrender.com'; 
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() { // <--- AHORA ES ASYNC
     
     // 1. VERIFICAR USUARIO
     const idUsuario = localStorage.getItem('idUsuario');
@@ -15,28 +15,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 2. BIENVENIDA (SOLO EN SECCIÓN 1)
     const divBienvenida = document.getElementById('mensajeBienvenida');
-    
-    // Detectamos si estamos en la primera sección buscando en la URL
     const esSeccionUno = window.location.href.includes('seccion1.html');
 
     if (nombreUsuario && divBienvenida && esSeccionUno) {
         divBienvenida.innerHTML = `👋 ¡Hola, <b>${nombreUsuario}</b>! \n Tu progreso se guardará automáticamente.`;
         divBienvenida.style.display = 'block';
     } else if (divBienvenida) {
-        // En las demás secciones (2, 3, etc.) nos aseguramos de ocultarlo
         divBienvenida.style.display = 'none';
     }
 
-    // 3. CONFIGURAR BOTONES DE NAVEGACIÓN (Cerrar Sesión y Regresar)
+    // 3. CONFIGURAR BOTONES DE NAVEGACIÓN
     configurarBotonesNavegacion();
 
-    // 4. CARGAR PREGUNTAS (Usando la variable CONFIG_SECCION del archivo individual)
+    // 4. CARGAR PREGUNTAS
     cargarCuestionarioLocal();
 
-    // 5. RECUPERAR PROGRESO
-    cargarRespuestasPrevias(idUsuario);
+    // 5. RECUPERAR PROGRESO (Esperamos a que termine de llenar los datos)
+    await cargarRespuestasPrevias(idUsuario); 
 
-    // 6. EVENTO SUBMIT
+    // =========================================================
+    // 🔒 6. VERIFICAR SI ESTÁ FINALIZADA (CANDADO)
+    // =========================================================
+    const estaFinalizada = localStorage.getItem('encuestaFinalizada');
+
+    if (estaFinalizada === '1') {
+        // Si ya acabó, bloqueamos todo visualmente
+        activarModoSoloLectura();
+    }
+    
+    // 7. EVENTO SUBMIT (Solo si no está finalizada, aunque ocultamos el botón)
     const form = document.getElementById('formularioDinamico');
     if (form) form.addEventListener('submit', enviarFormulario);
 });
@@ -1134,9 +1141,9 @@ async function cargarRespuestasPrevias(idUsuario) {
     }
 }
 
-// =========================================================
-// FUNCIÓN: ENVIAR FORMULARIO
-// =========================================================
+// =============================
+// FUNCIÓN: ENVIAR FORMULARIO 
+// =============================
 
 async function enviarFormulario(e) {
     e.preventDefault();
@@ -1176,12 +1183,11 @@ async function enviarFormulario(e) {
     let errorValidacion = false;
 
     for (const tr of filasTabla) {
-        // A. Checkbox Padre (Primera celda)
+        // A. Checkbox Padre
         const checkPadre = tr.querySelector('td:first-child input[type="checkbox"]');
 
         if (checkPadre && checkPadre.checked) {
-            
-            // B. Celda de Opciones (Última celda)
+            // B. Celda de Opciones
             const celdaHijos = tr.querySelector('td:last-child');
             const existenHijos = celdaHijos.querySelector('input[type="checkbox"]');
             
@@ -1193,32 +1199,26 @@ async function enviarFormulario(e) {
                     const labelPadre = tr.querySelector('td:first-child label');
                     const textoPadre = labelPadre ? labelPadre.innerText.trim() : "la categoría";
                     
-                    // 1. MENSAJE FLOTANTE (TOAST)
                     Toast.fire({
                         icon: 'warning',
                         title: 'Faltan detalles:',
                         text: `Selecciona una opción para: "${textoPadre}"`
                     });
                     
-                    // 2. SCROLL AL ERROR
                     checkPadre.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     
-                    // 3. MARCAR CON ROJO (Border Red)
-                    // Buscamos el div contenedor dentro de la celda, si no, usamos la celda misma
                     const contenedorVisual = celdaHijos.querySelector('div') || celdaHijos;
-                    
                     contenedorVisual.style.transition = "border 0.3s ease";
-                    contenedorVisual.style.border = "2px solid #dc3545"; // ROJO FUERTE
+                    contenedorVisual.style.border = "2px solid #dc3545"; 
                     contenedorVisual.style.borderRadius = "5px";
                     contenedorVisual.style.padding = "5px";
                     
-                    // Quitamos el rojo después de 4 segundos (igual que lo que dura el Toast)
                     setTimeout(() => { 
-                        contenedorVisual.style.border = "1px solid #eee"; // Regresa al original
+                        contenedorVisual.style.border = "1px solid #eee"; 
                     }, 4000);
 
                     errorValidacion = true;
-                    break; // Paramos para que corrija este error primero
+                    break; 
                 }
             }
         }
@@ -1227,7 +1227,7 @@ async function enviarFormulario(e) {
     if (errorValidacion) return;
 
     // =================================================================
-    // 🟢 2. RECOLECCIÓN DE DATOS (CÓDIGO ORIGINAL)
+    // 🟢 2. RECOLECCIÓN DE DATOS
     // =================================================================
 
     const respuestasSimples = [];
@@ -1347,7 +1347,6 @@ async function enviarFormulario(e) {
     };
 
     try {
-        // LOADING (Usamos SweetAlert normal para bloquear pantalla un momento)
         Swal.fire({
             title: 'Guardando...',
             text: 'Registrando respuestas',
@@ -1364,25 +1363,144 @@ async function enviarFormulario(e) {
         const result = await response.json();
         
         if(response.ok) {
-            // SUCCESS (Usamos el Toast también para que sea fluido, o Modal si prefieres)
-            // Aquí usaré Modal corto para confirmar éxito rotundo.
-            Swal.fire({
-                icon: 'success',
-                title: '¡Guardado!',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
-                    window.location.href = CONFIG_SECCION.siguiente;
-                } else {
-                    Swal.fire('¡Felicidades!', 'Cuestionario completado.', 'success');
+            
+            // =========================================================
+            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN (CANDADO)
+            // =========================================================
+            
+            if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
+                // CASO: SECCIÓN FINAL (SERVICIOS)
+                
+                // 1. Llamar a la API para cerrar (UPDATE finalizado=1)
+                try {
+                    await fetch(`${API_URL_SAVE}/finalizar-cuestionario`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id_usuario: idUsuario })
+                    });
+                    
+                    // 2. Bloquear localmente
+                    localStorage.setItem('encuestaFinalizada', '1');
+
+                    // 3. Alerta de éxito Final
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Encuesta Finalizada!',
+                        text: 'Gracias por completar el cuestionario. Tus respuestas han sido enviadas.',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+
+                } catch (errFin) {
+                    console.error("Error al finalizar:", errFin);
                 }
-            });
+
+            } else {
+                // CASO: SECCIÓN NORMAL
+                await Swal.fire({
+                    icon: 'success',
+                    title: '¡Guardado!',
+                    timer: 1000,
+                    showConfirmButton: false
+                });
+            }
+
+            // --- REDIRECCIÓN ---
+            if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
+                window.location.href = CONFIG_SECCION.siguiente;
+            } else {
+                Swal.fire('¡Listo!', 'Proceso completado.', 'success');
+            }
+
         } else {
             Swal.fire('Error', result.error, 'error');
         }
     } catch (error) {
         console.error(error);
         Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
+    }
+}
+
+// =========================================================
+// FUNCIÓN: ACTIVAR MODO SOLO LECTURA (CORREGIDO ANCHO)
+// =========================================================
+function activarModoSoloLectura() {
+    console.log("🔒 Activando modo solo lectura...");
+
+    // 1. BLOQUEAR TODOS LOS INPUTS
+    const inputs = document.querySelectorAll('#formularioDinamico input, #formularioDinamico select, #formularioDinamico textarea');
+    inputs.forEach(input => {
+        input.disabled = true;
+        input.style.backgroundColor = "#f2f2f2"; 
+        input.style.cursor = "not-allowed";
+        input.style.opacity = "0.7";
+    });
+
+    // 2. OCULTAR BOTONES DE EDICIÓN
+    const botonesEdicion = document.querySelectorAll('.btn-agregar, .btn-eliminar');
+    botonesEdicion.forEach(btn => btn.style.display = 'none');
+
+    // 3. TRANSFORMAR EL BOTÓN PRINCIPAL
+    const btnPrincipal = document.querySelector('.btn-guardar') || document.querySelector('.btn-finalizar');
+    
+    if (btnPrincipal) {
+        if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
+            
+            const nuevoBoton = btnPrincipal.cloneNode(true);
+            btnPrincipal.parentNode.replaceChild(nuevoBoton, btnPrincipal);
+            
+            nuevoBoton.type = 'button';
+            nuevoBoton.style.display = 'inline-flex'; // Usamos inline-flex para centrar icono y texto
+            nuevoBoton.style.alignItems = 'center';
+            nuevoBoton.style.justifyContent = 'center';
+            nuevoBoton.style.gap = '8px';
+            nuevoBoton.style.cursor = 'pointer';
+            
+            // --- 🔧 FIX VISUAL: CONTROLAR EL ANCHO ---
+            nuevoBoton.style.width = 'auto';       // Importante: Que se ajuste al texto
+            nuevoBoton.style.minWidth = '140px';   // Un mínimo para que se vea bien
+            nuevoBoton.style.maxWidth = '200px';   // Un máximo para que no empuje al otro
+            nuevoBoton.style.padding = '10px 20px'; // Padding equilibrado
+            nuevoBoton.style.margin = '0';         // Quitar márgenes extraños
+            // -----------------------------------------
+
+            // CASO ESPECIAL: Última sección
+            if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
+                nuevoBoton.innerHTML = 'Resumen <i class="fas fa-file-alt"></i>'; // Texto más corto para ahorrar espacio
+                nuevoBoton.className = 'btn-guardar'; 
+                nuevoBoton.style.backgroundColor = "#17a2b8"; 
+                nuevoBoton.style.borderColor = "#17a2b8";
+            } else {
+                nuevoBoton.innerHTML = 'Siguiente <i class="fas fa-arrow-right"></i>';
+                nuevoBoton.style.backgroundColor = "#6c757d"; 
+                nuevoBoton.style.borderColor = "#6c757d";
+            }
+
+            // Evento
+            nuevoBoton.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = CONFIG_SECCION.siguiente;
+            });
+
+        } else {
+            btnPrincipal.style.display = 'none';
+        }
+    }
+
+    // 4. AVISO VISUAL (BANNER)
+    const cardBody = document.querySelector('.card-body');
+    if (cardBody && !document.getElementById('bannerSoloLectura')) {
+        const banner = document.createElement('div');
+        banner.id = 'bannerSoloLectura';
+        banner.innerHTML = `
+            <div style="background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-lock"></i>
+                <div>
+                    <strong>Modo Visualización</strong>
+                    <br>Cuestionario finalizado.
+                </div>
+            </div>
+        `;
+        cardBody.insertBefore(banner, cardBody.firstChild);
     }
 }
