@@ -1,6 +1,6 @@
 // js/encuesta.js
 
-const API_URL_SAVE = 'http://172.17.175.137:3005'; 
+const API_URL_SAVE = 'https://api-cuestionario.onrender.com'; 
 
 document.addEventListener('DOMContentLoaded', function() {
     
