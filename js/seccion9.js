@@ -19,7 +19,7 @@ const CONFIG_SECCION = {
             opciones: [
                 // --- 1. SERVICIOS BÁSICOS (Cambiamos ID 1 a 91) ---
                 { 
-                    id: 91, texto: "Servicios al usuario", 
+                    id: 91, texto: "Servicios que ofrece la institución a las personas usuarias", 
                     sub_opciones: [
                         { id: 101, texto: "Consulta en sala" },
                         { id: 102, texto: "Préstamos" },
@@ -31,7 +31,7 @@ const CONFIG_SECCION = {
                 },
                 // --- 2. REQUISITOS (Cambiamos ID 2 a 92) ---
                 { 
-                    id: 92, texto: "Requisitos de consulta", 
+                    id: 92, texto: "Requisitos o condiciones se solicitan para la consulta del acervo", 
                     sub_opciones: [
                         { id: 110, texto: "Consulta libre (Sin requisitos)" },
                         { id: 111, texto: "Cita previa" },
@@ -45,7 +45,7 @@ const CONFIG_SECCION = {
                 },
                 // --- 3. EDUCATIVOS (Cambiamos ID 3 a 93) ---
                 { 
-                    id: 93, texto: "Servicios educativos", 
+                    id: 93, texto: "Servicios educativos que ofrece la institución", 
                     sub_opciones: [
                         { id: 120, texto: "Cursos" },
                         { id: 121, texto: "Talleres" },
@@ -56,7 +56,7 @@ const CONFIG_SECCION = {
                 },
                 // --- 4. DIFUSIÓN (Cambiamos ID 4 a 94) ---
                 { 
-                    id: 94, texto: "Difusión y divulgación", 
+                    id: 94, texto: "Mecanismos de difusión y divulgación que realiza la institución", 
                     sub_opciones: [
                         { id: 130, texto: "Exhibición" },
                         { id: 131, texto: "Prensa" },
