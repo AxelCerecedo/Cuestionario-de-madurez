@@ -19,17 +19,17 @@ const CONFIG_SECCION = {
                 // --- A. BOOLEANOS (Padres simples) ---
                 { 
                     id: 491, // VALE 1 PUNTO
-                    texto: "¿Cuenta con proceso formal de ingreso?", 
+                    texto: "Proceso formal de ingreso", 
                     ayuda: "Marque si existe un documento o proceso oficial de entrada." 
                 },
                 { 
                     id: 492, // VALE 1 PUNTO
-                    texto: "¿Cuenta con proceso formal de salida?", 
+                    texto: "Proceso formal de salida", 
                     ayuda: "Marque si existe proceso para salidas temporales o definitivas." 
                 },
                 { 
                     id: 493, // VALE 1 PUNTO
-                    texto: "¿Cuenta con plan de emergencia?", 
+                    texto: "Plan de emergencia", 
                     ayuda: "Marque si cuenta con un plan actualizado para protección del acervo." 
                 },
 
