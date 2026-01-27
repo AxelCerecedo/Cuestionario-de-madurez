@@ -26,7 +26,7 @@ const CONFIG_SECCION = {
         {
             id: 39,
             orden: 39,
-            texto: "De las herramientas que seleccionó, indique su nivel de experiencia o dominio en funnción de las siguientes actividades.",
+            texto: "De las herramientas que seleccionó, indique su nivel de experiencia o dominio en función de las siguientes actividades.",
             ayuda: "Donde Inexperto = 1, Nivel básico = 2, Nivel intermedio = 3, Nivel avanzado = 4, Experto = 5",
             tipo: "matriz_dinamica",
             id_pregunta_origen: 38,
@@ -34,17 +34,18 @@ const CONFIG_SECCION = {
             obligatorio: true,
             graficar: true,
             columnas: [
-                { id: 1, texto: "Inventario", ayuda: "Registro básico con número único." },
-                { id: 2, texto: "Catalogación", ayuda: "Descripción detallada siguiendo normas." },
-                { id: 3, texto: "Control de movimientos", ayuda: "Seguimiento de traslados y préstamos." },
-                { id: 4, texto: "Gestión del acervo", ayuda: "Operaciones técnicas y administrativas." },
-                { id: 5, texto: "Listas de obra", ayuda: "Listados para exposiciones." },
-                { id: 6, texto: "Reportes", ayuda: "Informes para análisis." },
-                { id: 7, texto: "Consulta interna", ayuda: "Acceso del personal." },
-                { id: 8, texto: "Consulta pública", ayuda: "Acceso del público." },
-                { id: 9, texto: "Registro", ayuda: "Documentación formal sistemática." },
-                { id: 10, texto: "Diagnóstico", ayuda: "Evaluación estado físico." },
-                { id: 11, texto: "Investigación", ayuda: "Fines académicos." }
+                { id: 1, texto: "Inventario", ayuda: "Registro básico con número único identificador de cada pieza u objeto." },
+                { id: 2, texto: "Catalogación", ayuda: "Descripción detallada del acervo siguiendo normas y estándares establecidos." },
+                { id: 3, texto: "Control de movimientos", ayuda: "Seguimiento de traslados, préstamos, cambios de ubicación y movimientos internos." },
+                { id: 4, texto: "Gestión del acervo", ayuda: "Operaciones técnicas y administrativas relacionadas con la organización, preservación y control del acervo." },
+                { id: 5, texto: "Listas de obra", ayuda: "Listados generados para exposiciones, préstamos, revisiones o actividades específicas." },
+                { id: 6, texto: "Reportes", ayuda: "Informes o listados generados para análisis, revisión interna o toma de decisiones." },
+                { id: 7, texto: "Consulta interna", ayuda: "Acceso del personal autorizado para revisar información detallada del acervo." },
+                { id: 8, texto: "Consulta pública", ayuda: "Acceso del público general a información seleccionada o aprobada del acervo." },
+                { id: 9, texto: "Registro", ayuda: "Documentación formal y sistemática de la información esencial de cada pieza en el acervo." },
+                { id: 10, texto: "Diagnóstico de estados de conservación", ayuda: "Evaluación del estado físico de cada pieza, identificación de deterioros y necesidades de conservación." },
+                { id: 11, texto: "Investigación", ayuda: "Uso del acervo con fines académicos, técnicos, científicos o de investigación especializada." },
+                { id: 12, texto: "Otro", especificar: true, ayuda: "Cualquier otro uso no contemplado en la lista que pueda definirse según las necesidades de la institución." }
             ]
         },
         {
