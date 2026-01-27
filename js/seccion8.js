@@ -19,17 +19,17 @@ const CONFIG_SECCION = {
                 // --- A. BOOLEANOS (Padres simples) ---
                 { 
                     id: 491, // VALE 1 PUNTO
-                    texto: "Proceso formal de ingreso", 
+                    texto: "Proceso formal para la entrada o ingreso de objetos al acervo.", 
                     ayuda: "Marque si existe un documento o proceso oficial de entrada." 
                 },
                 { 
                     id: 492, // VALE 1 PUNTO
-                    texto: "Proceso formal de salida", 
+                    texto: "Proceso establecido para la salida de objetos del acervo (temporal o definitiva).", 
                     ayuda: "Marque si existe proceso para salidas temporales o definitivas." 
                 },
                 { 
                     id: 493, // VALE 1 PUNTO
-                    texto: "Plan de emergencia", 
+                    texto: "Plan de emergencia actualizado para la protección del acervo", 
                     ayuda: "Marque si cuenta con un plan actualizado para protección del acervo." 
                 },
 
@@ -38,11 +38,11 @@ const CONFIG_SECCION = {
                 // ESTA SE QUEDA MULTIPLE (CHECKBOXES) - NO AGREGAMOS NADA
                 { 
                     id: 494, 
-                    texto: "Documentos de préstamo/devolución", 
+                    texto: "Tipo de documento que utiliza para prestamo y devulución de documentos", 
                     ayuda: "Seleccione los formatos que utiliza:",
                     sub_opciones: [
                         { id: 4941, texto: "Formato institucional" },
-                        { id: 4942, texto: "Contrato / Convenio" },
+                        { id: 4942, texto: "Contrato" },
                         { id: 4943, texto: "Hoja de movimientos" },
                         { id: 4944, texto: "Otro", especificar: true }
                        
@@ -54,7 +54,7 @@ const CONFIG_SECCION = {
                     id: 495, 
                     texto: "Frecuencia de auditorías", 
                     modo: "unica", // <--- AGREGAR ESTO
-                    ayuda: "Seleccione la frecuencia actual:",
+                    ayuda: "Seleccione la frecuencia en que se realizan las auditorias:",
                     sub_opciones: [
                         { id: 4951, texto: "No se realizan" },
                         { id: 4952, texto: "Cada dos años o más" },
@@ -67,7 +67,7 @@ const CONFIG_SECCION = {
                 // ESTA SERÁ ÚNICA
                 { 
                     id: 496, 
-                    texto: "Evaluación de conservación", 
+                    texto: "Evaluación de estado de conservación", 
                     modo: "unica", // <--- AGREGAR ESTO
                     ayuda: "¿Quién la realiza?",
                     sub_opciones: [
