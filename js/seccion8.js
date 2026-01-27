@@ -44,8 +44,8 @@ const CONFIG_SECCION = {
                         { id: 4941, texto: "Formato institucional" },
                         { id: 4942, texto: "Contrato / Convenio" },
                         { id: 4943, texto: "Hoja de movimientos" },
-                        { id: 4944, texto: "Otro", especificar: true },
-                        { id: 4945, texto: "Ninguno" }
+                        { id: 4944, texto: "Otro", especificar: true }
+                       
                     ]
                 },
 
@@ -73,8 +73,7 @@ const CONFIG_SECCION = {
                     sub_opciones: [
                         { id: 4961, texto: "Especialista interno" },
                         { id: 4962, texto: "Especialista externo" },
-                        { id: 4963, texto: "Ambos" },
-                        { id: 4964, texto: "Ninguno" }
+                        { id: 4963, texto: "Ambos" }
                     ]
                 },
 
