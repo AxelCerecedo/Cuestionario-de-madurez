@@ -4,60 +4,241 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resumen de Resultados</title>
-    <link rel="stylesheet" href="css/resumen.css"> 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-     <link rel="icon" href="Imagenes/logo.jpg" type="image/png"> </head>
+    <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-body: #f4f6f9;
+            --text-main: #333;
+            --white: #ffffff;
+            --gray-light: #e9ecef;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        /* --- HEADER SENCILLO --- */
+        .header-top {
+            background: white;
+            padding: 15px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .logo { height: 45px; }
+        .header-title { margin: 0; font-size: 1.2rem; color: #555; }
+
+        /* --- HERO SECTION (EL PUNTAJE ARRIBA) --- */
+        .hero-score-container {
+            /* Color por defecto, luego se cambia con JS */
+            background: linear-gradient(135deg, #6c757d, #495057); 
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+
+        .nivel-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .big-score {
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin: 0;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .score-context {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 5px;
+            font-weight: 300;
+        }
+
+        /* BARRA DE PROGRESO VISUAL */
+        .progress-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255,255,255,0.2);
+            height: 12px;
+            border-radius: 10px;
+            margin: 25px auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: white;
+            width: 0%; /* Se anima con JS */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            transition: width 1.5s ease-out;
+        }
+
+        .mensaje-final {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        /* --- CONTENIDO PRINCIPAL (TABLA) --- */
+        .main-content {
+            max-width: 1000px;
+            margin: -30px auto 0; /* Efecto traslape hacia arriba */
+            padding: 0 20px;
+        }
+
+        .card-blanca {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.05);
+        }
+
+        .titulo-seccion {
+            color: #2c3e50;
+            border-left: 5px solid #7c1225;
+            padding-left: 15px;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        /* TABLA MEJORADA */
+        .tabla-desglosada {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .tabla-desglosada th {
+            text-align: left;
+            color: #888;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        .tabla-desglosada td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #f4f4f4;
+            color: #333;
+        }
+        .tabla-desglosada tr:last-child td { border-bottom: none; }
+        
+        .score-pill {
+            background: #f8f9fa;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #333;
+            float: right;
+        }
+
+        /* BOTONES ACCION */
+        .actions-bar {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .btn {
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s;
+            text-decoration: none;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-print { background: #2c3e50; color: white; }
+        .btn-exit { background: #e9ecef; color: #333; }
+
+        @media print {
+            .hero-score-container { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .actions-bar { display: none; }
+            .header-top { display: none; }
+            .main-content { margin-top: 20px; box-shadow: none; }
+        }
+    </style>
+</head>
 <body>
 
-    <div class="resumen-container">
+    <div class="header-top">
+        <img src="Imagenes/logo.png" alt="Logo" class="logo" />
+        <h2 class="header-title">Reporte de Diagnóstico Institucional</h2>
+    </div>
+
+    <div class="hero-score-container" id="heroScore">
         
-        <div class="header-resumen">
-            <img src="Imagenes/logo.png" alt="Logo" class="logo" />
-            <div style="margin-left: 230px;"> 
-                <h1>📊 Resultados del Diagnóstico</h1>
-                <p class="intro">Desglose detallado de la evaluación institucional.</p>
-            </div>
+        <div id="lblNivel" class="nivel-badge">Calculando...</div>
+        
+        <h1 class="big-score" id="lblPuntaje">--</h1>
+        
+        <div class="score-context">
+            puntos obtenidos de <strong id="lblMaximo">--</strong> posibles
         </div>
 
-        <div class="dashboard-grid">
+        <div class="progress-container">
+            <div class="progress-bar" id="barraProgreso"></div>
+        </div>
+
+        <p class="mensaje-final" id="lblMensaje">Generando interpretación de resultados...</p>
+    </div>
+
+    <div class="main-content">
+        <div class="card-blanca">
+            <h3 class="titulo-seccion">Desglose Detallado por Áreas</h3>
             
-            <div class="dashboard-left">
-                <div id="cardPuntaje" class="card-puntaje">
-                    <p class="titulo-score">Puntaje Total</p>
-                    
-                    <div class="big-number">
-                        <span id="lblPuntaje">--</span>
-                        <span id="lblMaximo"></span>
-                    </div>
-                    
-                    <div class="nivel-label" id="lblNivel">Cargando...</div>
-                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 0;">
-                    <p class="mensaje-score" id="lblMensaje">Calculando resultados...</p>
-                </div>
+            <table class="tabla-desglosada">
+                <thead>
+                    <tr>
+                        <th>Sección Evaluada</th>
+                        <th style="text-align: right;">Puntaje</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaBody">
+                    </tbody>
+            </table>
 
-                <div class="actions-panel">
-                    <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir Reporte</button>
-                    <a href="login.html" class="link-salir">Salir</a>
-                </div>
+            <div class="actions-bar">
+                <button onclick="window.print()" class="btn btn-print">
+                    <i class="fas fa-print"></i> Imprimir Reporte
+                </button>
+                <a href="login.html" class="btn btn-exit">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </a>
             </div>
-
-            <div class="dashboard-right">
-                <h3 class="titulo-seccion">Desglose por Sección</h3>
-                <div class="tabla-container">
-                    <table class="tabla-desglosada">
-                        <thead>
-                            <tr>
-                                <th>Sección</th>
-                                <th style="text-align: right;">Puntos</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaBody">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div> </div>
+        </div>
+    </div>
 
     <script>
 
@@ -65,7 +246,10 @@
 
         async function cargarResumen() {
             const idUsuario = localStorage.getItem('idUsuario');
-            if(!idUsuario) { alert("No hay sesión activa."); window.location.href = 'login.html'; return; }
+            if(!idUsuario) { 
+                Swal.fire('Error', 'No hay sesión activa', 'error').then(() => window.location.href = 'login.html');
+                return; 
+            }
 
             try {
                 const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
@@ -73,14 +257,31 @@
 
                 if(data.error) { alert(data.error); return; }
 
-                // ANIMACIONES Y DATOS
-                animarNumero('lblPuntaje', 0, data.total, 1500);
-                document.getElementById('lblMaximo').innerText = `/ ${data.maximo}`;
+                // 1. DATOS DEL HERO (ARRIBA)
+                
+                // Fondo dinámico según el color que manda el server
+                document.getElementById('heroScore').style.background = data.color; 
+                
+                // Texto de Nivel
                 document.getElementById('lblNivel').innerText = `${data.nivel} (${data.porcentaje}%)`;
+                
+                // Puntaje Máximo
+                document.getElementById('lblMaximo').innerText = data.maximo;
+                
+                // Mensaje
                 document.getElementById('lblMensaje').innerText = data.mensaje;
-                document.getElementById('cardPuntaje').style.background = data.color;
 
-                // TABLA
+                // Animación de la Barra de Progreso
+                // Pequeño delay para que se vea la animación
+                setTimeout(() => {
+                    document.getElementById('barraProgreso').style.width = `${data.porcentaje}%`;
+                }, 300);
+
+                // Animación del Número Grande
+                animarNumero('lblPuntaje', 0, data.total, 1500);
+
+
+                // 2. LLENADO DE TABLA (ABAJO)
                 const tbody = document.getElementById('tablaBody');
                 tbody.innerHTML = '';
                 
@@ -96,22 +297,33 @@
                     9: "Servicios"
                 };
 
+                // Ordenar e insertar
                 Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
+                    // Opcional: Ocultar si vale 0 y es 'Otra'
                     if(sec === 'Otra' && data.secciones[sec] === 0) return;
-                    const tr = document.createElement('tr');
+
                     const nombreSec = nombresSecciones[sec] || 'General';
+                    const puntajeSec = data.secciones[sec];
+
+                    const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>
-                            <div style="font-weight:bold; color:#2c3e50;">${sec}. ${nombreSec}</div>
+                            <div style="font-weight:600; color:#444;">${sec}. ${nombreSec}</div>
                         </td>
-                        <td class="col-puntos">${data.secciones[sec]}</td>
+                        <td>
+                            <span class="score-pill">${puntajeSec} pts</span>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
 
-            } catch (error) { console.error(error); }
+            } catch (error) { 
+                console.error(error); 
+                document.getElementById('lblMensaje').innerText = "Error cargando resultados. Revisa tu conexión.";
+            }
         }
 
+        // Función matemática para animar el conteo
         function animarNumero(id, start, end, duration) {
             const obj = document.getElementById(id);
             let startTimestamp = null;
@@ -123,6 +335,7 @@
             };
             window.requestAnimationFrame(step);
         }
+
         document.addEventListener('DOMContentLoaded', cargarResumen);
     </script>
 </body>
