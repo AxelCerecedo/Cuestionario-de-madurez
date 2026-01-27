@@ -52,7 +52,8 @@ const CONFIG_SECCION = {
                 { id: 4, texto: "Fotografías nacidas digitales" },
                 { id: 5, texto: "Fotografías digitalizadas" },
                 { id: 6, texto: "Documentos u objetos asociados" },
-                { id: 7, texto: "Otro", especificar: true }
+                { id: 7, texto: "Dispositivos fotográficos" },
+                { id: 8, texto: "Otro", especificar: true }
             ]
         },
 
@@ -113,24 +114,24 @@ const CONFIG_SECCION = {
         {
             id: 26,
             orden: 26,
-            texto: "¿Cuál es el nivel de equipamiento disponible?",
+            texto: "¿Cuál es el nivel de equipamiento disponible para la organización, conservación y prestación de servicios relacionados con el acervo?",
             tipo: "catalogo_unico", 
             obligatorio: true, 
             graficar: true,
             puntaje_regla: "escala_directa",
             opciones: [
-                { id: 1, texto: "Inadecuado", ayuda: "Solo herramientas básicas, insuficientes o improvisadas." },
-                { id: 2, texto: "Básico", ayuda: "Elementos mínimos o parciales." },
-                { id: 3, texto: "Adecuado", ayuda: "Suficiente para tareas esenciales." },
-                { id: 4, texto: "Bueno", ayuda: "Equipamiento completo, funcional y en buenas condiciones." },
-                { id: 5, texto: "Óptimo", ayuda: "Equipamiento profesional, actualizado y especializado." }
+                { id: 1, texto: "Inadecuado", ayuda: "No se cuenta con equipamiento adecuado; solo herramientas básicas, insuficientes o improvisadas. No permite realizar correctamente tareas de organización, conservación o servicios." },
+                { id: 2, texto: "Básico", ayuda: "Se cuenta con algunos elementos mínimos o parciales, pero no cubren las necesidades del acervo. El equipamiento permite realizar solo actividades muy esenciales." },
+                { id: 3, texto: "Adecuado", ayuda: "El equipamiento es suficiente para realizar las tareas esenciales de organización, conservación y operación del acervo. Puede haber áreas por mejorar, pero las funciones principales están cubiertas." },
+                { id: 4, texto: "Bueno", ayuda: "Equipamiento completo, funcional y en buenas condiciones. Permite realizar procesos especializados y ofrecer servicios de manera eficiente y estable." },
+                { id: 5, texto: "Óptimo", ayuda: "Equipamiento profesional, actualizado y especializado. Cumple estándares técnicos para conservación, operación, digitalización y servicios. Permite un funcionamiento de alto nivel." }
             ]
         },
         {
             id: 27,
             orden: 27,
             texto: "¿Con qué espacios de almacenamiento acondicionados cuenta la institución?",
-            ayuda: "Puede seleccionar más de una opción.",
+            ayuda: "Espacio especialmente preparado para conservar el acervo, con control de temperatura, humedad, iluminación, mobiliario adecuado y protección contra riesgos.",
             tipo: "catalogo_multiple",
             obligatorio: true, 
             graficar: true,
