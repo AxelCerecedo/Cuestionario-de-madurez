@@ -62,7 +62,7 @@ const CONFIG_SECCION = {
                 { id: 1, texto: "MARC21" },
                 { id: 2, texto: "ISAD(G)" },
                 { id: 3, texto: "ISBD" },
-                { id: 4, texto: "NMX-R-069-SCFI-2016" },
+                { id: 4, texto: "Norma Mexicana: NMX-R-069-SCFI-2016" },
                 { id: 5, texto: "RDA" },
                 { id: 6, texto: "CCO" },
                 { id: 5, texto: "Object ID" },
