@@ -26,8 +26,7 @@ const CONFIG_SECCION = {
                         { id: 103, texto: "Reprografía / Digitalización" },
                         { id: 104, texto: "Investigación" },
                         { id: 105, texto: "Gestión de permisos de uso" },
-                        { id: 106, texto: "Otro", especificar: true },
-                        { id: 107, texto: "Ninguno" }
+                        { id: 106, texto: "Otro", especificar: true }
                     ]
                 },
                 // --- 2. REQUISITOS (Cambiamos ID 2 a 92) ---
@@ -52,8 +51,7 @@ const CONFIG_SECCION = {
                         { id: 121, texto: "Talleres" },
                         { id: 122, texto: "Conferencias" },
                         { id: 123, texto: "Visitas guiadas" },
-                        { id: 124, texto: "Otros", especificar: true },
-                        { id: 125, texto: "Ninguno" }
+                        { id: 124, texto: "Otros", especificar: true }
                     ]
                 },
                 // --- 4. DIFUSIÓN (Cambiamos ID 4 a 94) ---
@@ -65,7 +63,6 @@ const CONFIG_SECCION = {
                         { id: 132, texto: "Publicaciones" },
                         { id: 133, texto: "Venta de obra" },
                         { id: 134, texto: "Otros", especificar: true },
-                        { id: 135, texto: "Ninguno" },
                         { id: 136, texto: "Redes sociales"}
                     ]
                 }
