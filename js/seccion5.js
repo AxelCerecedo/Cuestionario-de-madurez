@@ -70,66 +70,84 @@ const CONFIG_SECCION = {
 };
 
 // =========================================================
-// LÓGICA ESPECIAL SECCIÓN 5 (PREGUNTAS 38 Y 39)
+// LÓGICA ESPECIAL SECCIÓN 5:
+// 1. Exclusividad de "Ninguna de las anteriores"
+// 2. Ocultar la Matriz (P39) si se marca "Ninguna"
 // =========================================================
 document.addEventListener('change', function(e) {
     
-    // Detectar cambios solo en la Pregunta 38
+    // Detectamos cambios SOLO en la pregunta 38
     if (e.target.type === 'checkbox' && e.target.getAttribute('data-id-pregunta') === '38') {
 
         const checkboxClickeado = e.target;
         const valor = parseInt(checkboxClickeado.value);
-        const ID_NINGUNA = 3899; // ID de "Ninguna de las anteriores"
+        const ID_NINGUNA = 3899; // El ID de "Ninguna de las anteriores"
 
-        // Seleccionamos todos los checkboxes de la pregunta 38
+        // Obtenemos todos los checkboxes de la pregunta 38
         const grupoCheckboxes = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]');
 
-        // --- 1. LÓGICA DE EXCLUSIVIDAD ---
+        // --- 1. LÓGICA DE EXCLUSIVIDAD (Limpieza de checks) ---
         
         // CASO A: Se marcó "Ninguna"
         if (valor === ID_NINGUNA && checkboxClickeado.checked) {
             grupoCheckboxes.forEach(cb => {
                 if (parseInt(cb.value) !== ID_NINGUNA) {
-                    cb.checked = false;
-                    // Disparamos evento change manual para que la matriz detecte que se desmarcaron
-                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    cb.checked = false; // Desmarcar las demás
                 }
             });
         }
 
-        // CASO B: Se marcó cualquier otra herramienta
+        // CASO B: Se marcó cualquier otra opción
         if (valor !== ID_NINGUNA && checkboxClickeado.checked) {
             grupoCheckboxes.forEach(cb => {
                 if (parseInt(cb.value) === ID_NINGUNA) {
-                    cb.checked = false;
-                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    cb.checked = false; // Desmarcar "Ninguna"
                 }
             });
         }
 
-        // --- 2. LÓGICA DE VISIBILIDAD DE LA MATRIZ (PREGUNTA 39) ---
+        // --- 2. LÓGICA VISUAL: ¿MOSTRAMOS LA PREGUNTA 39? ---
         
-        // Buscamos el checkbox de "Ninguna" actualizado
+        // Verificamos si "Ninguna" quedó marcada después de la lógica anterior
         const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
+        const estaNingunaMarcada = checkNinguna ? checkNinguna.checked : false;
+
+        // Buscamos el contenedor visual de la Pregunta 39 para ocultarlo
+        // (Intentamos varios métodos para asegurar que lo encuentre)
+        let contenedorMatriz = document.getElementById('pregunta-container-39');
         
-        // Intentamos buscar el contenedor de la Pregunta 39
-        // (Buscamos por el atributo data-id-pregunta="39" y subimos al contenedor padre .card)
-        let contenedorMatriz = null;
-        const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
-        if (inputMatriz) {
-            contenedorMatriz = inputMatriz.closest('.card') || inputMatriz.closest('.mb-4');
-        } else {
-            // Intento alternativo por si la matriz aun no se genera en el DOM
-            contenedorMatriz = document.getElementById('pregunta-container-39');
+        // Si no tiene ID directo, buscamos por el atributo data-id dentro de un card
+        if (!contenedorMatriz) {
+            const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
+            if (inputMatriz) {
+                contenedorMatriz = inputMatriz.closest('.card') || inputMatriz.closest('.mb-4');
+            }
         }
 
         if (contenedorMatriz) {
-            if (checkNinguna && checkNinguna.checked) {
-                // Si "Ninguna" está marcada, OCULTAMOS la matriz de experiencia
+            if (estaNingunaMarcada) {
+                // Si "Ninguna" está marcada -> OCULTAMOS la matriz completa
+                // Esto evita que se genere la columna y limpia la interfaz
                 contenedorMatriz.style.display = 'none';
+                
+                // OPCIONAL: Limpiar los inputs de la matriz por si acaso había algo escrito antes
+                const inputsMatriz = contenedorMatriz.querySelectorAll('input');
+                inputsMatriz.forEach(inp => {
+                    if(inp.type === 'radio' || inp.type === 'checkbox') inp.checked = false;
+                    if(inp.type === 'text' || inp.type === 'number') inp.value = '';
+                });
+
             } else {
-                // Si hay herramientas seleccionadas, MOSTRAMOS la matriz
-                contenedorMatriz.style.display = 'block';
+                // Si hay otras opciones marcadas -> MOSTRAMOS la matriz
+                // (Pero validamos que haya ALGO marcado para no mostrarla vacía)
+                const hayAlgunaMarcada = Array.from(grupoCheckboxes).some(cb => cb.checked);
+                
+                if (hayAlgunaMarcada) {
+                    contenedorMatriz.style.display = 'block';
+                } else {
+                    // Si no hay nada marcado (ni ninguna ni otras), también ocultamos
+                    contenedorMatriz.style.display = 'none';
+                }
             }
         }
     }
