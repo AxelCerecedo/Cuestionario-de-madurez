@@ -69,3 +69,96 @@ const CONFIG_SECCION = {
     ]
 };
 
+// =========================================================
+// LÓGICA DE BLOQUEO VISUAL SECCIÓN 5
+// =========================================================
+
+function bloquearMatrizSiNinguna() {
+    const ID_NINGUNA = 3899;
+    const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
+    
+    // Buscamos el contenedor de la Matriz (Pregunta 39)
+    let contenedorMatriz = document.getElementById('pregunta-container-39');
+    
+    if (!contenedorMatriz) {
+        const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
+        if (inputMatriz) {
+            contenedorMatriz = inputMatriz.closest('.card') || inputMatriz.closest('.mb-4');
+        }
+    }
+
+    if (contenedorMatriz && checkNinguna) {
+        if (checkNinguna.checked) {
+            // === MODO BLOQUEO ===
+            // 1. Bloquear clics (Nadie puede seleccionar nada)
+            contenedorMatriz.style.pointerEvents = 'none';
+            // 2. Hacerla transparente para indicar que está deshabilitada
+            contenedorMatriz.style.opacity = '0.4';
+            contenedorMatriz.style.filter = 'grayscale(100%)'; // Opcional: ponerla en gris
+            
+            // 3. Deshabilitar inputs internos (Doble seguridad)
+            const inputsInternos = contenedorMatriz.querySelectorAll('input');
+            inputsInternos.forEach(input => input.disabled = true);
+
+        } else {
+            // === MODO DESBLOQUEO ===
+            // Restaurar interactividad si selecciona otra cosa
+            const hayOtras = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]:checked').length > 0;
+            
+            if (hayOtras) {
+                contenedorMatriz.style.pointerEvents = 'auto';
+                contenedorMatriz.style.opacity = '1';
+                contenedorMatriz.style.filter = 'none';
+                
+                const inputsInternos = contenedorMatriz.querySelectorAll('input');
+                inputsInternos.forEach(input => input.disabled = false);
+            } else {
+                // Si no hay nada seleccionado, mejor la ocultamos visualmente (opcional)
+                contenedorMatriz.style.display = 'none';
+            }
+        }
+    }
+}
+
+document.addEventListener('change', function(e) {
+    // Detectamos cambios en la pregunta 38
+    if (e.target.type === 'checkbox' && e.target.getAttribute('data-id-pregunta') === '38') {
+
+        const checkboxClickeado = e.target;
+        const valor = parseInt(checkboxClickeado.value);
+        const ID_NINGUNA = 3899; 
+        const grupoCheckboxes = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]');
+
+        // --- 1. LÓGICA DE EXCLUSIVIDAD (Igual que antes) ---
+        if (valor === ID_NINGUNA && checkboxClickeado.checked) {
+            grupoCheckboxes.forEach(cb => {
+                if (parseInt(cb.value) !== ID_NINGUNA) {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change', { bubbles: true })); 
+                }
+            });
+        }
+
+        if (valor !== ID_NINGUNA && checkboxClickeado.checked) {
+            grupoCheckboxes.forEach(cb => {
+                if (parseInt(cb.value) === ID_NINGUNA) {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
+        // --- 2. EJECUTAR EL BLOQUEO ---
+        // Lo ejecutamos con varios retrasos para asegurar que, 
+        // aunque se dibuje la tabla, inmediatamente la bloqueemos.
+        bloquearMatrizSiNinguna();
+        setTimeout(bloquearMatrizSiNinguna, 100);
+        setTimeout(bloquearMatrizSiNinguna, 300);
+        setTimeout(bloquearMatrizSiNinguna, 500);
+    }
+});
+
+// Ejecutar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(bloquearMatrizSiNinguna, 200);
+});
