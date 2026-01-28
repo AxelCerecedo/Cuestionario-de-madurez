@@ -66,10 +66,71 @@ const CONFIG_SECCION = {
             ]
         }
 
-        //SECCION PREGUNTAS
-        // Revisar el puntaje con alberto ya que aqui da mas de 177 puntos
-
-
-
     ]
 };
+
+// =========================================================
+// LÓGICA ESPECIAL SECCIÓN 5 (PREGUNTAS 38 Y 39)
+// =========================================================
+document.addEventListener('change', function(e) {
+    
+    // Detectar cambios solo en la Pregunta 38
+    if (e.target.type === 'checkbox' && e.target.getAttribute('data-id-pregunta') === '38') {
+
+        const checkboxClickeado = e.target;
+        const valor = parseInt(checkboxClickeado.value);
+        const ID_NINGUNA = 3899; // ID de "Ninguna de las anteriores"
+
+        // Seleccionamos todos los checkboxes de la pregunta 38
+        const grupoCheckboxes = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]');
+
+        // --- 1. LÓGICA DE EXCLUSIVIDAD ---
+        
+        // CASO A: Se marcó "Ninguna"
+        if (valor === ID_NINGUNA && checkboxClickeado.checked) {
+            grupoCheckboxes.forEach(cb => {
+                if (parseInt(cb.value) !== ID_NINGUNA) {
+                    cb.checked = false;
+                    // Disparamos evento change manual para que la matriz detecte que se desmarcaron
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
+        // CASO B: Se marcó cualquier otra herramienta
+        if (valor !== ID_NINGUNA && checkboxClickeado.checked) {
+            grupoCheckboxes.forEach(cb => {
+                if (parseInt(cb.value) === ID_NINGUNA) {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
+        // --- 2. LÓGICA DE VISIBILIDAD DE LA MATRIZ (PREGUNTA 39) ---
+        
+        // Buscamos el checkbox de "Ninguna" actualizado
+        const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
+        
+        // Intentamos buscar el contenedor de la Pregunta 39
+        // (Buscamos por el atributo data-id-pregunta="39" y subimos al contenedor padre .card)
+        let contenedorMatriz = null;
+        const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
+        if (inputMatriz) {
+            contenedorMatriz = inputMatriz.closest('.card') || inputMatriz.closest('.mb-4');
+        } else {
+            // Intento alternativo por si la matriz aun no se genera en el DOM
+            contenedorMatriz = document.getElementById('pregunta-container-39');
+        }
+
+        if (contenedorMatriz) {
+            if (checkNinguna && checkNinguna.checked) {
+                // Si "Ninguna" está marcada, OCULTAMOS la matriz de experiencia
+                contenedorMatriz.style.display = 'none';
+            } else {
+                // Si hay herramientas seleccionadas, MOSTRAMOS la matriz
+                contenedorMatriz.style.display = 'block';
+            }
+        }
+    }
+});
