@@ -70,85 +70,79 @@ const CONFIG_SECCION = {
 };
 
 // =========================================================
-// LÓGICA ESPECIAL SECCIÓN 5:
-// 1. Exclusividad de "Ninguna de las anteriores"
-// 2. Ocultar la Matriz (P39) si se marca "Ninguna"
+// LÓGICA ESPECIAL SECCIÓN 5 (FINAL)
 // =========================================================
+
+// Función separada para manejar la visibilidad
+function actualizarVisibilidadMatriz() {
+    const ID_NINGUNA = 3899;
+    const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
+    
+    // Buscamos el contenedor de la 39 de forma robusta
+    let contenedorMatriz = document.getElementById('pregunta-container-39');
+    if (!contenedorMatriz) {
+        // Intento secundario
+        const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
+        if (inputMatriz) {
+            contenedorMatriz = inputMatriz.closest('.card') || inputMatriz.closest('.mb-4');
+        }
+    }
+
+    if (contenedorMatriz && checkNinguna) {
+        if (checkNinguna.checked) {
+            // FUERZA BRUTA: Ocultar con !important usando cssText
+            contenedorMatriz.style.cssText = 'display: none !important';
+        } else {
+            // Verificar si hay alguna otra marcada
+            const hayOtras = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]:checked').length > 0;
+            if (hayOtras) {
+                contenedorMatriz.style.cssText = 'display: block';
+            } else {
+                contenedorMatriz.style.cssText = 'display: none !important';
+            }
+        }
+    }
+}
+
 document.addEventListener('change', function(e) {
     
-    // Detectamos cambios SOLO en la pregunta 38
+    // Detectamos cambios en la pregunta 38
     if (e.target.type === 'checkbox' && e.target.getAttribute('data-id-pregunta') === '38') {
 
         const checkboxClickeado = e.target;
         const valor = parseInt(checkboxClickeado.value);
-        const ID_NINGUNA = 3899; // El ID de "Ninguna de las anteriores"
+        const ID_NINGUNA = 3899; 
 
-        // Obtenemos todos los checkboxes de la pregunta 38
         const grupoCheckboxes = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]');
 
-        // --- 1. LÓGICA DE EXCLUSIVIDAD (Limpieza de checks) ---
-        
-        // CASO A: Se marcó "Ninguna"
+        // --- 1. LÓGICA DE EXCLUSIVIDAD ---
         if (valor === ID_NINGUNA && checkboxClickeado.checked) {
             grupoCheckboxes.forEach(cb => {
                 if (parseInt(cb.value) !== ID_NINGUNA) {
-                    cb.checked = false; // Desmarcar las demás
+                    cb.checked = false;
+                    // Avisar al sistema que desmarcamos
+                    cb.dispatchEvent(new Event('change', { bubbles: true })); 
                 }
             });
         }
 
-        // CASO B: Se marcó cualquier otra opción
         if (valor !== ID_NINGUNA && checkboxClickeado.checked) {
             grupoCheckboxes.forEach(cb => {
                 if (parseInt(cb.value) === ID_NINGUNA) {
-                    cb.checked = false; // Desmarcar "Ninguna"
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
         }
 
-        // --- 2. LÓGICA VISUAL: ¿MOSTRAMOS LA PREGUNTA 39? ---
-        
-        // Verificamos si "Ninguna" quedó marcada después de la lógica anterior
-        const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
-        const estaNingunaMarcada = checkNinguna ? checkNinguna.checked : false;
-
-        // Buscamos el contenedor visual de la Pregunta 39 para ocultarlo
-        // (Intentamos varios métodos para asegurar que lo encuentre)
-        let contenedorMatriz = document.getElementById('pregunta-container-39');
-        
-        // Si no tiene ID directo, buscamos por el atributo data-id dentro de un card
-        if (!contenedorMatriz) {
-            const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
-            if (inputMatriz) {
-                contenedorMatriz = inputMatriz.closest('.card') || inputMatriz.closest('.mb-4');
-            }
-        }
-
-        if (contenedorMatriz) {
-            if (estaNingunaMarcada) {
-                // Si "Ninguna" está marcada -> OCULTAMOS la matriz completa
-                // Esto evita que se genere la columna y limpia la interfaz
-                contenedorMatriz.style.display = 'none';
-                
-                // OPCIONAL: Limpiar los inputs de la matriz por si acaso había algo escrito antes
-                const inputsMatriz = contenedorMatriz.querySelectorAll('input');
-                inputsMatriz.forEach(inp => {
-                    if(inp.type === 'radio' || inp.type === 'checkbox') inp.checked = false;
-                    if(inp.type === 'text' || inp.type === 'number') inp.value = '';
-                });
-
-            } else {
-                // Si hay otras opciones marcadas -> MOSTRAMOS la matriz
-                // (Pero validamos que haya ALGO marcado para no mostrarla vacía)
-                const hayAlgunaMarcada = Array.from(grupoCheckboxes).some(cb => cb.checked);
-                
-                if (hayAlgunaMarcada) {
-                    contenedorMatriz.style.display = 'block';
-                } else {
-                    // Si no hay nada marcado (ni ninguna ni otras), también ocultamos
-                    contenedorMatriz.style.display = 'none';
-                }
-            }
-        }
+        // --- 2. EL TRUCO DEL RETRASO (SETTIMEOUT) ---
+        // Esperamos 50ms a que tu encuesta.js termine de dibujar la tabla incorrecta
+        // y entonces nosotros la ocultamos.
+        setTimeout(actualizarVisibilidadMatriz, 50);
     }
+});
+
+// Ejecutar también al cargar por si el usuario regresa a esta sección y ya estaba marcada
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(actualizarVisibilidadMatriz, 100);
 });
