@@ -70,18 +70,18 @@ const CONFIG_SECCION = {
 };
 
 // =========================================================
-// LÓGICA ESPECIAL SECCIÓN 5 (FINAL)
+// LÓGICA ESPECIAL SECCIÓN 5 (FINAL Y ROBUSTA)
 // =========================================================
 
-// Función separada para manejar la visibilidad
-function actualizarVisibilidadMatriz() {
+function forzarOcultamientoMatriz() {
     const ID_NINGUNA = 3899;
     const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
     
-    // Buscamos el contenedor de la 39 de forma robusta
+    // Buscamos el contenedor de la Pregunta 39 (La Matriz)
     let contenedorMatriz = document.getElementById('pregunta-container-39');
+    
+    // Si no lo encuentra por ID, lo busca por atributo (Plan B)
     if (!contenedorMatriz) {
-        // Intento secundario
         const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
         if (inputMatriz) {
             contenedorMatriz = inputMatriz.closest('.card') || inputMatriz.closest('.mb-4');
@@ -90,15 +90,22 @@ function actualizarVisibilidadMatriz() {
 
     if (contenedorMatriz && checkNinguna) {
         if (checkNinguna.checked) {
-            // FUERZA BRUTA: Ocultar con !important usando cssText
-            contenedorMatriz.style.cssText = 'display: none !important';
+            // SI "NINGUNA" ESTÁ MARCADA:
+            // 1. Ocultamos el contenedor violentamente
+            contenedorMatriz.style.setProperty('display', 'none', 'important');
+            contenedorMatriz.classList.add('d-none'); // Clase de Bootstrap por si acaso
         } else {
-            // Verificar si hay alguna otra marcada
-            const hayOtras = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]:checked').length > 0;
-            if (hayOtras) {
-                contenedorMatriz.style.cssText = 'display: block';
+            // SI "NINGUNA" NO ESTÁ MARCADA:
+            // Revisamos si hay ALGO más marcado
+            const hayOtrasMarcadas = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]:checked').length > 0;
+            
+            if (hayOtrasMarcadas) {
+                // Si hay otras (Excel, BD, etc), mostramos la matriz
+                contenedorMatriz.style.display = 'block';
+                contenedorMatriz.classList.remove('d-none');
             } else {
-                contenedorMatriz.style.cssText = 'display: none !important';
+                // Si no hay nada marcado, también ocultamos
+                contenedorMatriz.style.setProperty('display', 'none', 'important');
             }
         }
     }
@@ -120,7 +127,7 @@ document.addEventListener('change', function(e) {
             grupoCheckboxes.forEach(cb => {
                 if (parseInt(cb.value) !== ID_NINGUNA) {
                     cb.checked = false;
-                    // Avisar al sistema que desmarcamos
+                    // Disparamos evento para limpiar memoria interna de encuesta.js
                     cb.dispatchEvent(new Event('change', { bubbles: true })); 
                 }
             });
@@ -135,14 +142,20 @@ document.addEventListener('change', function(e) {
             });
         }
 
-        // --- 2. EL TRUCO DEL RETRASO (SETTIMEOUT) ---
-        // Esperamos 50ms a que tu encuesta.js termine de dibujar la tabla incorrecta
-        // y entonces nosotros la ocultamos.
-        setTimeout(actualizarVisibilidadMatriz, 50);
+        // --- 2. FORZAR OCULTAMIENTO (EN VARIOS TIEMPOS) ---
+        // Ejecutamos la función inmediatamente
+        forzarOcultamientoMatriz();
+
+        // Y la ejecutamos de nuevo a los 50ms, 100ms y 300ms
+        // Esto es para asegurar que, si tu encuesta.js dibuja la tabla después,
+        // nosotros lleguemos al final y la volvamos a ocultar.
+        setTimeout(forzarOcultamientoMatriz, 50);
+        setTimeout(forzarOcultamientoMatriz, 100);
+        setTimeout(forzarOcultamientoMatriz, 300);
     }
 });
 
-// Ejecutar también al cargar por si el usuario regresa a esta sección y ya estaba marcada
+// Ejecutar al cargar la página por si ya vienen datos guardados
 document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(actualizarVisibilidadMatriz, 100);
+    setTimeout(forzarOcultamientoMatriz, 200);
 });
