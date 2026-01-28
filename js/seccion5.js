@@ -34,18 +34,18 @@ const CONFIG_SECCION = {
             obligatorio: true,
             graficar: true,
             columnas: [
-                { id: 1, texto: "Inventario", ayuda: "Registro básico con número único identificador de cada pieza u objeto." },
-                { id: 2, texto: "Catalogación", ayuda: "Descripción detallada del acervo siguiendo normas y estándares establecidos." },
-                { id: 3, texto: "Control de movimientos", ayuda: "Seguimiento de traslados, préstamos, cambios de ubicación y movimientos internos." },
-                { id: 4, texto: "Gestión del acervo", ayuda: "Operaciones técnicas y administrativas relacionadas con la organización, preservación y control del acervo." },
-                { id: 5, texto: "Listas de obra", ayuda: "Listados generados para exposiciones, préstamos, revisiones o actividades específicas." },
-                { id: 6, texto: "Reportes", ayuda: "Informes o listados generados para análisis, revisión interna o toma de decisiones." },
-                { id: 7, texto: "Consulta interna", ayuda: "Acceso del personal autorizado para revisar información detallada del acervo." },
-                { id: 8, texto: "Consulta pública", ayuda: "Acceso del público general a información seleccionada o aprobada del acervo." },
-                { id: 9, texto: "Registro", ayuda: "Documentación formal y sistemática de la información esencial de cada pieza en el acervo." },
-                { id: 10, texto: "Diagnóstico de estados de conservación", ayuda: "Evaluación del estado físico de cada pieza, identificación de deterioros y necesidades de conservación." },
-                { id: 11, texto: "Investigación", ayuda: "Uso del acervo con fines académicos, técnicos, científicos o de investigación especializada." },
-                { id: 12, texto: "Otro", especificar: true, ayuda: "Cualquier otro uso no contemplado en la lista que pueda definirse según las necesidades de la institución." }
+                { id: 1, texto: "Inventario" },
+                { id: 2, texto: "Catalogación" },
+                { id: 3, texto: "Control de movimientos" },
+                { id: 4, texto: "Gestión del acervo" },
+                { id: 5, texto: "Listas de obra" },
+                { id: 6, texto: "Reportes" },
+                { id: 7, texto: "Consulta interna" },
+                { id: 8, texto: "Consulta pública" },
+                { id: 9, texto: "Registro" },
+                { id: 10, texto: "Diagnóstico de estados de conservación" },
+                { id: 11, texto: "Investigación" },
+                { id: 12, texto: "Otro", especificar: true }
             ]
         },
         {
@@ -65,21 +65,57 @@ const CONFIG_SECCION = {
                 { id: 5, texto: "De 81 a 100%" }
             ]
         }
-
     ]
 };
 
 // =========================================================
-// LÓGICA DE BLOQUEO VISUAL SECCIÓN 5
+// 🛡️ LÓGICA DE PROTECCIÓN (MONITOR CONSTANTE)
 // =========================================================
 
-function bloquearMatrizSiNinguna() {
+// 1. Manejo del click (Exclusividad: Si marco Ninguna, borro las otras)
+document.addEventListener('change', function(e) {
+    if (e.target.type === 'checkbox' && e.target.getAttribute('data-id-pregunta') === '38') {
+        
+        const checkbox = e.target;
+        const valor = parseInt(checkbox.value);
+        const ID_NINGUNA = 3899;
+        const grupo = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]');
+
+        // A. Si marqué Ninguna -> Borrar las demás
+        if (valor === ID_NINGUNA && checkbox.checked) {
+            grupo.forEach(cb => {
+                if (parseInt(cb.value) !== ID_NINGUNA) {
+                    cb.checked = false;
+                    // Avisamos a encuesta.js que hubo un cambio
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
+        // B. Si marqué Otra -> Borrar Ninguna
+        if (valor !== ID_NINGUNA && checkbox.checked) {
+            grupo.forEach(cb => {
+                if (parseInt(cb.value) === ID_NINGUNA) {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+    }
+});
+
+// 2. EL MARTILLO: Monitor que se ejecuta 10 veces por segundo
+// Este código revisa constantemente si "Ninguna" está marcada y fuerza el ocultamiento de la tabla.
+setInterval(() => {
     const ID_NINGUNA = 3899;
+    
+    // Buscamos el checkbox de "Ninguna"
     const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
     
-    // Buscamos el contenedor de la Matriz (Pregunta 39)
+    // Buscamos el contenedor de la matriz (Pregunta 39)
     let contenedorMatriz = document.getElementById('pregunta-container-39');
     
+    // Si no lo encuentra por ID, intenta buscarlo por atributo
     if (!contenedorMatriz) {
         const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
         if (inputMatriz) {
@@ -89,76 +125,25 @@ function bloquearMatrizSiNinguna() {
 
     if (contenedorMatriz && checkNinguna) {
         if (checkNinguna.checked) {
-            // === MODO BLOQUEO ===
-            // 1. Bloquear clics (Nadie puede seleccionar nada)
-            contenedorMatriz.style.pointerEvents = 'none';
-            // 2. Hacerla transparente para indicar que está deshabilitada
-            contenedorMatriz.style.opacity = '0.4';
-            contenedorMatriz.style.filter = 'grayscale(100%)'; // Opcional: ponerla en gris
-            
-            // 3. Deshabilitar inputs internos (Doble seguridad)
-            const inputsInternos = contenedorMatriz.querySelectorAll('input');
-            inputsInternos.forEach(input => input.disabled = true);
-
+            // SI ESTÁ MARCADA "NINGUNA":
+            // Forzamos ocultar con máxima prioridad.
+            // Aunque encuesta.js intente mostrarla, esto la volverá a ocultar en milisegundos.
+            contenedorMatriz.style.setProperty('display', 'none', 'important');
         } else {
-            // === MODO DESBLOQUEO ===
-            // Restaurar interactividad si selecciona otra cosa
+            // SI NO ESTÁ MARCADA "NINGUNA":
+            // Verificamos si hay ALGO más marcado
             const hayOtras = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]:checked').length > 0;
             
             if (hayOtras) {
-                contenedorMatriz.style.pointerEvents = 'auto';
-                contenedorMatriz.style.opacity = '1';
-                contenedorMatriz.style.filter = 'none';
-                
-                const inputsInternos = contenedorMatriz.querySelectorAll('input');
-                inputsInternos.forEach(input => input.disabled = false);
+                // Si hay otras opciones, dejamos que se vea
+                // (Solo quitamos el none si nosotros lo pusimos, respetando el display original)
+                if (contenedorMatriz.style.display === 'none') {
+                    contenedorMatriz.style.display = 'block';
+                }
             } else {
-                // Si no hay nada seleccionado, mejor la ocultamos visualmente (opcional)
-                contenedorMatriz.style.display = 'none';
+                // Si no hay nada marcado, ocultamos
+                contenedorMatriz.style.setProperty('display', 'none', 'important');
             }
         }
     }
-}
-
-document.addEventListener('change', function(e) {
-    // Detectamos cambios en la pregunta 38
-    if (e.target.type === 'checkbox' && e.target.getAttribute('data-id-pregunta') === '38') {
-
-        const checkboxClickeado = e.target;
-        const valor = parseInt(checkboxClickeado.value);
-        const ID_NINGUNA = 3899; 
-        const grupoCheckboxes = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]');
-
-        // --- 1. LÓGICA DE EXCLUSIVIDAD (Igual que antes) ---
-        if (valor === ID_NINGUNA && checkboxClickeado.checked) {
-            grupoCheckboxes.forEach(cb => {
-                if (parseInt(cb.value) !== ID_NINGUNA) {
-                    cb.checked = false;
-                    cb.dispatchEvent(new Event('change', { bubbles: true })); 
-                }
-            });
-        }
-
-        if (valor !== ID_NINGUNA && checkboxClickeado.checked) {
-            grupoCheckboxes.forEach(cb => {
-                if (parseInt(cb.value) === ID_NINGUNA) {
-                    cb.checked = false;
-                    cb.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-        }
-
-        // --- 2. EJECUTAR EL BLOQUEO ---
-        // Lo ejecutamos con varios retrasos para asegurar que, 
-        // aunque se dibuje la tabla, inmediatamente la bloqueemos.
-        bloquearMatrizSiNinguna();
-        setTimeout(bloquearMatrizSiNinguna, 100);
-        setTimeout(bloquearMatrizSiNinguna, 300);
-        setTimeout(bloquearMatrizSiNinguna, 500);
-    }
-});
-
-// Ejecutar al cargar
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(bloquearMatrizSiNinguna, 200);
-});
+}, 100); // Se ejecuta cada 100ms
