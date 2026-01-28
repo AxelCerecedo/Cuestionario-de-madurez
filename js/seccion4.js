@@ -184,30 +184,42 @@ const CONFIG_SECCION = {
 };
 
 // =========================================================
-// LÓGICA DE EXCLUSIVIDAD PARA PREGUNTA 37
+// LÓGICA DE EXCLUSIVIDAD PARA PREGUNTA 37 (VERSIÓN ROBUSTA)
 // =========================================================
 document.addEventListener('change', function(e) {
-    // Verificamos si el click fue en un checkbox de la pregunta 37
-    if (e.target.name === 'pregunta_37') {
-        
+    // 1. Verificamos que sea un checkbox
+    if (e.target.type !== 'checkbox') return;
+
+    // 2. Buscamos si este checkbox está dentro del contenedor de la pregunta 37
+    // Buscamos hacia arriba un div que tenga algo que ver con la pregunta 37
+    // (Generalmente los generadores ponen IDs como "pregunta-container-37" o similar)
+    // O verificamos si el nombre del input contiene "37"
+    const nombreInput = e.target.name || '';
+    const idInput = e.target.id || '';
+
+    // Si el nombre o el ID contiene "37", asumimos que es de esta pregunta
+    if (nombreInput.includes('37') || idInput.includes('37')) {
+
         const checkboxClickeado = e.target;
-        const idOpcion = parseInt(checkboxClickeado.value);
-        const todosLosCheckboxes = document.querySelectorAll('input[name="pregunta_37"]');
+        const valor = parseInt(checkboxClickeado.value);
+
+        // Obtenemos TODOS los checkboxes que compartan el mismo nombre (sean del mismo grupo)
+        const grupoCheckboxes = document.querySelectorAll(`input[name="${nombreInput}"]`);
 
         // CASO A: Se marcó "No se digitaliza" (ID 1)
-        // -> Debemos desmarcar todas las demás opciones (2, 3, 4, 5)
-        if (idOpcion === 1 && checkboxClickeado.checked) {
-            todosLosCheckboxes.forEach(cb => {
+        if (valor === 1 && checkboxClickeado.checked) {
+            // Desmarcar todos los demás
+            grupoCheckboxes.forEach(cb => {
                 if (parseInt(cb.value) !== 1) {
                     cb.checked = false;
                 }
             });
         }
 
-        // CASO B: Se marcó cualquier otra opción (ID 2, 3, 4 o 5)
-        // -> Debemos desmarcar la opción "No se digitaliza" (ID 1)
-        if (idOpcion !== 1 && checkboxClickeado.checked) {
-            todosLosCheckboxes.forEach(cb => {
+        // CASO B: Se marcó cualquier otra opción (IDs 2, 3, 4, 5)
+        if (valor !== 1 && checkboxClickeado.checked) {
+            // Desmarcar "No se digitaliza" (ID 1)
+            grupoCheckboxes.forEach(cb => {
                 if (parseInt(cb.value) === 1) {
                     cb.checked = false;
                 }
