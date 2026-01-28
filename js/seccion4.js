@@ -182,3 +182,36 @@ const CONFIG_SECCION = {
         
     ]
 };
+
+// =========================================================
+// LÓGICA DE EXCLUSIVIDAD PARA PREGUNTA 37
+// =========================================================
+document.addEventListener('change', function(e) {
+    // Verificamos si el click fue en un checkbox de la pregunta 37
+    if (e.target.name === 'pregunta_37') {
+        
+        const checkboxClickeado = e.target;
+        const idOpcion = parseInt(checkboxClickeado.value);
+        const todosLosCheckboxes = document.querySelectorAll('input[name="pregunta_37"]');
+
+        // CASO A: Se marcó "No se digitaliza" (ID 1)
+        // -> Debemos desmarcar todas las demás opciones (2, 3, 4, 5)
+        if (idOpcion === 1 && checkboxClickeado.checked) {
+            todosLosCheckboxes.forEach(cb => {
+                if (parseInt(cb.value) !== 1) {
+                    cb.checked = false;
+                }
+            });
+        }
+
+        // CASO B: Se marcó cualquier otra opción (ID 2, 3, 4 o 5)
+        // -> Debemos desmarcar la opción "No se digitaliza" (ID 1)
+        if (idOpcion !== 1 && checkboxClickeado.checked) {
+            todosLosCheckboxes.forEach(cb => {
+                if (parseInt(cb.value) === 1) {
+                    cb.checked = false;
+                }
+            });
+        }
+    }
+});
