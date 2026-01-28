@@ -545,20 +545,6 @@ function crearHTMLPregunta(p) {
 
                 // Identificar herramientas seleccionadas
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
-                    .filter(chk => chk.checked && chk.value != '99')
-                    .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
-
-                if (herramientasSeleccionadas.length === 0) {
-                    const tr = document.createElement('tr');
-                    const td = document.createElement('td');
-                    td.innerText = "Seleccione herramientas arriba para habilitar esta tabla.";
-                    td.style.padding = '20px';
-                    td.style.textAlign = 'center';
-                    td.style.color = '#777';
-                    tbody.appendChild(tr);
-                    avisoScroll.style.display = 'none';
-                    return;
-                }
 
                 // --- CASO 1: MATRIZ INVERTIDA (Eje Y: Actividades | Eje X: Herramientas) ---
                 if (p.invertir_ejes) {
