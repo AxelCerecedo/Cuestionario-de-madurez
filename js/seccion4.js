@@ -184,27 +184,17 @@ const CONFIG_SECCION = {
 };
 
 // =========================================================
-// LÓGICA DE EXCLUSIVIDAD PARA PREGUNTA 37 (VERSIÓN ROBUSTA)
+// LÓGICA DE EXCLUSIVIDAD PARA PREGUNTA 37 (VERSIÓN DATA ATTRIBUTE)
 // =========================================================
 document.addEventListener('change', function(e) {
-    // 1. Verificamos que sea un checkbox
-    if (e.target.type !== 'checkbox') return;
-
-    // 2. Buscamos si este checkbox está dentro del contenedor de la pregunta 37
-    // Buscamos hacia arriba un div que tenga algo que ver con la pregunta 37
-    // (Generalmente los generadores ponen IDs como "pregunta-container-37" o similar)
-    // O verificamos si el nombre del input contiene "37"
-    const nombreInput = e.target.name || '';
-    const idInput = e.target.id || '';
-
-    // Si el nombre o el ID contiene "37", asumimos que es de esta pregunta
-    if (nombreInput.includes('37') || idInput.includes('37')) {
+    // 1. Verificamos que sea un checkbox y que pertenezca a la pregunta 37
+    if (e.target.type === 'checkbox' && e.target.getAttribute('data-id-pregunta') === '37') {
 
         const checkboxClickeado = e.target;
         const valor = parseInt(checkboxClickeado.value);
 
-        // Obtenemos TODOS los checkboxes que compartan el mismo nombre (sean del mismo grupo)
-        const grupoCheckboxes = document.querySelectorAll(`input[name="${nombreInput}"]`);
+        // Seleccionamos TODOS los checkboxes que tengan data-id-pregunta="37"
+        const grupoCheckboxes = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="37"]');
 
         // CASO A: Se marcó "No se digitaliza" (ID 1)
         if (valor === 1 && checkboxClickeado.checked) {
