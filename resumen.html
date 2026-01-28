@@ -4,9 +4,115 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resumen de Resultados</title>
+    
     <link rel="stylesheet" href="css/resumen.css"> 
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-     <link rel="icon" href="Imagenes/logo.jpg" type="image/png"> </head>
+    <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
+    
+    <style>
+        /* Estilos para la tarjeta mejorada */
+        .card-puntaje {
+            text-align: center; 
+            padding: 30px 20px; 
+            color: white; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1); 
+            position: relative;
+        }
+
+        /* 1. EL BADGE DE NIVEL */
+        .nivel-badge {
+            background: rgba(255, 255, 255, 0.25); 
+            color: white; 
+            padding: 8px 25px; 
+            border-radius: 50px; 
+            text-transform: uppercase; 
+            font-weight: 800; 
+            font-size: 1.6rem; 
+            display: inline-block; 
+            margin-bottom: 15px; 
+            letter-spacing: 1.5px; 
+            backdrop-filter: blur(5px); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 2. EL NÚMERO GIGANTE (EL PROTAGONISTA) */
+        .big-number {
+            font-size: 3.8rem; 
+            font-weight: 800; 
+            line-height: 1; 
+            margin: 5px 0 5px 0; 
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* 3. TEXTO DE CONTEXTO */
+        .score-subtext {
+            font-size: 1.1rem; 
+            opacity: 0.9; /* Un poco más suave para no competir con el grande */
+            margin-top: 5px;
+            margin-bottom: 25px;
+            font-weight: 400;
+        }
+
+        /* USAMOS EL ID Y !IMPORTANT PARA EL MÁXIMO */
+        #lblMaximo {
+            font-size: 1.5rem !important; 
+            font-weight: 800 !important;
+            opacity: 1 !important; 
+            vertical-align: middle;
+            margin: 0 6px;
+            position: relative;
+            top: -2px;
+            color: #ffffff;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* 4. BARRA DE PROGRESO */
+        .progress-track {
+            background: rgba(255, 255, 255, 0.2); 
+            height: 12px; 
+            border-radius: 10px; 
+            width: 100%; 
+            max-width: 280px; 
+            margin: 0 auto 20px auto; 
+            overflow: hidden; 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .progress-fill {
+            height: 100%; 
+            background: white; 
+            width: 0%; 
+            border-radius: 10px; 
+            transition: width 1.5s ease-out; 
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        
+        .mensaje-score { font-weight: 500; line-height: 1.1; font-size: 1rem; }
+
+        /* Estilo para el puntaje obtenido (Grande y oscuro) */
+.score-actual {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #2c3e50;
+}
+
+/* Estilo para el total (Pequeño y gris) */
+.score-divider {
+    color: #aaa;
+    font-weight: 400;
+    font-size: 0.9rem;
+    margin: 0 2px;
+}
+
+.score-max {
+    color: #888;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+    </style>
+</head>
 <body>
 
     <div class="resumen-container">
@@ -22,16 +128,23 @@
         <div class="dashboard-grid">
             
             <div class="dashboard-left">
+                
                 <div id="cardPuntaje" class="card-puntaje">
-                    <p class="titulo-score">Puntaje Total</p>
                     
-                    <div class="big-number">
-                        <span id="lblPuntaje">--</span>
-                        <span id="lblMaximo"></span>
+                    <div id="lblNivel" class="nivel-badge">Cargando...</div>
+                    
+                    <div class="big-number" id="lblPuntaje">--</div>
+                    
+                    <div class="score-subtext">
+                        puntos de <strong id="lblMaximo">--</strong> posibles
+                    </div>
+
+                    <div class="progress-track">
+                        <div class="progress-fill" id="barraProgreso"></div>
                     </div>
                     
-                    <div class="nivel-label" id="lblNivel">Cargando...</div>
                     <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 0;">
+                    
                     <p class="mensaje-score" id="lblMensaje">Calculando resultados...</p>
                 </div>
 
@@ -57,15 +170,19 @@
                 </div>
             </div>
 
-        </div> </div>
+        </div> 
+    </div>
 
     <script>
-
-        const API_URL = 'https://api-cuestionario.onrender.com';
+        const API_URL = 'http://172.17.175.137:3005';
 
         async function cargarResumen() {
             const idUsuario = localStorage.getItem('idUsuario');
-            if(!idUsuario) { alert("No hay sesión activa."); window.location.href = 'login.html'; return; }
+            if(!idUsuario) { 
+                alert("No hay sesión activa."); 
+                window.location.href = 'login.html'; 
+                return; 
+            }
 
             try {
                 const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
@@ -73,14 +190,29 @@
 
                 if(data.error) { alert(data.error); return; }
 
-                // ANIMACIONES Y DATOS
-                animarNumero('lblPuntaje', 0, data.total, 1500);
-                document.getElementById('lblMaximo').innerText = `/ ${data.maximo}`;
-                document.getElementById('lblNivel').innerText = `${data.nivel} (${data.porcentaje}%)`;
-                document.getElementById('lblMensaje').innerText = data.mensaje;
+                // --- ACTUALIZACIÓN DE DATOS ---
+
+                // 1. Color de Fondo
                 document.getElementById('cardPuntaje').style.background = data.color;
 
-                // TABLA
+                // 2. Animación del Número Grande
+                animarNumero('lblPuntaje', 0, data.total, 1500);
+                
+                // 3. Texto del Máximo
+                document.getElementById('lblMaximo').innerText = data.maximo;
+                
+                // 4. Nivel (Badge arriba)
+                document.getElementById('lblNivel').innerText = `${data.nivel} (${data.porcentaje}%)`;
+                
+                // 5. Mensaje
+                document.getElementById('lblMensaje').innerText = data.mensaje;
+
+                // 6. Animación de la Barra de Progreso
+                setTimeout(() => {
+                    document.getElementById('barraProgreso').style.width = `${data.porcentaje}%`;
+                }, 300);
+
+                // --- TABLA CON TOTALES ---
                 const tbody = document.getElementById('tablaBody');
                 tbody.innerHTML = '';
                 
@@ -96,15 +228,39 @@
                     9: "Servicios"
                 };
 
+                // ⚠️ IMPORTANTE: AQUÍ DEBES PONER EL VALOR MÁXIMO DE CADA SECCIÓN
+                // Suma los puntos de las preguntas de cada sección y ponlos aquí.
+                const MAXIMOS_POR_SECCION = {
+                    1: "0",  // Ejemplo: La sección 1 vale 15 puntos 
+                    2: 5, 
+                    3: 20,
+                    4: 25,
+                    5: "varía", // Si no sabes el máximo pon "varía"
+                    6: 40,
+                    7: 5,
+                    8: 7,
+                    9: 4
+                    //Total: 106 checar las preguntas de la seccion 5 ya que alli suman mas de 100 puntos
+                    // La suma de todo esto debería dar 187 (tu máximo total)
+                };
+
                 Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
                     if(sec === 'Otra' && data.secciones[sec] === 0) return;
+                    
                     const tr = document.createElement('tr');
                     const nombreSec = nombresSecciones[sec] || 'General';
+                    const puntajeObtenido = data.secciones[sec];
+                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || '?'; // Si no lo defines pone '?'
+
                     tr.innerHTML = `
                         <td>
-                            <div style="font-weight:bold; color:#2c3e50;">${sec}. ${nombreSec}</div>
+                            <div style="font-weight:600; color:#444;">${sec}. ${nombreSec}</div>
                         </td>
-                        <td class="col-puntos">${data.secciones[sec]}</td>
+                        <td class="col-puntos">
+                            <span class="score-actual">${puntajeObtenido}</span>
+                            <span class="score-divider">/</span>
+                            <span class="score-max">${puntajeMaximo}</span>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -123,6 +279,7 @@
             };
             window.requestAnimationFrame(step);
         }
+        
         document.addEventListener('DOMContentLoaded', cargarResumen);
     </script>
 </body>
