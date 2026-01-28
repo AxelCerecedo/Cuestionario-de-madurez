@@ -103,7 +103,7 @@ const REGLAS_PUNTAJE = {
     25: { tipo: 'escala_directa' }, 
     26: { tipo: 'escala_directa' }, 
     27: { tipo: 'acumulativo_max5' },
-    28: { tipo: 'acumulativo_max5' }, 
+    28: { tipo: 'conteo_mas_uno' }, 
 
     // --- SECCIÓN 4 --- 
     29: { tipo: 'escala_directa' }, 
@@ -282,6 +282,19 @@ function calcularPuntosPregunta(idPregunta, idOpcion, valorTexto) {
         return regla.valor;
     }
 
+    // ---------------------------------------------------------
+    // 7. REGLA: CONTEO + 1 (Para Pregunta 28)
+    // ---------------------------------------------------------
+    if (regla.tipo === 'conteo_mas_uno') {
+        // Truco visual:
+        // Decimos que cada opción vale 1 punto.
+        // La suma visual será "4" si marcan 4, o "1" si marcan ninguna.
+        // El servidor corregirá la suma final agregando el +1 restante.
+        
+        if (idOpcion == '99') return 1; // Visualmente "Ninguna" vale 1
+        return 1; // Cada check vale 1 visualmente
+    }
+
     return 0;
 }
 
@@ -316,7 +329,7 @@ function calcularPuntosSeccion9(respuestasMultiples) {
 
 
 // =================================================================
-// RUTA A: GUARDAR ENCUESTA (CORREGIDA: EVITA DOBLE SUMA EN MIXTAS)
+// RUTA A: GUARDAR ENCUESTA (CON LOGICA ESPECIAL PREGUNTA 28)
 // =================================================================
 app.post('/guardar-encuesta', async (req, res) => {
     try {
@@ -326,54 +339,40 @@ app.post('/guardar-encuesta', async (req, res) => {
 
         // =============================================================
         // PASO PREVIO: OBTENER EL NOMBRE REAL
-        // (Consultamos la tabla de usuarios registrados para saber quién es)
         // =============================================================
-        let nombreReal = "Usuario"; // Default por si falla
+        let nombreReal = "Usuario"; 
         const [users] = await db.query('SELECT nombre_completo FROM usuarios_registrados WHERE id = ?', [id_usuario]);
-        
         if (users.length > 0 && users[0].nombre_completo) {
             nombreReal = users[0].nombre_completo;
         }
 
         // =============================================================
-        // 1. BUSCAR O CREAR INSTITUCIÓN (CON NOMBRE CORREGIDO)
+        // 1. BUSCAR O CREAR INSTITUCIÓN
         // =============================================================
         let idInstitucion;
         const [rows] = await db.query('SELECT id_institucion FROM instituciones WHERE id_usuario = ?', [id_usuario]);
         
         if (rows.length > 0) {
             idInstitucion = rows[0].id_institucion;
-            
-            // 🛠️ CORRECCIÓN AUTOMÁTICA: 
-            // Si ya existe, actualizamos el nombre por si antes se guardó como "Usuario" o "UsuarioTemp"
             await db.query('UPDATE instituciones SET nombre_usuario = ? WHERE id_institucion = ?', [nombreReal, idInstitucion]);
-            
         } else {
-            // Si es nueva, la creamos con el nombre correcto desde el principio
             const [result] = await db.query('INSERT INTO instituciones (id_usuario, nombre_usuario) VALUES (?, ?)', [id_usuario, nombreReal]);
             idInstitucion = result.insertId;
         }
 
         // =============================================================
-        // 🧠 HISTORIAL LOCAL PARA "ÚNICA VEZ" 
+        // HELPER LOCAL
         // =============================================================
-        // Esto evita que si marcan 2 opciones en una pregunta de "única vez", sumen doble.
         const preguntasYaPuntuadas = new Set();
-
         const obtenerPuntos = (idPregunta, idOpcion, valorTexto) => {
             const regla = REGLAS_PUNTAJE[idPregunta];
-            
             // Regla: ÚNICA VEZ 
             if (regla && regla.tipo === 'unica_vez') {
                 if (idOpcion == '99') return 0; 
                 if (preguntasYaPuntuadas.has(String(idPregunta))) return 0; 
-                
                 preguntasYaPuntuadas.add(String(idPregunta)); 
                 return regla.valor; 
             }
-            
-            // Para las demás (incluida la Sección 9 con 'puntos_por_opcion')
-            // usará la tabla VALOR_OPCIONES que definimos arriba (Padres=1, Hijos=0)
             return calcularPuntosPregunta(idPregunta, idOpcion, valorTexto);
         };
 
@@ -388,7 +387,6 @@ app.post('/guardar-encuesta', async (req, res) => {
             
             const values = respuestas_simples.map(r => {
                 let puntosCalculados = 0;
-                // Si es texto vacío y sin opción, 0 puntos
                 if (r.valor_texto === '' && !r.id_opcion) {
                     puntosCalculados = 0; 
                 } else {
@@ -400,23 +398,55 @@ app.post('/guardar-encuesta', async (req, res) => {
             await db.query('INSERT INTO respuestas (id_institucion, id_pregunta, respuesta_texto, id_opcion_seleccionada, puntos_otorgados) VALUES ?', [values]);
         }
 
-        // --- B. RESPUESTAS MÚLTIPLES ---
+        // --- B. RESPUESTAS MÚLTIPLES (AQUÍ ESTÁ EL CAMBIO CLAVE ⭐) ---
         const { ids_multiples_activas } = req.body; 
 
-        // 1. Limpieza preventiva (lo que se desmarcó)
+        // 1. Limpieza preventiva
         if (ids_multiples_activas && ids_multiples_activas.length > 0) {
             await db.query(`DELETE FROM respuestas_multiples WHERE id_institucion=? AND id_pregunta IN (?)`, [idInstitucion, ids_multiples_activas]);
         }
 
-        // 2. Insertar lo nuevo
+        // 2. Insertar lo nuevo con lógica especial para Q28
         if (respuestas_multiples && respuestas_multiples.length > 0) {
+            
+            // --- 🟢 LÓGICA ESPECIAL PREGUNTA 28: CONTEO + 1 ---
+            let puntosTotal28 = 0;
+            let flagPuntos28Asignados = false; // Para dar los puntos solo al primer registro
+
+            // Filtramos las respuestas de la 28 para calcular su total antes de guardar
+            const respuestas28 = respuestas_multiples.filter(r => r.id_pregunta == 28);
+            if (respuestas28.length > 0) {
+                // Contamos las que NO son "Ninguna" (ID 99)
+                const validas = respuestas28.filter(r => r.id_opcion != 99);
+                // Fórmula: Cantidad + 1
+                puntosTotal28 = validas.length + 1;
+                // Tope máximo (por si acaso)
+                if (puntosTotal28 > 5) puntosTotal28 = 5;
+            }
+            // --------------------------------------------------
+
             const valuesMulti = respuestas_multiples.map(r => {
-                // AQUÍ OCURRE LA MAGIA PARA LA SECCIÓN 9:
-                // Si es un Padre (ID 91-94) -> obtenerPuntos devuelve 1.
-                // Si es un Hijo (ID 100+) -> obtenerPuntos devuelve 0.
-                const puntosCalculados = obtenerPuntos(r.id_pregunta, r.id_opcion, null);
+                let puntosCalculados = 0;
+
+                // CASO ESPECIAL: Es la Pregunta 28
+                if (r.id_pregunta == 28) {
+                    if (!flagPuntos28Asignados) {
+                        // Al PRIMER registro le asignamos TODO el puntaje acumulado
+                        puntosCalculados = puntosTotal28;
+                        flagPuntos28Asignados = true;
+                    } else {
+                        // A los siguientes registros les ponemos 0 (para no duplicar suma)
+                        puntosCalculados = 0;
+                    }
+                } 
+                // CASO NORMAL: Cualquier otra pregunta
+                else {
+                    puntosCalculados = obtenerPuntos(r.id_pregunta, r.id_opcion, null);
+                }
+
                 return [idInstitucion, r.id_pregunta, r.id_opcion, puntosCalculados];
             });
+
             await db.query('INSERT INTO respuestas_multiples (id_institucion, id_pregunta, id_opcion, puntos_otorgados) VALUES ?', [valuesMulti]);
         }
 
@@ -442,11 +472,11 @@ app.post('/guardar-encuesta', async (req, res) => {
         // =============================================================
         // 3. CÁLCULO DE PUNTAJE TOTAL (LECTURA SIMPLE)
         // =============================================================
+        // Como ya guardamos los puntos correctos en la BD, la suma SQL funcionará perfecta.
         
         console.log("---------------------------------------------------");
         console.log(`📊 REPORTE DE PUNTAJE - INSTITUCIÓN ${idInstitucion}`);
 
-        // A. Sumar todo lo que está guardado en la BD
         const sqlDetalle = `
             SELECT id_pregunta, SUM(puntos_otorgados) as puntos 
             FROM (
