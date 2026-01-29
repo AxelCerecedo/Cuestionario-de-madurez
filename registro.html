@@ -176,7 +176,7 @@
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
-        // --- 1. LÓGICA DE GEOLOCALIZACIÓN ---
+       // --- 1. LÓGICA DE GEOLOCALIZACIÓN CORREGIDA ---
         const inputUbi = document.getElementById('txtUbicacion');
         const status = document.getElementById('statusUbicacion');
         const latInput = document.getElementById('latitud');
@@ -190,10 +190,10 @@
             }
 
             status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando ubicación...';
-            status.style.color = "#007bff"; // Azul
+            status.style.color = "#007bff"; 
 
-            // API Gratuita de OpenStreetMap
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+            // CORRECCIÓN AQUÍ: Agregamos '&addressdetails=1' a la URL 👇
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`)
                 .then(response => response.json())
                 .then(data => {
                     if(data && data.length > 0) {
@@ -201,12 +201,24 @@
                         latInput.value = lugar.lat;
                         lonInput.value = lugar.lon;
                         
-                        // Mostramos un nombre más corto y limpio
-                        status.innerHTML = `<i class="fas fa-check-circle"></i> Ubicación detectada: <b>${lugar.name}, ${lugar.address.country || ''}</b>`;
-                        status.style.color = "#28a745"; // Verde
+                        // CORRECCIÓN DE SEGURIDAD 👇
+                        // Verificamos si existe 'address' antes de pedir el país
+                        // Si no existe, usamos el 'display_name' completo que nunca falla.
+                        let textoMostrar = "";
+                        
+                        if (lugar.address && lugar.address.country) {
+                            // Si tenemos detalles, armamos algo bonito: "Monterrey, México"
+                            textoMostrar = `${lugar.name}, ${lugar.address.country}`;
+                        } else {
+                            // Si no, mostramos la dirección completa que nos da la API
+                            textoMostrar = lugar.display_name;
+                        }
+
+                        status.innerHTML = `<i class="fas fa-check-circle"></i> Ubicación detectada: <b>${textoMostrar}</b>`;
+                        status.style.color = "#28a745"; 
                     } else {
                         status.innerHTML = '<i class="fas fa-times-circle"></i> No encontramos el lugar. Intenta ser más específico.';
-                        status.style.color = "#dc3545"; // Rojo
+                        status.style.color = "#dc3545"; 
                         latInput.value = "";
                         lonInput.value = "";
                     }
