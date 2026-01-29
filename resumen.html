@@ -282,5 +282,91 @@
         
         document.addEventListener('DOMContentLoaded', cargarResumen);
     </script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .mapa-container {
+        width: 95%;
+        max-width: 1200px;
+        margin: 50px auto; /* Separación de lo de arriba */
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    #mapaUsuarios { 
+        height: 500px; 
+        width: 100%; 
+        border-radius: 10px; 
+        z-index: 1; /* Para que no tape menús desplegables */
+    }
+
+    .titulo-mapa {
+        text-align: center;
+        color: #2c3e50;
+        font-family: 'Inter', sans-serif;
+        margin-bottom: 20px;
+        font-size: 1.8em;
+    }
+</style>
+
+<div class="mapa-container">
+    <h2 class="titulo-mapa">🌍 Ubicación de Usuarios Registrados</h2>
+    <div id="mapaUsuarios"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        
+        // A. Inicializar Mapa (Centrado en México)
+        const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
+
+        // B. Capa Visual (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // C. Cargar Datos del Servidor
+        try {
+            // Usa tu URL real de Render
+            const API_URL = 'https://api-cuestionario.onrender.com'; 
+            
+            const response = await fetch(`${API_URL}/api/ubicaciones`);
+            const usuarios = await response.json();
+
+            console.log(`📍 Se encontraron ${usuarios.length} ubicaciones.`);
+
+            usuarios.forEach(u => {
+                const lat = parseFloat(u.latitud);
+                const lon = parseFloat(u.longitud);
+
+                // Validamos que las coordenadas sean números reales
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    
+                    // Color del pin según puntaje (Opcional: Rojo bajo, Verde alto)
+                    // Por ahora usamos el pin azul default
+                    
+                    const marker = L.marker([lat, lon]).addTo(map);
+                    
+                    // Popup al hacer clic
+                    marker.bindPopup(`
+                        <div style="text-align:center; font-family:sans-serif;">
+                            <strong style="color:#7c1225; font-size:1.1em;">${u.nombre_completo}</strong><br>
+                            <span style="font-size:0.9em; color:#666;">${u.ubicacion_texto}</span>
+                            <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+                            📊 Puntaje Actual: <b>${u.puntaje}</b>
+                        </div>
+                    `);
+                }
+            });
+
+        } catch (error) {
+            console.error("Error cargando el mapa:", error);
+            document.getElementById('mapaUsuarios').innerHTML = '<p style="text-align:center; padding:20px;">No se pudo cargar el mapa de usuarios.</p>';
+        }
+    });
+</script>
 </body>
 </html>
