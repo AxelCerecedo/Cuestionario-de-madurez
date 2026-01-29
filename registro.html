@@ -217,6 +217,43 @@
                 });
             }
         });
+
+        const inputUbi = document.getElementById('txtUbicacion');
+    const status = document.getElementById('statusUbicacion');
+
+    let timeout = null;
+
+    inputUbi.addEventListener('blur', function() {
+        const query = this.value;
+        if(query.length < 3) return;
+
+        status.innerText = "Buscando ubicación...";
+        status.style.color = "blue";
+
+        // API Gratuita de OpenStreetMap
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                if(data && data.length > 0) {
+                    // Tomamos el primer resultado
+                    const lugar = data[0];
+                    document.getElementById('latitud').value = lugar.lat;
+                    document.getElementById('longitud').value = lugar.lon;
+                    
+                    status.innerText = `📍 Ubicación detectada: ${lugar.display_name}`;
+                    status.style.color = "green";
+                } else {
+                    status.innerText = "❌ No pudimos ubicar ese lugar. Intenta ser más específico (Ciudad, País).";
+                    status.style.color = "red";
+                    document.getElementById('latitud').value = "";
+                    document.getElementById('longitud').value = "";
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                status.innerText = "Error al buscar ubicación.";
+            });
+    });
     </script>
 </body>
 </html>
