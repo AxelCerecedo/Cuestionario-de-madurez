@@ -488,7 +488,7 @@ function crearHTMLPregunta(p) {
     // --- G. MATRIZ DINÁMICA (NORMAL E INVERTIDA) ---
     else if (p.tipo === 'matriz_dinamica') {
         
-        // AVISO SCROLL
+        // AVISO SCROLL (Solo visible si la tabla es muy ancha)
         const avisoScroll = document.createElement('div');
         avisoScroll.innerHTML = '↔ <b>Desliza horizontalmente</b> si no ves todas las columnas.';
         avisoScroll.style.cssText = 'font-size:0.85em; color:#856404; background:#fff3cd; border:1px solid #ffeeba; padding:8px; margin-bottom:5px; border-radius:4px; text-align:center; display:none;';
@@ -509,7 +509,7 @@ function crearHTMLPregunta(p) {
         tabla.style.width = '100%';
         tabla.style.borderCollapse = 'collapse';
         tabla.style.fontSize = '0.85em';
-        if (!p.invertir_ejes) tabla.style.minWidth = '800px'; // Solo forzamos ancho en la normal
+        if (!p.invertir_ejes) tabla.style.minWidth = '800px'; 
 
         // CREAMOS ESTRUCTURA BASE
         const thead = document.createElement('thead');
@@ -522,11 +522,12 @@ function crearHTMLPregunta(p) {
         div.appendChild(tableContainer);
 
         // LÓGICA DE ESCUCHA Y RENDERIZADO
+        // Usamos setTimeout para asegurar que los inputs origen ya existan en el DOM
         setTimeout(() => {
             const inputsOrigen = document.querySelectorAll(`.input-multiple[data-id-pregunta="${p.id_pregunta_origen}"]`);
             
             const actualizarFilas = () => {
-                // 1. BACKUP DE RESPUESTAS
+                // 1. BACKUP DE RESPUESTAS (Para no perder lo que el usuario ya llenó al redibujar)
                 const valoresPrevios = {};
                 if (p.modo === 'matriz_radio') {
                     tbody.querySelectorAll('input[type="radio"]:checked').forEach(rad => {
@@ -539,15 +540,17 @@ function crearHTMLPregunta(p) {
                     });
                 }
 
-                // 2. LIMPIEZA TOTAL (Cabecera y Cuerpo se regeneran)
+                // 2. LIMPIEZA TOTAL
                 thead.innerHTML = '';
                 tbody.innerHTML = ''; 
 
-                // Identificar herramientas seleccionadas
+                // 3. IDENTIFICAR HERRAMIENTAS SELECCIONADAS
+                // 🔥 AQUÍ ESTÁ LA CORRECCIÓN CLAVE: Agregamos && chk.value != '3899'
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
-                    .filter(chk => chk.checked && chk.value != '99')
+                    .filter(chk => chk.checked && chk.value != '99' && chk.value != '3899') 
                     .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
 
+                // Si no hay nada válido seleccionado (o solo marcó Ninguna), mostramos aviso
                 if (herramientasSeleccionadas.length === 0) {
                     const tr = document.createElement('tr');
                     const td = document.createElement('td');
@@ -555,23 +558,23 @@ function crearHTMLPregunta(p) {
                     td.style.padding = '20px';
                     td.style.textAlign = 'center';
                     td.style.color = '#777';
+                    td.style.fontStyle = 'italic';
                     tbody.appendChild(tr);
                     avisoScroll.style.display = 'none';
                     return;
                 }
 
                 // --- CASO 1: MATRIZ INVERTIDA (Eje Y: Actividades | Eje X: Herramientas) ---
+                // * Usado en la Sección 5 *
                 if (p.invertir_ejes) {
-                    // Mostrar aviso scroll solo si hay muchas herramientas
                     avisoScroll.style.display = (herramientasSeleccionadas.length > 3) ? 'block' : 'none';
 
-                    // A. CONSTRUIR CABECERA (Las columnas son las HERRAMIENTAS)
+                    // A. CONSTRUIR CABECERA (Columnas dinámicas = HERRAMIENTAS)
                     const trHead = document.createElement('tr');
                     
-                    // Esquina vacía
                     const thEsq = document.createElement('th');
                     thEsq.innerText = "Actividad \\ Herramienta";
-                    thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; width: 30%;';
+                    thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; width: 30%; min-width: 200px;';
                     trHead.appendChild(thEsq);
 
                     herramientasSeleccionadas.forEach(herr => {
@@ -582,7 +585,7 @@ function crearHTMLPregunta(p) {
                     });
                     thead.appendChild(trHead);
 
-                    // B. CONSTRUIR CUERPO (Las filas son las ACTIVIDADES Fijas)
+                    // B. CONSTRUIR CUERPO (Filas fijas = ACTIVIDADES del JSON)
                     p.columnas.forEach(actividad => {
                         const tr = document.createElement('tr');
                         
@@ -602,10 +605,9 @@ function crearHTMLPregunta(p) {
                             select.className = 'input-matriz-celda';
                             select.dataset.idPregunta = p.id;
                             
-                            // IMPORTANTE: En invertida, Fila=Actividad, Columna=Herramienta
-                            // Esto cambia cómo se guarda en la BD (id_fila será la actividad 1-11)
-                            select.dataset.idFila = actividad.id;       // Actividad (1-11)
-                            select.dataset.idColumna = herr.id;         // Herramienta (ID dinámico)
+                            // IMPORTANTE: En invertida -> idFila=Actividad, idColumna=Herramienta
+                            select.dataset.idFila = actividad.id;       
+                            select.dataset.idColumna = herr.id;         
 
                             const optDef = new Option('-', '');
                             select.appendChild(optDef);
@@ -613,7 +615,7 @@ function crearHTMLPregunta(p) {
 
                             select.style.width = '100%';
                             
-                            // Restaurar valor
+                            // Restaurar valor previo si existe
                             const key = `${actividad.id}_${herr.id}`;
                             if (valoresPrevios[key]) select.value = valoresPrevios[key];
 
@@ -624,7 +626,7 @@ function crearHTMLPregunta(p) {
                     });
                 } 
                 
-                // --- CASO 2: MATRIZ NORMAL (Eje Y: Herramientas | Eje X: Usos) ---
+                // --- CASO 2: MATRIZ NORMAL (Eje Y: Herramientas | Eje X: Criterios) ---
                 else {
                     avisoScroll.style.display = (p.columnas.length > 5) ? 'block' : 'none';
 
@@ -644,7 +646,7 @@ function crearHTMLPregunta(p) {
                     });
                     thead.appendChild(trHead);
 
-                    // B. CONSTRUIR CUERPO (Filas dinámicas por Herramienta)
+                    // B. CONSTRUIR CUERPO (Filas dinámicas = HERRAMIENTAS)
                     herramientasSeleccionadas.forEach(herr => {
                         const tr = document.createElement('tr');
                         
@@ -690,10 +692,13 @@ function crearHTMLPregunta(p) {
                 }
             };
 
+            // Escuchar cambios en los checkboxes de origen
             inputsOrigen.forEach(chk => chk.addEventListener('change', actualizarFilas));
-            actualizarFilas(); // Primera ejecución
+            
+            // Ejecución inicial por si ya hay datos cargados
+            actualizarFilas(); 
 
-        }, 500);
+        }, 500); // Retraso para asegurar carga del DOM
     }
 
     // --- H. CATÁLOGO TIPO TABLA (HÍBRIDO + AYUDA EN COLUMNA DERECHA) ---
