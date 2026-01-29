@@ -72,9 +72,9 @@ const CONFIG_SECCION = {
                 { id: 5, texto: "Restauración" },
                 { id: 6, texto: "Digitalización/Reprografía" },
                 { id: 7, texto: "Cómputo, herramientas digitales o bases de datos" },
-                { id: 7, texto: "Historia / arte" },
-                { id: 7, texto: "Manipulacón física del material del acervo" },
-                { id: 8, texto: "Otro", especificar: true },
+                { id: 8, texto: "Historia / arte" },
+                { id: 9, texto: "Manipulacón física del material del acervo" },
+                { id: 10, texto: "Otro", especificar: true },
                 { id: 99, texto: "Ninguno" }  
             ]
         },
