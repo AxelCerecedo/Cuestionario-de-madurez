@@ -1057,9 +1057,39 @@ app.post('/finalizar-cuestionario', async (req, res) => {
 // 📍 ENDPOINT: OBTENER UBICACIONES PARA EL MAPA
 // =========================================================
 
+// 1. RUTA PARA QUE EL ADMIN VEA EL MAPA (GET)
+app.get('/api/ubicaciones', async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                u.nombre_completo AS nombre, 
+                u.ubicacion_texto AS ubicacion, 
+                u.latitud, 
+                u.longitud,
+                COALESCE(i.puntaje_total, 0) AS puntaje
+            FROM usuarios_registrados u
+            LEFT JOIN instituciones i ON u.id = i.id_usuario
+            WHERE u.latitud IS NOT NULL AND u.latitud != ''
+        `;
+        
+        const [usuarios] = await db.query(sql);
+        res.json(usuarios);
+
+    } catch (error) {
+        console.error("Error al obtener mapa:", error);
+        res.status(500).json({ error: 'Error interno' });
+    }
+});
+
+// 2. RUTA PARA GUARDAR COORDENADAS DESDE SECCIÓN 1 (POST)
 app.post('/api/actualizar-ubicacion', async (req, res) => {
     const { id_usuario, latitud, longitud, ubicacion_texto } = req.body;
     
+    // Validación básica
+    if (!id_usuario || !latitud) {
+        return res.status(400).json({ error: 'Faltan datos de ubicación' });
+    }
+
     try {
         const sql = `
             UPDATE usuarios_registrados 
@@ -1068,10 +1098,11 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
         `;
         await db.query(sql, [latitud, longitud, ubicacion_texto, id_usuario]);
         
-        res.json({ message: 'Ubicación actualizada' });
+        console.log(`📍 Ubicación actualizada para usuario ${id_usuario}`);
+        res.json({ message: 'Ubicación guardada correctamente' });
     } catch (error) {
         console.error("Error actualizando ubicación:", error);
-        res.status(500).json({ error: 'Error interno' });
+        res.status(500).json({ error: 'Error interno de base de datos' });
     }
 });
 
