@@ -119,6 +119,14 @@
                     <input type="password" id="pass2" required placeholder="******">
                 </div>
 
+                <div class="input-group">
+                    <label>¿Desde dónde nos visitas?</label>
+                    <input type="text" id="txtUbicacion" placeholder="Ej: Monterrey, Nuevo León" class="input-style" required>
+                    <input type="hidden" id="latitud" name="latitud">
+                    <input type="hidden" id="longitud" name="longitud">
+                    <small id="statusUbicacion" style="color:gray;"></small>
+                </div>
+
                 <button type="submit" class="btn-login full-width">Registrarse</button>
             </form>
 
