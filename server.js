@@ -897,7 +897,7 @@ app.get('/resumen/:idUsuario', async (req, res) => {
         // =========================================================
 
         // Establecemos el tope teórico en 187 (según tu cálculo reciente)
-        const MAX_PUNTAJE = 187; 
+        const MAX_PUNTAJE = 200; 
         
         // Calculamos porcentaje solo para mostrar la barrita de progreso visual
         const porcentaje = MAX_PUNTAJE > 0 ? Math.round((puntajeTotal / MAX_PUNTAJE) * 100) : 0;
