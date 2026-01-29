@@ -1059,10 +1059,24 @@ app.post('/finalizar-cuestionario', async (req, res) => {
 
 app.get('/api/ubicaciones', async (req, res) => {
     try {
-        // Seleccionamos solo los datos necesarios para el mapa
-        const [rows] = await db.query('SELECT nombre_usuario, ubicacion_texto, latitud, longitud, puntaje_total FROM instituciones WHERE latitud IS NOT NULL');
+        // Obtenemos usuarios que tengan latitud y longitud
+        // También traemos el puntaje total de la tabla instituciones si existe
+        const sql = `
+            SELECT 
+                u.nombre_completo as nombre_usuario, 
+                u.ubicacion_texto, 
+                u.latitud, 
+                u.longitud,
+                (SELECT puntaje_total FROM instituciones WHERE id_usuario = u.id LIMIT 1) as puntaje_total
+            FROM usuarios_registrados u 
+            WHERE u.latitud IS NOT NULL AND u.latitud != ''
+        `;
+        
+        const [rows] = await db.query(sql);
         res.json(rows);
+
     } catch (error) {
+        console.error("Error mapa:", error);
         res.status(500).json({ error: 'Error al obtener ubicaciones' });
     }
 });

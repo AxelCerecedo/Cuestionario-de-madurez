@@ -30,7 +30,7 @@
         async function cargarPines() {
             try {
                 // Tienes que crear esta ruta en tu server.js (ver Paso 5)
-                const response = await fetch('http://172.17.175.137:3005/api/ubicaciones');
+                const response = await fetch('https://api-cuestionario.onrender.com/api/ubicaciones');
                 const usuarios = await response.json();
 
                 usuarios.forEach(user => {
