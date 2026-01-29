@@ -950,9 +950,7 @@ app.get('/resumen/:idUsuario', async (req, res) => {
 // =========================================================
 // 📊 ENDPOINT: DATOS DETALLADOS (CORREGIDO FINAL)
 // =========================================================
-// =========================================================
-// 📊 ENDPOINT: DATOS DETALLADOS (CORREGIDO PARA CONTACTOS)
-// =========================================================
+
 app.get('/admin/detalle-graficas/:idInstitucion', async (req, res) => {
     try {
         const { idInstitucion } = req.params;
