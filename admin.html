@@ -183,18 +183,16 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/admin.js"></script> <script>
+    <script src="js/admin.js"></script> 
+    <script>
         document.addEventListener('DOMContentLoaded', async () => {
             
-            // 1. Inicializar Mapa
-            // Nota: Al estar dentro de un dashboard, a veces Leaflet necesita redimensionarse
             const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
-            // Corrección visual por si carga oculto
             setTimeout(() => { map.invalidateSize(); }, 500);
 
             try {
@@ -203,7 +201,9 @@
                 const response = await fetch(`${API_URL}/api/ubicaciones`);
                 const usuarios = await response.json();
 
-                console.log(`📍 Se encontraron ${usuarios.length} ubicaciones.`);
+                // --- 🔍 DIAGNÓSTICO EN CONSOLA ---
+                // Si vuelve a fallar, presiona F12 y mira qué dice aquí:
+                console.log("Datos recibidos del servidor:", usuarios); 
 
                 usuarios.forEach(u => {
                     const lat = parseFloat(u.latitud);
@@ -212,19 +212,23 @@
                     if (!isNaN(lat) && !isNaN(lon)) {
                         const marker = L.marker([lat, lon]).addTo(map);
                         
+                        // Usamos operadores || para tener un plan B si algo viene vacío
+                        const nombreFinal = u.nombre || u.nombre_completo || 'Usuario Desconocido';
+                        const ubicacionFinal = u.ubicacion || u.ubicacion_texto || 'Ubicación no especificada';
+                        const puntajeFinal = (u.puntaje !== undefined) ? u.puntaje : '0';
+
                         marker.bindPopup(`
                             <div style="text-align:center; font-family:sans-serif;">
-                                <strong style="color:#7c1225; font-size:1.1em;">${u.nombre_completo}</strong><br>
-                                <span style="font-size:0.9em; color:#666;">${u.ubicacion_texto}</span>
+                                <strong style="color:#7c1225; font-size:1.1em;">${nombreFinal}</strong><br>
+                                <span style="font-size:0.9em; color:#666;">${ubicacionFinal}</span>
                                 <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
-                                📊 Puntaje Actual: <b>${u.puntaje}</b>
+                                📊 Puntaje Actual: <b>${puntajeFinal}</b>
                             </div>
                         `);
                     }
                 });
             } catch (error) {
                 console.error("Error cargando el mapa:", error);
-                document.getElementById('mapaUsuarios').innerHTML = '<p style="text-align:center; padding:20px;">No se pudo cargar el mapa de usuarios.</p>';
             }
         });
     </script>

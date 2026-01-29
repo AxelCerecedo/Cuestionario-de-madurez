@@ -1059,25 +1059,25 @@ app.post('/finalizar-cuestionario', async (req, res) => {
 
 app.get('/api/ubicaciones', async (req, res) => {
     try {
-        // Obtenemos usuarios que tengan latitud y longitud
-        // También traemos el puntaje total de la tabla instituciones si existe
+        // Usamos 'AS' para ponerle "apodos" a las columnas y que no fallen en el front
         const sql = `
             SELECT 
-                u.nombre_completo as nombre_usuario, 
-                u.ubicacion_texto, 
+                u.nombre_completo AS nombre, 
+                u.ubicacion_texto AS ubicacion, 
                 u.latitud, 
                 u.longitud,
-                (SELECT puntaje_total FROM instituciones WHERE id_usuario = u.id LIMIT 1) as puntaje_total
-            FROM usuarios_registrados u 
+                COALESCE(i.puntaje_total, 0) AS puntaje
+            FROM usuarios_registrados u
+            LEFT JOIN instituciones i ON u.id = i.id_usuario
             WHERE u.latitud IS NOT NULL AND u.latitud != ''
         `;
         
-        const [rows] = await db.query(sql);
-        res.json(rows);
+        const [usuarios] = await db.query(sql);
+        res.json(usuarios);
 
     } catch (error) {
-        console.error("Error mapa:", error);
-        res.status(500).json({ error: 'Error al obtener ubicaciones' });
+        console.error("Error al obtener mapa:", error);
+        res.status(500).json({ error: 'Error interno' });
     }
 });
 
