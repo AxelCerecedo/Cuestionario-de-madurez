@@ -9,103 +9,36 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <link rel="stylesheet" href="css/login.css"> 
 
     <style>
-        /* --- ESTILOS GENERALES --- */
+        /* Estilos base del Login/Registro */
         .login-card {
             max-width: 420px;
             width: 90%;
             padding: 25px;
         }
+        .logo-img { width: 230px; height: auto; margin-bottom: 10px; }
+        .app-title { font-size: 0.95em; line-height: 1.3; margin-bottom: 5px; }
+        .page-subtitle { color: #666; margin-bottom: 15px; font-size: 1em; font-weight: 600; }
 
-        .logo-img {
-            width: 230px;
-            height: auto;
-            margin-bottom: 10px;
-        }
-        
-        .app-title {
-            font-size: 0.95em;
-            line-height: 1.3;
-            margin-bottom: 5px;
-        }
-
-        .page-subtitle {
-            color: #666;
-            margin-bottom: 15px;
-            font-size: 1em;
-            font-weight: 600;
-        }
-
-        /* --- GRID SYSTEM --- */
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             text-align: left;
         }
-
-        .full-width {
-            grid-column: span 2;
-        }
-
-        .form-group {
-            margin-bottom: 0;
-            position: relative; /* Para posicionar íconos absolutos si se necesita */
-        }
+        .full-width { grid-column: span 2; }
         
-        .form-group label {
-            font-size: 0.8em;
-            margin-bottom: 4px;
-            font-weight: 600;
-            color: #333;
-        }
-
+        .form-group label { font-size: 0.8em; margin-bottom: 4px; font-weight: 600; color: #333; }
         .form-group input {
-            width: 100%; /* Asegura que llene el contenedor */
-            box-sizing: border-box; /* Evita desbordes por padding */
-            padding: 8px 10px;
-            font-size: 0.9em;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        /* --- ESTILO ESPECIAL PARA UBICACIÓN --- */
-        .input-icon-wrapper {
-            position: relative;
-            width: 100%;
-        }
-
-        .input-icon-wrapper i {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #7c1225;
-        }
-
-        .input-con-icono {
-            padding-left: 35px !important; /* Espacio para el ícono */
-        }
-
-        #statusUbicacion {
-            display: block;
-            margin-top: 4px;
-            font-size: 0.75em;
-            min-height: 1.2em; /* Reserva espacio para que no brinque */
+            width: 100%; box-sizing: border-box; padding: 8px 10px;
+            font-size: 0.9em; border: 1px solid #ccc; border-radius: 5px;
         }
 
         .btn-login {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #7c1225;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
+            margin-top: 15px; padding: 10px; background-color: #7c1225;
+            color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
         }
         .btn-login:hover { background-color: #5a0d1b; }
 
@@ -117,12 +50,11 @@
 </head>
 <body>
 
-    <div class="login-container"> <div class="login-card">
+    <div class="login-container"> 
+        <div class="login-card">
             
             <img src="Imagenes/logo.png" alt="Logo" class="logo-img">
-            
             <h1 class="app-title">Cuestionario de evaluación de madurez</h1>
-            
             <h2 class="page-subtitle">Crear Cuenta</h2>
             
             <form id="registroForm" class="form-grid" novalidate>
@@ -152,18 +84,6 @@
                     <input type="password" id="pass2" required placeholder="******">
                 </div>
 
-                <div class="form-group full-width">
-                    <label>¿Desde dónde nos visitas? (Ciudad, Estado)</label>
-                    <div class="input-icon-wrapper">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <input type="text" id="txtUbicacion" placeholder="Ej: Monterrey, Nuevo León" class="input-con-icono">
-                    </div>
-                    
-                    <input type="hidden" id="latitud" name="latitud">
-                    <input type="hidden" id="longitud" name="longitud">
-                    
-                    <small id="statusUbicacion"></small>
-                </div>
                 <button type="submit" class="btn-login full-width">Registrarse</button>
             </form>
 
@@ -176,153 +96,48 @@
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
-       // --- 1. LÓGICA DE GEOLOCALIZACIÓN CORREGIDA ---
-        const inputUbi = document.getElementById('txtUbicacion');
-        const status = document.getElementById('statusUbicacion');
-        const latInput = document.getElementById('latitud');
-        const lonInput = document.getElementById('longitud');
-
-        inputUbi.addEventListener('blur', function() {
-            const query = this.value.trim();
-            if(query.length < 3) {
-                status.innerText = "";
-                return;
-            }
-
-            status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando ubicación...';
-            status.style.color = "#007bff"; 
-
-            // CORRECCIÓN AQUÍ: Agregamos '&addressdetails=1' a la URL 👇
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`)
-                .then(response => response.json())
-                .then(data => {
-                    if(data && data.length > 0) {
-                        const lugar = data[0];
-                        latInput.value = lugar.lat;
-                        lonInput.value = lugar.lon;
-                        
-                        // CORRECCIÓN DE SEGURIDAD 👇
-                        // Verificamos si existe 'address' antes de pedir el país
-                        // Si no existe, usamos el 'display_name' completo que nunca falla.
-                        let textoMostrar = "";
-                        
-                        if (lugar.address && lugar.address.country) {
-                            // Si tenemos detalles, armamos algo bonito: "Monterrey, México"
-                            textoMostrar = `${lugar.name}, ${lugar.address.country}`;
-                        } else {
-                            // Si no, mostramos la dirección completa que nos da la API
-                            textoMostrar = lugar.display_name;
-                        }
-
-                        status.innerHTML = `<i class="fas fa-check-circle"></i> Ubicación detectada: <b>${textoMostrar}</b>`;
-                        status.style.color = "#28a745"; 
-                    } else {
-                        status.innerHTML = '<i class="fas fa-times-circle"></i> No encontramos el lugar. Intenta ser más específico.';
-                        status.style.color = "#dc3545"; 
-                        latInput.value = "";
-                        lonInput.value = "";
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    status.innerText = "Error de conexión al buscar ubicación.";
-                    status.style.color = "red";
-                });
-        });
-
-
-        // --- 2. LÓGICA DE REGISTRO ---
         document.getElementById('registroForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // Referencias a los valores
             const institucion = document.getElementById('institucion').value.trim();
             const nombre = document.getElementById('nombre').value.trim();
             const email = document.getElementById('email').value.trim();
             const pass1 = document.getElementById('pass1').value.trim();
             const pass2 = document.getElementById('pass2').value.trim();
-            
-            // 🔥 IMPORTANTE: Obtenemos los valores de ubicación
-            const ubicacion = document.getElementById('txtUbicacion').value.trim();
-            const latitud = latInput.value;
-            const longitud = lonInput.value;
 
-            // VALIDACIONES
             if (!institucion || !nombre || !email || !pass1 || !pass2) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Faltan datos',
-                    text: 'Complete todos los campos obligatorios.',
-                    confirmButtonColor: '#7c1225'
-                });
+                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Complete todos los campos.', confirmButtonColor: '#7c1225' });
                 return;
             }
 
             if (pass1 !== pass2) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Las contraseñas no coinciden.',
-                    confirmButtonColor: '#7c1225'
-                });
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Las contraseñas no coinciden.', confirmButtonColor: '#7c1225' });
                 return;
             }
 
-            // ENVÍO
             try {
-                Swal.fire({
-                    title: 'Registrando...',
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
+                Swal.fire({ title: 'Registrando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                // 🔥 AQUÍ AGREGAMOS LA UBICACIÓN AL JSON
-                const datosEnviar = { 
-                    institucion, 
-                    nombre, 
-                    email, 
-                    password: pass1,
-                    ubicacion, // Enviar texto
-                    latitud,   // Enviar lat
-                    longitud   // Enviar lon
-                };
-
+                // Ya NO enviamos ubicación aquí
                 const response = await fetch(`${API_URL}/auth/registro`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datosEnviar)
+                    body: JSON.stringify({ institucion, nombre, email, password: pass1 })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
                     Swal.fire({
-                        icon: 'success',
-                        title: '¡Bienvenido!',
-                        text: 'Cuenta creada exitosamente.',
-                        confirmButtonColor: '#7c1225',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.href = 'login.html';
-                    });
+                        icon: 'success', title: '¡Listo!', text: 'Cuenta creada.',
+                        confirmButtonColor: '#7c1225', timer: 1500, showConfirmButton: false
+                    }).then(() => { window.location.href = 'login.html'; });
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'Error al registrar.',
-                        confirmButtonColor: '#7c1225'
-                    });
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Error al registrar.', confirmButtonColor: '#7c1225' });
                 }
-
             } catch (error) {
                 console.error(error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Sin conexión al servidor.',
-                    confirmButtonColor: '#7c1225'
-                });
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Sin conexión al servidor.', confirmButtonColor: '#7c1225' });
             }
         });
     </script>

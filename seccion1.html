@@ -15,7 +15,7 @@
 
     <style>
         :root {
-            --primary: #7c1225; /* Tu color vino */
+            --primary: #7c1225;
             --bg-body: #f4f6f9;
             --text-main: #333;
         }
@@ -27,120 +27,64 @@
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
-            align-items: center; 
-            justify-content: center;
-            padding: 20px;
+            align-items: center; justify-content: center; padding: 20px;
         }
 
         .container {
-            width: 100%;
-            max-width: 900px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            padding: 0; 
-            overflow: hidden; 
-            margin: 0 auto;
+            width: 100%; max-width: 900px; background: white;
+            border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 0; overflow: hidden; margin: 0 auto;
         }
 
-        /* --- BARRA ROJA INTERNA --- */
         .card-header {
-            background-color: var(--primary);
-            /* Color base blanco para todo el header */
-            color: #ffffff; 
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            background-color: var(--primary); color: #ffffff; 
+            padding: 15px 25px; display: flex; align-items: center; justify-content: space-between;
         }
 
         .header-logo {
-            width: 200px;
-            height: 40px;
-            object-fit: contain;
-            background: white;
-            border-radius: 8px;
-            margin-left: 10px;
-            padding: 3px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            width: 200px; height: 40px; object-fit: contain;
+            background: white; border-radius: 8px; margin-left: 10px; padding: 3px;
         }
 
-        .header-center { text-align: center; }
-        
-        /* 🟢 AQUÍ ESTÁ EL CAMBIO: COLOR BLANCO EXPLÍCITO */
         .header-section-title { 
-            margin: 0; 
-            font-size: 1.1em; 
-            font-weight: 700; 
-            letter-spacing: 0.5px; 
-            text-transform: uppercase;
-            color: #ffffff !important; /* Blanco puro */
+            margin: 0; font-size: 1.1em; font-weight: 700; text-transform: uppercase; color: #ffffff !important;
         }
         
         .header-progress { 
-            font-size: 0.8em; 
-            opacity: 0.9; /* Un poco más visible */
-            margin: 2px 0 0 0; 
-            color: #ffffff !important; /* Blanco puro */
-            font-weight: 400;
+            font-size: 0.8em; opacity: 0.9; margin: 2px 0 0 0; color: #ffffff !important;
         }
 
         .btn-logout {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85em;
-            font-weight: 600;
-            display: flex; align-items: center; gap: 8px;
-            transition: all 0.2s;
+            background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em;
+            display: flex; align-items: center; gap: 8px; transition: all 0.2s;
         }
         .btn-logout:hover { background: rgba(255,255,255,0.3); }
 
-        .card-body {
-            padding: 40px; 
-        }
+        .card-body { padding: 40px; }
 
         .btn-guardar {
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            width: 100%; 
-            max-width: 350px; 
-            padding: 15px; 
-            font-size: 16px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            box-shadow: 0 4px 6px rgba(124, 18, 37, 0.2); 
-            transition: transform 0.2s;
+            background: var(--primary); color: white; border: none; width: 100%; max-width: 350px;
+            padding: 15px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: 600;
+            box-shadow: 0 4px 6px rgba(124, 18, 37, 0.2); transition: transform 0.2s;
         }
         .btn-guardar:hover { transform: translateY(-2px); opacity: 0.95; }
 
-        @media (max-width: 600px) {
-            .card-header { flex-direction: column; gap: 15px; text-align: center; padding: 20px; }
-            .header-center { order: 2; margin-bottom: 10px; }
-            .btn-logout { order: 3; width: 100%; justify-content: center; }
-            .card-body { padding: 20px; }
+        /* ESTILOS PARA EL FEEDBACK DE UBICACIÓN */
+        .ubicacion-feedback {
+            font-size: 0.85em; margin-top: 5px; display: block; min-height: 20px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-
         <div class="card-header">
-            <div>
-                <img src="Imagenes/logo.png" alt="Logo" class="header-logo">
-            </div>
-
+            <div><img src="Imagenes/logo.png" alt="Logo" class="header-logo"></div>
             <div class="header-center">
                 <h2 class="header-section-title" style="margin-right: 40px;">Sección 1</h2>
                 <p class="header-progress" style="margin-right: 40px;">Progreso: 1 de 9</p>
             </div>
-
             <div>
                 <button type="button" id="btnCerrarSesion" class="btn-logout">
                     Salir <i class="fas fa-sign-out-alt"></i>
@@ -149,7 +93,6 @@
         </div>
 
         <div class="card-body">
-            
             <div id="areaBotonRegresar" style="margin-bottom: 20px;"></div>
 
             <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.6em;">
@@ -170,7 +113,6 @@
                 </div>
             </form>
         </div>
-
     </div>
 
     <script src="js/seccion1.js"></script> 
@@ -178,6 +120,93 @@
         window.NOMBRE_SECCION = "1. Identificación de la Institución / Archivo";
     </script>
     <script src="js/encuesta.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Buscamos la pregunta 4 cada 500ms hasta que encuesta.js la dibuje
+            const intervalo = setInterval(() => {
+                // Buscamos el input por su atributo data-id-pregunta="4"
+                // OJO: Asegúrate que en seccion1.js la pregunta de dirección tenga id: 4
+                const inputDireccion = document.querySelector('input[data-id-pregunta="4"]');
+                
+                if (inputDireccion) {
+                    clearInterval(intervalo);
+                    console.log("✅ Input de dirección encontrado. Activando geolocalización...");
+
+                    // 1. Crear elemento para mostrar status debajo del input
+                    const statusMsg = document.createElement('small');
+                    statusMsg.className = 'ubicacion-feedback';
+                    inputDireccion.parentNode.appendChild(statusMsg);
+
+                    // 2. Evento al salir del campo (Blur)
+                    inputDireccion.addEventListener('blur', function() {
+                        const query = this.value.trim();
+                        if (query.length < 4) return;
+
+                        statusMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando coordenadas...';
+                        statusMsg.style.color = 'blue';
+
+                        // 3. Consultar Nominatim
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data && data.length > 0) {
+                                    const lugar = data[0];
+                                    const lat = lugar.lat;
+                                    const lon = lugar.lon;
+                                    
+                                    // Feedback visual
+                                    let ubicacionTexto = lugar.display_name;
+                                    if(lugar.address && lugar.address.country) {
+                                        ubicacionTexto = `${lugar.name || query}, ${lugar.address.state || ''}, ${lugar.address.country}`;
+                                    }
+
+                                    statusMsg.innerHTML = `<i class="fas fa-check-circle"></i> Ubicación localizada: <b>${ubicacionTexto}</b>`;
+                                    statusMsg.style.color = 'green';
+
+                                    // 4. 🔥 GUARDADO AUTOMÁTICO DE COORDENADAS 🔥
+                                    // Enviamos las coordenadas al servidor silenciosamente para que el Mapa Admin funcione
+                                    const idUsuario = localStorage.getItem('idUsuario');
+                                    if(idUsuario) {
+                                        guardarCoordenadasEnBD(idUsuario, lat, lon, ubicacionTexto);
+                                    }
+
+                                } else {
+                                    statusMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> No se encontraron coordenadas exactas (solo se guardará el texto).';
+                                    statusMsg.style.color = '#d9534f';
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                statusMsg.innerText = "Error de conexión con mapa.";
+                            });
+                    });
+                }
+            }, 500); // Revisar cada medio segundo
+        });
+
+        // Función para actualizar lat/long en la tabla de usuarios sin molestar al usuario
+        async function guardarCoordenadasEnBD(idUsuario, lat, lon, texto) {
+            try {
+                // Usamos la API de Render
+                const API_URL = 'https://api-cuestionario.onrender.com';
+                
+                await fetch(`${API_URL}/api/actualizar-ubicacion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_usuario: idUsuario,
+                        latitud: lat,
+                        longitud: lon,
+                        ubicacion_texto: texto
+                    })
+                });
+                console.log("📍 Coordenadas actualizadas en la BD");
+            } catch (e) {
+                console.error("Error guardando coordenadas:", e);
+            }
+        }
+    </script>
 
 </body>
 </html>

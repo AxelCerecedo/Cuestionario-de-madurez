@@ -1057,26 +1057,20 @@ app.post('/finalizar-cuestionario', async (req, res) => {
 // 📍 ENDPOINT: OBTENER UBICACIONES PARA EL MAPA
 // =========================================================
 
-app.get('/api/ubicaciones', async (req, res) => {
+app.post('/api/actualizar-ubicacion', async (req, res) => {
+    const { id_usuario, latitud, longitud, ubicacion_texto } = req.body;
+    
     try {
-        // Usamos 'AS' para ponerle "apodos" a las columnas y que no fallen en el front
         const sql = `
-            SELECT 
-                u.nombre_completo AS nombre, 
-                u.ubicacion_texto AS ubicacion, 
-                u.latitud, 
-                u.longitud,
-                COALESCE(i.puntaje_total, 0) AS puntaje
-            FROM usuarios_registrados u
-            LEFT JOIN instituciones i ON u.id = i.id_usuario
-            WHERE u.latitud IS NOT NULL AND u.latitud != ''
+            UPDATE usuarios_registrados 
+            SET latitud = ?, longitud = ?, ubicacion_texto = ? 
+            WHERE id = ?
         `;
+        await db.query(sql, [latitud, longitud, ubicacion_texto, id_usuario]);
         
-        const [usuarios] = await db.query(sql);
-        res.json(usuarios);
-
+        res.json({ message: 'Ubicación actualizada' });
     } catch (error) {
-        console.error("Error al obtener mapa:", error);
+        console.error("Error actualizando ubicación:", error);
         res.status(500).json({ error: 'Error interno' });
     }
 });
