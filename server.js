@@ -685,7 +685,7 @@ app.get('/admin/globales', async (req, res) => {
 
         if (totalInstituciones === 0) return res.json({ vacio: true });
 
-        // 2. Calcular Distribución de Niveles (AJUSTADO A MAX ~187)
+        // 2. Calcular Distribución de Niveles (AJUSTADO A MAX ~200)
         const niveles = { "Inicial": 0, "Básico": 0, "Intermedio": 0, "Avanzado": 0 };
         
         inst.forEach(i => {
