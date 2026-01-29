@@ -533,13 +533,16 @@ app.post('/guardar-encuesta', async (req, res) => {
     }
 });
 
-// RUTA B: REGISTRO DE USUARIO (CON LOGS)
+// RUTA B: REGISTRO DE USUARIO (CON GEOLOCALIZACIÓN 🌍)
 app.post('/auth/registro', async (req, res) => {
-    const { institucion, nombre, email, password } = req.body;
+    // 1. Recibimos los nuevos campos del frontend (ubicacion, latitud, longitud)
+    const { institucion, nombre, email, password, ubicacion, latitud, longitud } = req.body;
+    
     console.log(`👤 [REGISTRO] Intentando registrar a: ${email}`);
+    if(ubicacion) console.log(`   📍 Ubicación detectada: ${ubicacion} (${latitud}, ${longitud})`);
 
     try {
-        // 1. Verificar si el correo ya existe
+        // 2. Verificar si el correo ya existe
         console.log('   🔍 Verificando existencia del correo...');
         const [existe] = await db.query('SELECT id FROM usuarios_registrados WHERE email = ?', [email]);
         
@@ -548,17 +551,23 @@ app.post('/auth/registro', async (req, res) => {
             return res.status(400).json({ error: 'Este correo ya está registrado.' });
         }
 
-        // 2. Insertar usuario
+        // 3. Insertar usuario (ACTUALIZADO CON COORDENADAS)
         console.log('   💾 Insertando nuevo usuario en BD...');
-        const sql = 'INSERT INTO usuarios_registrados (institucion_procedencia, nombre_completo, email, password) VALUES (?, ?, ?, ?)';
-        await db.query(sql, [institucion, nombre, email, password]);
+        
+        const sql = `
+            INSERT INTO usuarios_registrados 
+            (institucion_procedencia, nombre_completo, email, password, ubicacion_texto, latitud, longitud) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        // Pasamos los valores en el orden exacto de la consulta
+        await db.query(sql, [institucion, nombre, email, password, ubicacion, latitud, longitud]);
 
-        console.log('   ✅ [REGISTRO] ¡Éxito! Usuario registrado.');
+        console.log('   ✅ [REGISTRO] ¡Éxito! Usuario registrado con ubicación.');
         res.json({ message: 'Usuario registrado exitosamente' });
 
     } catch (error) {
         console.error("❌ [ERROR REGISTRO]:", error);
-        // Esto te mostrará el error exacto de SQL en la terminal
         res.status(500).json({ error: 'Error en el servidor al registrar.' });
     }
 });
@@ -1043,6 +1052,20 @@ app.post('/finalizar-cuestionario', async (req, res) => {
     }
 });
 
+
+// =========================================================
+// 📍 ENDPOINT: OBTENER UBICACIONES PARA EL MAPA
+// =========================================================
+
+app.get('/api/ubicaciones', async (req, res) => {
+    try {
+        // Seleccionamos solo los datos necesarios para el mapa
+        const [rows] = await db.query('SELECT nombre_usuario, ubicacion_texto, latitud, longitud, puntaje_total FROM instituciones WHERE latitud IS NOT NULL');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener ubicaciones' });
+    }
+});
 
 // ==========================
 // 5. INICIAR SERVIDOR
