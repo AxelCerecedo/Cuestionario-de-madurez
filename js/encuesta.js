@@ -673,25 +673,30 @@ function crearHTMLPregunta(p) {
 
             // --- FUNCIÓN PRINCIPAL: ACTUALIZAR TABLA ---
             const actualizarTabla = () => {
-                // 1. LEER VALORES ACTUALES (Para no borrar lo que el usuario acaba de escribir)
+                // 1. INICIALIZAR DICCIONARIO DE VALORES
                 const valoresPrevios = {};
-                // Buscamos en el DOM actual
-                tbody.querySelectorAll('.input-matriz-celda').forEach(select => {
-                    const key = `${select.dataset.idFila}_${select.dataset.idColumna}`;
-                    if (select.value) valoresPrevios[key] = select.value;
-                });
-                
-                // 🔥 RECUPERACIÓN DE BD (CRÍTICO): 
-                // Si la tabla está vacía visualmente, intentamos leer datos guardados del servidor
-                // que quizás se cargaron antes de que este script corriera.
-                if (Object.keys(valoresPrevios).length === 0 && window.RESPUESTAS_PREVIAS_CACHE) {
-                     window.RESPUESTAS_PREVIAS_CACHE.forEach(r => {
-                         if (r.id_pregunta == p.id) {
-                             const key = `${r.id_fila}_${r.id_columna}`;
-                             valoresPrevios[key] = r.valor;
-                         }
-                     });
+
+                // A. PRIMERO: RECUPERAR DE LA BASE DE DATOS (CACHE GLOBAL)
+                // Esto asegura que si recargas la página, los '1, 2, 3, 4, 5' regresen.
+                if (window.RESPUESTAS_PREVIAS_CACHE && Array.isArray(window.RESPUESTAS_PREVIAS_CACHE)) {
+                    window.RESPUESTAS_PREVIAS_CACHE.forEach(r => {
+                        // Verificamos que sea respuesta de ESTA pregunta
+                        if (r.id_pregunta == p.id) {
+                            // Convertimos a String para asegurar coincidencia
+                            const key = `${r.id_fila}_${r.id_columna}`;
+                            valoresPrevios[key] = String(r.valor);
+                        }
+                    });
                 }
+
+                // B. SEGUNDO: SOBREESCRIBIR CON LO QUE EL USUARIO ACABA DE MOVER EN PANTALLA
+                // (Para no borrar lo que estás editando ahorita mismo)
+                tbody.querySelectorAll('.input-matriz-celda').forEach(select => {
+                    if (select.value) {
+                        const key = `${select.dataset.idFila}_${select.dataset.idColumna}`;
+                        valoresPrevios[key] = String(select.value);
+                    }
+                });
 
                 // 2. DETECTAR HERRAMIENTAS SELECCIONADAS (COLUMNAS)
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
@@ -728,8 +733,9 @@ function crearHTMLPregunta(p) {
                 if (p.modo_incremental) {
                     tbody.innerHTML = '';
                     
-                    // 🔥 REHIDRATACIÓN: Si hay datos guardados (valoresPrevios), 
-                    // debemos asegurarnos de que esas filas existan en 'filasAgregadas'.
+                    // 🔥 REHIDRATACIÓN ROBUSTA 🔥
+                    // Buscamos en 'valoresPrevios' cualquier fila que tenga datos guardados
+                    // y la agregamos al set de filas visibles.
                     Object.keys(valoresPrevios).forEach(key => {
                         const idFila = key.split('_')[0]; // Extraer ID Actividad
                         filasAgregadas.add(idFila);
@@ -738,10 +744,11 @@ function crearHTMLPregunta(p) {
                     filasAgregadas.forEach(idFila => {
                         const colConfig = p.columnas.find(c => c.id == idFila);
                         if (colConfig) {
+                            // Aquí pasamos 'valoresPrevios' que ya tiene la mezcla de BD + DOM
                             const tr = crearFila(idFila, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
                             tbody.appendChild(tr);
                             
-                            // Deshabilitar del select
+                            // UX: Deshabilitar opción del select para que no la vuelvan a agregar
                             const select = document.getElementById(`select_actividad_${p.id}`);
                             if(select) {
                                 const op = Array.from(select.options).find(o => o.value == idFila);
@@ -752,7 +759,7 @@ function crearHTMLPregunta(p) {
 
                     // Reactivar lógica del botón Agregar
                     const btnAgregar = controlesIncremental.querySelector('.btn-agregar-fila');
-                    const nuevoBtn = btnAgregar.cloneNode(true); // Clonar para limpiar eventos viejos
+                    const nuevoBtn = btnAgregar.cloneNode(true);
                     btnAgregar.parentNode.replaceChild(nuevoBtn, btnAgregar);
                     
                     nuevoBtn.onclick = () => {
@@ -762,20 +769,21 @@ function crearHTMLPregunta(p) {
 
                         if (!filasAgregadas.has(idActividad)) {
                             const colConfig = p.columnas.find(c => c.id == idActividad);
-                            const tr = crearFila(idActividad, colConfig.texto, herramientasSeleccionadas, {});
+                            // Al crear nueva fila manual, pasamos valoresPrevios (aunque probablemente esté vacía para esta fila nueva)
+                            const tr = crearFila(idActividad, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
                             tbody.appendChild(tr);
                             filasAgregadas.add(idActividad);
                             
-                            // UX: Deshabilitar opción y limpiar selección
+                            // Resetear select
                             const op = Array.from(select.options).find(o => o.value == idActividad);
                             if(op) op.disabled = true;
                             select.value = '';
-                            if(divAyudaSeleccion) divAyudaSeleccion.innerHTML = ''; // Limpiar ayuda
+                            if(divAyudaSeleccion) divAyudaSeleccion.innerHTML = '';
                         }
                     };
 
                 } else {
-                    // MODO NORMAL (Tabla completa)
+                    // MODO NORMAL
                     tbody.innerHTML = ''; 
                     p.columnas.forEach(actividad => {
                         const tr = crearFila(actividad.id, actividad.texto, herramientasSeleccionadas, valoresPrevios);
