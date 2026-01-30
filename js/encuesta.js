@@ -671,26 +671,33 @@ function crearHTMLPregunta(p) {
                 return tr;
             };
 
-            // --- FUNCIÓN PRINCIPAL: ACTUALIZAR TABLA ---
+            // --- FUNCIÓN PRINCIPAL: ACTUALIZAR TABLA CON LOGS ---
             const actualizarTabla = () => {
-                // 1. INICIALIZAR DICCIONARIO DE VALORES
+                console.group("🔍 DEPURACIÓN MATRIZ 39"); // Agrupa los logs
+                
+                // 1. INICIALIZAR DICCIONARIO
                 const valoresPrevios = {};
 
-                // A. PRIMERO: RECUPERAR DE LA BASE DE DATOS (CACHE GLOBAL)
-                // Esto asegura que si recargas la página, los '1, 2, 3, 4, 5' regresen.
+                // A. RECUPERAR DEL CACHE (BD)
                 if (window.RESPUESTAS_PREVIAS_CACHE && Array.isArray(window.RESPUESTAS_PREVIAS_CACHE)) {
+                    console.log(`📥 Cache global tiene ${window.RESPUESTAS_PREVIAS_CACHE.length} respuestas.`);
+                    
                     window.RESPUESTAS_PREVIAS_CACHE.forEach(r => {
-                        // Verificamos que sea respuesta de ESTA pregunta
+                        // Verificamos si es de ESTA pregunta (39)
                         if (r.id_pregunta == p.id) {
-                            // Convertimos a String para asegurar coincidencia
                             const key = `${r.id_fila}_${r.id_columna}`;
-                            valoresPrevios[key] = String(r.valor);
+                            const valor = String(r.valor);
+                            valoresPrevios[key] = valor;
+                            
+                            // LOG: Ver qué estamos recuperando
+                            console.log(`✅ Recuperado BD -> Fila(Actividad): ${r.id_fila}, Col(Herr): ${r.id_columna}, Valor: ${valor}, Key: ${key}`);
                         }
                     });
+                } else {
+                    console.warn("⚠️ RESPUESTAS_PREVIAS_CACHE está vacío o no es un array.");
                 }
 
-                // B. SEGUNDO: SOBREESCRIBIR CON LO QUE EL USUARIO ACABA DE MOVER EN PANTALLA
-                // (Para no borrar lo que estás editando ahorita mismo)
+                // B. PRESERVAR LO QUE EL USUARIO YA ESCRIBIÓ
                 tbody.querySelectorAll('.input-matriz-celda').forEach(select => {
                     if (select.value) {
                         const key = `${select.dataset.idFila}_${select.dataset.idColumna}`;
@@ -698,16 +705,18 @@ function crearHTMLPregunta(p) {
                     }
                 });
 
-                // 2. DETECTAR HERRAMIENTAS SELECCIONADAS (COLUMNAS)
+                // 2. DETECTAR HERRAMIENTAS (COLUMNAS)
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
                     .filter(chk => chk.checked && chk.value != '99' && chk.value != '3899') 
                     .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
 
-                // Si no hay herramientas, ocultar todo
+                console.log("🛠️ Herramientas seleccionadas (Columnas):", tools = herramientasSeleccionadas.map(h => h.id));
+
                 if (herramientasSeleccionadas.length === 0) {
                     thead.innerHTML = '';
                     tbody.innerHTML = '';
                     if (controlesIncremental) controlesIncremental.parentElement.style.display = 'none';
+                    console.groupEnd();
                     return;
                 }
                 
@@ -733,31 +742,49 @@ function crearHTMLPregunta(p) {
                 if (p.modo_incremental) {
                     tbody.innerHTML = '';
                     
-                    // 🔥 REHIDRATACIÓN ROBUSTA 🔥
-                    // Buscamos en 'valoresPrevios' cualquier fila que tenga datos guardados
-                    // y la agregamos al set de filas visibles.
+                    // REHIDRATACIÓN
+                    console.log("🔄 Rehidratando filas...");
                     Object.keys(valoresPrevios).forEach(key => {
-                        const idFila = key.split('_')[0]; // Extraer ID Actividad
-                        filasAgregadas.add(idFila);
+                        const idFila = key.split('_')[0]; 
+                        if (!filasAgregadas.has(idFila)) {
+                            console.log(`➕ Agregando fila recuperada ID: ${idFila} porque existe en BD.`);
+                            filasAgregadas.add(idFila);
+                        }
                     });
 
                     filasAgregadas.forEach(idFila => {
                         const colConfig = p.columnas.find(c => c.id == idFila);
                         if (colConfig) {
-                            // Aquí pasamos 'valoresPrevios' que ya tiene la mezcla de BD + DOM
+                            // Crear fila pasando los valores
                             const tr = crearFila(idFila, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
                             tbody.appendChild(tr);
                             
-                            // UX: Deshabilitar opción del select para que no la vuelvan a agregar
+                            // VERIFICACIÓN VISUAL
+                            // Buscamos si los selects dentro del TR realmente tomaron el valor
+                            tr.querySelectorAll('select').forEach(sel => {
+                                const k = `${sel.dataset.idFila}_${sel.dataset.idColumna}`;
+                                const valEsperado = valoresPrevios[k];
+                                if (valEsperado) {
+                                    if (sel.value === valEsperado) {
+                                        console.log(`🟢 ÉXITO VISUAL: Celda [${k}] tiene valor ${sel.value}`);
+                                    } else {
+                                        console.error(`🔴 FALLO VISUAL: Celda [${k}] debería tener ${valEsperado} pero tiene ${sel.value}. ¿Coinciden los options?`);
+                                    }
+                                }
+                            });
+
+                            // Deshabilitar opción del select
                             const select = document.getElementById(`select_actividad_${p.id}`);
                             if(select) {
                                 const op = Array.from(select.options).find(o => o.value == idFila);
                                 if(op) op.disabled = true;
                             }
+                        } else {
+                            console.warn(`⚠️ Fila con ID ${idFila} existe en datos pero no en JSON de columnas.`);
                         }
                     });
 
-                    // Reactivar lógica del botón Agregar
+                    // Logica botón agregar (re-bind)
                     const btnAgregar = controlesIncremental.querySelector('.btn-agregar-fila');
                     const nuevoBtn = btnAgregar.cloneNode(true);
                     btnAgregar.parentNode.replaceChild(nuevoBtn, btnAgregar);
@@ -769,12 +796,10 @@ function crearHTMLPregunta(p) {
 
                         if (!filasAgregadas.has(idActividad)) {
                             const colConfig = p.columnas.find(c => c.id == idActividad);
-                            // Al crear nueva fila manual, pasamos valoresPrevios (aunque probablemente esté vacía para esta fila nueva)
                             const tr = crearFila(idActividad, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
                             tbody.appendChild(tr);
                             filasAgregadas.add(idActividad);
                             
-                            // Resetear select
                             const op = Array.from(select.options).find(o => o.value == idActividad);
                             if(op) op.disabled = true;
                             select.value = '';
@@ -790,6 +815,7 @@ function crearHTMLPregunta(p) {
                         tbody.appendChild(tr);
                     });
                 }
+                console.groupEnd(); // Fin de los logs
             };
 
             // Listeners
