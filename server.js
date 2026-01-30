@@ -626,16 +626,18 @@ app.post('/auth/login', async (req, res) => {
 // A. OBTENER LISTA DE INSTITUCIONES QUE HAN RESPONDIDO
 app.get('/admin/instituciones', async (req, res) => {
     try {
-        // Traemos solo instituciones que tengan algún puntaje guardado
+        // CORRECCIÓN: Quitamos el "WHERE" para que traiga también a los de 0 puntos.
+        // Y ordenamos por fecha para que los nuevos salgan arriba.
         const sql = `
             SELECT id_institucion, nombre_usuario, puntaje_total, fecha_registro 
             FROM instituciones 
-            WHERE puntaje_total > 0 
-            ORDER BY puntaje_total DESC
+            ORDER BY fecha_registro DESC
         `;
+        
         const [rows] = await db.query(sql);
         res.json(rows);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Error al obtener instituciones" });
     }
 });
