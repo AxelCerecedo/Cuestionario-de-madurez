@@ -26,13 +26,14 @@ const CONFIG_SECCION = {
         {
             id: 39,
             orden: 39,
-            texto: "De las herramientas que seleccionó, indique su nivel de experiencia o dominio en función de las siguientes actividades.",
-            ayuda: "Donde Inexperto = 1, Nivel básico = 2, Nivel intermedio = 3, Nivel avanzado = 4, Experto = 5",
+            texto: "De las herramientas que seleccionó, indique su nivel de experiencia o dominio en función de las actividades que realiza.",
+            ayuda: "Seleccione una actividad de la lista, agréguela a la tabla y califique su nivel.",
             tipo: "matriz_dinamica",
             id_pregunta_origen: 38,
             invertir_ejes: true, 
             obligatorio: true,
             graficar: true,
+            modo_incremental: true, 
             columnas: [
                 { id: 1, texto: "Inventario", ayuda: "Registro básico con número único identificador de cada pieza u objeto." },
                 { id: 2, texto: "Catalogación", ayuda: "Descripción detallada del acervo siguiendo normas y estándares establecidos." },

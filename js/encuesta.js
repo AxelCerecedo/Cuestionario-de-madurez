@@ -485,14 +485,57 @@ function crearHTMLPregunta(p) {
         }
     }
 
-    // --- G. MATRIZ DINÁMICA (NORMAL E INVERTIDA) ---
+    // --- G. MATRIZ DINÁMICA (NORMAL, INVERTIDA E INCREMENTAL) ---
     else if (p.tipo === 'matriz_dinamica') {
         
-        // AVISO SCROLL (Solo visible si la tabla es muy ancha)
+        // AVISO SCROLL
         const avisoScroll = document.createElement('div');
         avisoScroll.innerHTML = '↔ <b>Desliza horizontalmente</b> si no ves todas las columnas.';
         avisoScroll.style.cssText = 'font-size:0.85em; color:#856404; background:#fff3cd; border:1px solid #ffeeba; padding:8px; margin-bottom:5px; border-radius:4px; text-align:center; display:none;';
         div.appendChild(avisoScroll);
+
+        // CONTENEDOR DE CONTROLES (SOLO PARA MODO INCREMENTAL)
+        let controlesIncremental = null;
+        if (p.modo_incremental) {
+            controlesIncremental = document.createElement('div');
+            controlesIncremental.style.marginBottom = '15px';
+            controlesIncremental.style.display = 'flex';
+            controlesIncremental.style.gap = '10px';
+            controlesIncremental.style.alignItems = 'center';
+            
+            // Select de Actividades
+            const selectActividad = document.createElement('select');
+            selectActividad.id = `select_actividad_${p.id}`;
+            selectActividad.className = 'input-auxiliar'; // Clase auxiliar para no confundir al guardado auto
+            selectActividad.style.padding = '8px';
+            selectActividad.style.borderRadius = '4px';
+            selectActividad.style.border = '1px solid #ccc';
+            selectActividad.style.flex = '1';
+
+            selectActividad.appendChild(new Option('Seleccione una actividad para agregar...', ''));
+            p.columnas.forEach(col => {
+                const op = new Option(col.texto, col.id);
+                // Si tiene ayuda, la ponemos como título
+                if(col.ayuda) op.title = col.ayuda; 
+                selectActividad.appendChild(op);
+            });
+
+            // Botón Agregar
+            const btnAgregar = document.createElement('button');
+            btnAgregar.type = 'button';
+            btnAgregar.innerHTML = '<i class="fas fa-plus"></i> Agregar';
+            btnAgregar.className = 'btn-agregar-fila';
+            btnAgregar.style.padding = '8px 15px';
+            btnAgregar.style.backgroundColor = '#28a745';
+            btnAgregar.style.color = 'white';
+            btnAgregar.style.border = 'none';
+            btnAgregar.style.borderRadius = '4px';
+            btnAgregar.style.cursor = 'pointer';
+
+            controlesIncremental.appendChild(selectActividad);
+            controlesIncremental.appendChild(btnAgregar);
+            div.appendChild(controlesIncremental);
+        }
 
         const tableContainer = document.createElement('div');
         tableContainer.style.overflowX = 'auto'; 
@@ -511,7 +554,7 @@ function crearHTMLPregunta(p) {
         tabla.style.fontSize = '0.85em';
         if (!p.invertir_ejes) tabla.style.minWidth = '800px'; 
 
-        // CREAMOS ESTRUCTURA BASE
+        // ESTRUCTURA BASE
         const thead = document.createElement('thead');
         tabla.appendChild(thead);
         const tbody = document.createElement('tbody');
@@ -522,183 +565,186 @@ function crearHTMLPregunta(p) {
         div.appendChild(tableContainer);
 
         // LÓGICA DE ESCUCHA Y RENDERIZADO
-        // Usamos setTimeout para asegurar que los inputs origen ya existan en el DOM
         setTimeout(() => {
             const inputsOrigen = document.querySelectorAll(`.input-multiple[data-id-pregunta="${p.id_pregunta_origen}"]`);
             
-            const actualizarFilas = () => {
-                // 1. BACKUP DE RESPUESTAS (Para no perder lo que el usuario ya llenó al redibujar)
-                const valoresPrevios = {};
-                if (p.modo === 'matriz_radio') {
-                    tbody.querySelectorAll('input[type="radio"]:checked').forEach(rad => {
-                        valoresPrevios[rad.name] = rad.value;
-                    });
-                } else {
-                    tbody.querySelectorAll('.input-matriz-celda').forEach(select => {
-                        const key = `${select.dataset.idFila}_${select.dataset.idColumna}`;
-                        if (select.value) valoresPrevios[key] = select.value;
-                    });
+            // CONJUNTO PARA RASTREAR FILAS YA AGREGADAS (MODO INCREMENTAL)
+            const filasAgregadas = new Set();
+
+            // FUNCIÓN PARA CREAR UNA FILA (Reutilizable)
+            const crearFila = (idFila, textoFila, herramientasSeleccionadas, valoresPrevios = {}) => {
+                const tr = document.createElement('tr');
+                tr.dataset.idFila = idFila; // Para identificarla
+
+                // Nombre Actividad / Fila
+                const tdNombre = document.createElement('td');
+                tdNombre.innerHTML = `<b>${textoFila}</b>`;
+                tdNombre.style.cssText = 'padding:8px; border:1px solid #ddd; background:#fff; position:relative;';
+                
+                // Botón eliminar (solo modo incremental)
+                if (p.modo_incremental) {
+                    const btnEliminar = document.createElement('button');
+                    btnEliminar.innerHTML = '×';
+                    btnEliminar.title = 'Quitar fila';
+                    btnEliminar.style.cssText = 'position:absolute; right:5px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:red; font-weight:bold; cursor:pointer; font-size:1.2em;';
+                    btnEliminar.onclick = () => {
+                        tr.remove();
+                        filasAgregadas.delete(String(idFila));
+                        // Restaurar opción en el select
+                        const select = document.getElementById(`select_actividad_${p.id}`);
+                        if(select) {
+                            const op = Array.from(select.options).find(o => o.value == idFila);
+                            if(op) op.disabled = false;
+                        }
+                    };
+                    tdNombre.appendChild(btnEliminar);
                 }
+                tr.appendChild(tdNombre);
 
-                // 2. LIMPIEZA TOTAL
-                thead.innerHTML = '';
-                tbody.innerHTML = ''; 
+                // Celdas
+                herramientasSeleccionadas.forEach(herr => {
+                    const td = document.createElement('td');
+                    td.style.cssText = 'border:1px solid #ddd; text-align:center; padding:5px;';
+                    
+                    const select = document.createElement('select');
+                    select.className = 'input-matriz-celda';
+                    select.dataset.idPregunta = p.id;
+                    
+                    // En matriz invertida: Fila=Actividad, Col=Herramienta
+                    select.dataset.idFila = idFila;       
+                    select.dataset.idColumna = herr.id;         
 
-                // 3. IDENTIFICAR HERRAMIENTAS SELECCIONADAS
-                // 🔥 AQUÍ ESTÁ LA CORRECCIÓN CLAVE: Agregamos && chk.value != '3899'
+                    const optDef = new Option('-', '');
+                    select.appendChild(optDef);
+                    [1,2,3,4,5].forEach(num => select.appendChild(new Option(num, num)));
+                    select.style.width = '100%';
+                    
+                    // Restaurar valor previo
+                    const key = `${idFila}_${herr.id}`;
+                    if (valoresPrevios[key]) select.value = valoresPrevios[key];
+
+                    td.appendChild(select);
+                    tr.appendChild(td);
+                });
+
+                return tr;
+            };
+
+            const actualizarTabla = () => {
+                // 1. BACKUP DE RESPUESTAS ACTUALES
+                const valoresPrevios = {};
+                tbody.querySelectorAll('.input-matriz-celda').forEach(select => {
+                    const key = `${select.dataset.idFila}_${select.dataset.idColumna}`;
+                    if (select.value) valoresPrevios[key] = select.value;
+                });
+
+                // 2. IDENTIFICAR HERRAMIENTAS (COLUMNAS)
+                // Ojo: Filtramos la opción "Ninguna" (3899)
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
                     .filter(chk => chk.checked && chk.value != '99' && chk.value != '3899') 
                     .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
 
-                // Si no hay nada válido seleccionado (o solo marcó Ninguna), mostramos aviso
+                // Si no hay herramientas, limpiar y mostrar aviso
                 if (herramientasSeleccionadas.length === 0) {
-                    const tr = document.createElement('tr');
-                    const td = document.createElement('td');
-                    td.innerText = "Seleccione herramientas arriba para habilitar esta tabla.";
-                    td.style.padding = '20px';
-                    td.style.textAlign = 'center';
-                    td.style.color = '#777';
-                    td.style.fontStyle = 'italic';
-                    tbody.appendChild(tr);
-                    avisoScroll.style.display = 'none';
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '';
+                    if (controlesIncremental) controlesIncremental.style.display = 'none';
                     return;
                 }
-
-                // --- CASO 1: MATRIZ INVERTIDA (Eje Y: Actividades | Eje X: Herramientas) ---
-                // * Usado en la Sección 5 *
-                if (p.invertir_ejes) {
-                    avisoScroll.style.display = (herramientasSeleccionadas.length > 3) ? 'block' : 'none';
-
-                    // A. CONSTRUIR CABECERA (Columnas dinámicas = HERRAMIENTAS)
-                    const trHead = document.createElement('tr');
-                    
-                    const thEsq = document.createElement('th');
-                    thEsq.innerText = "Actividad \\ Herramienta";
-                    thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; width: 30%; min-width: 200px;';
-                    trHead.appendChild(thEsq);
-
-                    herramientasSeleccionadas.forEach(herr => {
-                        const th = document.createElement('th');
-                        th.innerText = herr.texto;
-                        th.style.cssText = 'background:#f8f9fa; padding:8px; border:1px solid #ddd; min-width:100px; font-weight:bold; text-align:center;';
-                        trHead.appendChild(th);
-                    });
-                    thead.appendChild(trHead);
-
-                    // B. CONSTRUIR CUERPO (Filas fijas = ACTIVIDADES del JSON)
-                    p.columnas.forEach(actividad => {
-                        const tr = document.createElement('tr');
-                        
-                        // Nombre Actividad
-                        const tdNombre = document.createElement('td');
-                        tdNombre.innerHTML = `<b>${actividad.texto}</b>`;
-                        if(actividad.ayuda) tdNombre.innerHTML += `<br><small style='color:#666'>${actividad.ayuda}</small>`;
-                        tdNombre.style.cssText = 'padding:8px; border:1px solid #ddd; background:#fff;';
-                        tr.appendChild(tdNombre);
-
-                        // Celdas para cada Herramienta
-                        herramientasSeleccionadas.forEach(herr => {
-                            const td = document.createElement('td');
-                            td.style.cssText = 'border:1px solid #ddd; text-align:center; padding:5px;';
-                            
-                            const select = document.createElement('select');
-                            select.className = 'input-matriz-celda';
-                            select.dataset.idPregunta = p.id;
-                            
-                            // IMPORTANTE: En invertida -> idFila=Actividad, idColumna=Herramienta
-                            select.dataset.idFila = actividad.id;       
-                            select.dataset.idColumna = herr.id;         
-
-                            const optDef = new Option('-', '');
-                            select.appendChild(optDef);
-                            [1,2,3,4,5].forEach(num => select.appendChild(new Option(num, num)));
-
-                            select.style.width = '100%';
-                            
-                            // Restaurar valor previo si existe
-                            const key = `${actividad.id}_${herr.id}`;
-                            if (valoresPrevios[key]) select.value = valoresPrevios[key];
-
-                            td.appendChild(select);
-                            tr.appendChild(td);
-                        });
-                        tbody.appendChild(tr);
-                    });
-                } 
                 
-                // --- CASO 2: MATRIZ NORMAL (Eje Y: Herramientas | Eje X: Criterios) ---
-                else {
-                    avisoScroll.style.display = (p.columnas.length > 5) ? 'block' : 'none';
+                // Mostrar controles si hay herramientas
+                if (controlesIncremental) controlesIncremental.style.display = 'flex';
 
-                    // A. CONSTRUIR CABECERA (Columnas fijas del JSON)
-                    const trHead = document.createElement('tr');
-                    const thEsq = document.createElement('th');
-                    thEsq.innerText = "Herramienta / Uso";
-                    thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; position:sticky; left:0; z-index:10;';
-                    trHead.appendChild(thEsq);
+                // 3. RECONSTRUIR CABECERA (Siempre se reconstruye porque las herramientas cambian)
+                thead.innerHTML = '';
+                const trHead = document.createElement('tr');
+                const thEsq = document.createElement('th');
+                thEsq.innerText = "Actividad \\ Herramienta";
+                thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; width: 30%; min-width: 200px;';
+                trHead.appendChild(thEsq);
 
-                    p.columnas.forEach(col => {
-                        const th = document.createElement('th');
-                        th.innerText = col.texto;
-                        th.title = col.ayuda || "";
-                        th.style.cssText = 'background:#f8f9fa; padding:8px; border:1px solid #ddd; min-width:80px; font-weight:bold;';
-                        trHead.appendChild(th);
-                    });
-                    thead.appendChild(trHead);
+                herramientasSeleccionadas.forEach(herr => {
+                    const th = document.createElement('th');
+                    th.innerText = herr.texto;
+                    th.style.cssText = 'background:#f8f9fa; padding:8px; border:1px solid #ddd; min-width:100px; font-weight:bold; text-align:center;';
+                    trHead.appendChild(th);
+                });
+                thead.appendChild(trHead);
 
-                    // B. CONSTRUIR CUERPO (Filas dinámicas = HERRAMIENTAS)
-                    herramientasSeleccionadas.forEach(herr => {
-                        const tr = document.createElement('tr');
-                        
-                        const tdNombre = document.createElement('td');
-                        tdNombre.innerText = herr.texto;
-                        tdNombre.style.cssText = 'padding:8px; border:1px solid #ddd; font-weight:bold; background:#fff; position:sticky; left:0; z-index:5;';
-                        tr.appendChild(tdNombre);
-
-                        p.columnas.forEach(col => {
-                            const td = document.createElement('td');
-                            td.style.border = '1px solid #ddd';
-                            td.style.textAlign = 'center';
-                            
-                            if (p.modo === 'matriz_radio') {
-                                const radio = document.createElement('input');
-                                radio.type = 'radio';
-                                radio.name = `matriz_${p.id}_fila_${herr.id}`; 
-                                radio.value = col.valor;
-                                radio.className = 'input-matriz-radio';
-                                radio.dataset.idPregunta = p.id;
-                                radio.dataset.idFila = herr.id;
-                                radio.dataset.idColumna = col.id;
-                                if (valoresPrevios[radio.name] == radio.value) radio.checked = true;
-                                td.appendChild(radio);
-                            } else {
-                                const select = document.createElement('select');
-                                select.className = 'input-matriz-celda';
-                                select.dataset.idPregunta = p.id;
-                                select.dataset.idFila = herr.id;
-                                select.dataset.idColumna = col.id;
-                                const optDef = new Option('-', '');
-                                select.appendChild(optDef);
-                                [1,2,3,4,5].forEach(num => select.appendChild(new Option(num, num)));
-                                select.style.width = '100%';
-                                const key = `${herr.id}_${col.id}`;
-                                if (valoresPrevios[key]) select.value = valoresPrevios[key];
-                                td.appendChild(select);
-                            }
-                            tr.appendChild(td);
+                // 4. RECONSTRUIR CUERPO
+                // A. Si es MODO INCREMENTAL: Solo reconstruimos las filas que el usuario YA había agregado
+                if (p.modo_incremental) {
+                    // Limpiamos tbody visualmente pero mantenemos lógica de qué filas existen en 'filasAgregadas'
+                    // Sin embargo, como las herramientas (columnas) pueden haber cambiado, 
+                    // necesitamos redibujar TODAS las filas existentes con las nuevas columnas.
+                    tbody.innerHTML = '';
+                    
+                    // Redibujamos las filas que están en el Set 'filasAgregadas'
+                    // OJO: Si es la primera vez (carga inicial), 'filasAgregadas' estará vacío.
+                    // Pero si venimos de 'valoresPrevios' (recuperación de BD), debemos detectarlas.
+                    
+                    // Lógica de recuperación inicial desde BD:
+                    if (filasAgregadas.size === 0 && Object.keys(valoresPrevios).length > 0) {
+                        Object.keys(valoresPrevios).forEach(key => {
+                            const idFila = key.split('_')[0];
+                            filasAgregadas.add(idFila);
                         });
+                    }
+
+                    filasAgregadas.forEach(idFila => {
+                        const colConfig = p.columnas.find(c => c.id == idFila);
+                        if (colConfig) {
+                            const tr = crearFila(idFila, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
+                            tbody.appendChild(tr);
+                            // Deshabilitar opción en select
+                            const select = document.getElementById(`select_actividad_${p.id}`);
+                            if(select) {
+                                const op = Array.from(select.options).find(o => o.value == idFila);
+                                if(op) op.disabled = true;
+                            }
+                        }
+                    });
+
+                    // EVENTO DEL BOTÓN AGREGAR (Definido aquí para tener acceso al closure de herramientas)
+                    const btnAgregar = controlesIncremental.querySelector('.btn-agregar-fila');
+                    // Limpiamos eventos previos clonando
+                    const nuevoBtn = btnAgregar.cloneNode(true);
+                    btnAgregar.parentNode.replaceChild(nuevoBtn, btnAgregar);
+                    
+                    nuevoBtn.onclick = () => {
+                        const select = document.getElementById(`select_actividad_${p.id}`);
+                        const idActividad = select.value;
+                        if (!idActividad) return;
+
+                        if (!filasAgregadas.has(idActividad)) {
+                            const colConfig = p.columnas.find(c => c.id == idActividad);
+                            const tr = crearFila(idActividad, colConfig.texto, herramientasSeleccionadas, {}); // Sin valores previos
+                            tbody.appendChild(tr);
+                            filasAgregadas.add(idActividad);
+                            
+                            // Deshabilitar opción para no repetirla
+                            select.options[select.selectedIndex].disabled = true;
+                            select.value = ''; // Reset select
+                        }
+                    };
+
+                } else {
+                    // B. MODO NORMAL (Tabla Estática Completa)
+                    tbody.innerHTML = ''; // Limpiar todo
+                    p.columnas.forEach(actividad => {
+                        const tr = crearFila(actividad.id, actividad.texto, herramientasSeleccionadas, valoresPrevios);
                         tbody.appendChild(tr);
                     });
                 }
             };
 
             // Escuchar cambios en los checkboxes de origen
-            inputsOrigen.forEach(chk => chk.addEventListener('change', actualizarFilas));
+            inputsOrigen.forEach(chk => chk.addEventListener('change', actualizarTabla));
             
-            // Ejecución inicial por si ya hay datos cargados
-            actualizarFilas(); 
+            // Ejecución inicial
+            actualizarTabla(); 
 
-        }, 500); // Retraso para asegurar carga del DOM
+        }, 500); 
     }
 
     // --- H. CATÁLOGO TIPO TABLA (HÍBRIDO + AYUDA EN COLUMNA DERECHA) ---
