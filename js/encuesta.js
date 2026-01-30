@@ -1225,7 +1225,15 @@ async function enviarFormulario(e) {
 
                 // 1. Checkbox / Radio / Catálogos / Booleanos
                 if (['catalogo_unico', 'catalogo_multiple', 'booleano', 'radio'].includes(p.tipo)) {
-                    if (container.querySelectorAll('input:checked').length > 0) contestada = true;
+                    
+                    // A. Buscamos inputs marcados (Radio/Checkbox)
+                    const hayInputs = container.querySelectorAll('input:checked').length > 0;
+                    
+                    // B. Buscamos Selects con valor (Para catálogos largos como la Pregunta 11)
+                    const select = container.querySelector('select');
+                    const haySelect = select && select.value !== '';
+
+                    if (hayInputs || haySelect) contestada = true;
                 }
                 // 2. Matrices (Dinámicas, Normales, Invertidas)
                 else if (p.tipo && p.tipo.includes('matriz')) {
