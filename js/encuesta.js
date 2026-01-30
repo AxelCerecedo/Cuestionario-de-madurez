@@ -1150,6 +1150,10 @@ async function cargarRespuestasPrevias(idUsuario) {
 // FUNCIÓN: ENVIAR FORMULARIO 
 // =============================
 
+// =============================
+// FUNCIÓN: ENVIAR FORMULARIO
+// =============================
+
 async function enviarFormulario(e) {
     e.preventDefault();
 
@@ -1169,7 +1173,7 @@ async function enviarFormulario(e) {
     });
 
     const idUsuario = localStorage.getItem('idUsuario');
-    
+
     // 0. VALIDACIÓN DE SESIÓN
     if (!idUsuario) {
         Swal.fire({
@@ -1179,6 +1183,110 @@ async function enviarFormulario(e) {
             confirmButtonColor: '#2c3e50'
         }).then(() => window.location.href = 'login.html');
         return;
+    }
+
+    // =================================================================
+    // 🛑 0.5 VALIDACIÓN DE CAMPOS OBLIGATORIOS (NUEVO BLOQUE)
+    // =================================================================
+    
+    // A. LIMPIAR ERRORES PREVIOS VISUALES
+    document.querySelectorAll('.error-borde').forEach(el => {
+        el.classList.remove('error-borde');
+        el.style.border = 'none'; // Limpia bordes rojos anteriores
+        // Si usabas border-radius o padding extra, aquí se resetean visualmente
+        // al estado normal definido en tu CSS.
+    });
+
+    let erroresObligatorios = [];
+    let primeraFaltante = null;
+
+    if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.preguntas) {
+        CONFIG_SECCION.preguntas.forEach(p => {
+            // Intentamos encontrar el contenedor de la pregunta
+            // Nota: Asegúrate de que tu función 'crearHTMLPregunta' asigne este ID.
+            // Si no, el fallback buscará por atributo.
+            let container = document.getElementById(`pregunta-container-${p.id}`);
+            
+            if (!container) {
+                // Fallback: Buscar cualquier input de esa pregunta y subir a su contenedor
+                const inputCualquiera = document.querySelector(`[data-id-pregunta="${p.id}"]`);
+                if (inputCualquiera) {
+                    container = inputCualquiera.closest('.pregunta-box') || inputCualquiera.closest('.card') || inputCualquiera.closest('div');
+                }
+            }
+
+            // Si no encontramos contenedor o está oculto (display: none), ignoramos (ej. lógica de "Ninguna")
+            if (!container || container.style.display === 'none' || getComputedStyle(container).display === 'none') {
+                return;
+            }
+
+            if (p.obligatorio) {
+                let contestada = false;
+
+                // 1. Checkbox / Radio / Catálogos / Booleanos
+                if (['catalogo_unico', 'catalogo_multiple', 'booleano', 'radio'].includes(p.tipo)) {
+                    if (container.querySelectorAll('input:checked').length > 0) contestada = true;
+                }
+                // 2. Matrices (Dinámicas, Normales, Invertidas)
+                else if (p.tipo && p.tipo.includes('matriz')) {
+                    const radios = container.querySelectorAll('input[type="radio"]:checked');
+                    const selects = Array.from(container.querySelectorAll('select.input-matriz-celda')).filter(s => s.value !== '');
+                    
+                    if (radios.length > 0 || selects.length > 0) contestada = true;
+
+                    // Caso especial: Tabla vacía (ej. filtro anterior ocultó todo) -> Se considera válida o inválida según lógica
+                    if (!container.querySelector('table') && p.tipo === 'matriz_dinamica') contestada = false; 
+                }
+                // 3. Catálogo Tabla (Híbrido)
+                else if (p.tipo === 'catalogo_tabla') {
+                     if (container.querySelectorAll('input:checked').length > 0) contestada = true;
+                }
+                // 4. Liga Múltiple (Redes Sociales)
+                else if (p.tipo === 'liga_multiple') {
+                     const inputsTexto = Array.from(container.querySelectorAll('input[type="text"]')).filter(i => i.value.trim() !== '');
+                     const ningunCheck = container.querySelector('.input-ninguno-manual:checked');
+                     if (inputsTexto.length > 0 || ningunCheck) contestada = true;
+                }
+                // 5. Texto / Fecha / Número / Textarea
+                else {
+                    const inputs = container.querySelectorAll('input, textarea, select');
+                    for (let inp of inputs) {
+                        // Ignoramos inputs hidden o de tipo 'search' del navegador
+                        if (inp.type !== 'hidden' && inp.value && inp.value.trim() !== '') {
+                            contestada = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!contestada) {
+                    erroresObligatorios.push(p.texto);
+                    
+                    // Aplicar estilo de error
+                    container.style.border = "2px solid #dc3545"; 
+                    container.style.borderRadius = "8px";
+                    container.style.padding = "15px"; // Padding para que no se vea apretado
+                    container.classList.add('error-borde');
+                    
+                    if (!primeraFaltante) primeraFaltante = container;
+                }
+            }
+        });
+    }
+
+    // SI HAY ERRORES OBLIGATORIOS, DETENEMOS AQUÍ
+    if (erroresObligatorios.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos obligatorios faltantes',
+            text: 'Por favor conteste las preguntas marcadas en rojo antes de continuar.',
+            confirmButtonColor: '#7c1225'
+        });
+        
+        if (primeraFaltante) {
+            primeraFaltante.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return; // ⛔ DETIENE LA EJECUCIÓN DEL FORMULARIO
     }
 
     // =================================================================
@@ -1359,6 +1467,8 @@ async function enviarFormulario(e) {
             didOpen: () => Swal.showLoading()
         });
 
+        // Asegúrate que API_URL_SAVE está definida en tu encuesta.js o config global
+        // Si no, reemplaza por 'https://api-cuestionario.onrender.com/api'
         const response = await fetch(`${API_URL_SAVE}/guardar-encuesta`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
