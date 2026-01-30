@@ -494,11 +494,21 @@ function crearHTMLPregunta(p) {
         avisoScroll.style.cssText = 'font-size:0.85em; color:#856404; background:#fff3cd; border:1px solid #ffeeba; padding:8px; margin-bottom:5px; border-radius:4px; text-align:center; display:none;';
         div.appendChild(avisoScroll);
 
-        // CONTENEDOR DE CONTROLES (SOLO PARA MODO INCREMENTAL)
+        // =========================================================
+        // 1. CONTROLES DE MODO INCREMENTAL (SELECT + BOTÓN + AYUDA)
+        // =========================================================
         let controlesIncremental = null;
+        let divAyudaSeleccion = null; // Nuevo contenedor para la ayuda
+
         if (p.modo_incremental) {
+            const wrapperControles = document.createElement('div');
+            wrapperControles.style.marginBottom = '15px';
+            wrapperControles.style.background = '#f9f9f9';
+            wrapperControles.style.padding = '15px';
+            wrapperControles.style.borderRadius = '8px';
+            wrapperControles.style.border = '1px solid #eee';
+
             controlesIncremental = document.createElement('div');
-            controlesIncremental.style.marginBottom = '15px';
             controlesIncremental.style.display = 'flex';
             controlesIncremental.style.gap = '10px';
             controlesIncremental.style.alignItems = 'center';
@@ -506,7 +516,7 @@ function crearHTMLPregunta(p) {
             // Select de Actividades
             const selectActividad = document.createElement('select');
             selectActividad.id = `select_actividad_${p.id}`;
-            selectActividad.className = 'input-auxiliar'; // Clase auxiliar para no confundir al guardado auto
+            selectActividad.className = 'input-auxiliar'; 
             selectActividad.style.padding = '8px';
             selectActividad.style.borderRadius = '4px';
             selectActividad.style.border = '1px solid #ccc';
@@ -515,8 +525,8 @@ function crearHTMLPregunta(p) {
             selectActividad.appendChild(new Option('Seleccione una actividad para agregar...', ''));
             p.columnas.forEach(col => {
                 const op = new Option(col.texto, col.id);
-                // Si tiene ayuda, la ponemos como título
-                if(col.ayuda) op.title = col.ayuda; 
+                // Guardamos la ayuda en un atributo de datos
+                if(col.ayuda) op.dataset.ayuda = col.ayuda; 
                 selectActividad.appendChild(op);
             });
 
@@ -526,17 +536,46 @@ function crearHTMLPregunta(p) {
             btnAgregar.innerHTML = '<i class="fas fa-plus"></i> Agregar';
             btnAgregar.className = 'btn-agregar-fila';
             btnAgregar.style.padding = '8px 15px';
-            btnAgregar.style.backgroundColor = '#28a745';
+            btnAgregar.style.backgroundColor = '#28a745'; // Verde
             btnAgregar.style.color = 'white';
             btnAgregar.style.border = 'none';
             btnAgregar.style.borderRadius = '4px';
             btnAgregar.style.cursor = 'pointer';
 
+            // --- NUEVO: DIV PARA MOSTRAR LA AYUDA AL SELECCIONAR ---
+            divAyudaSeleccion = document.createElement('div');
+            divAyudaSeleccion.style.marginTop = '10px';
+            divAyudaSeleccion.style.fontSize = '0.9em';
+            divAyudaSeleccion.style.color = '#555';
+            divAyudaSeleccion.style.fontStyle = 'italic';
+            divAyudaSeleccion.style.minHeight = '20px'; // Para que no brinque tanto
+            divAyudaSeleccion.innerHTML = ''; // Inicia vacío
+
+            // EVENTO: Al cambiar el select, mostramos la ayuda
+            selectActividad.addEventListener('change', function() {
+                const opcionSeleccionada = this.options[this.selectedIndex];
+                const textoAyuda = opcionSeleccionada.dataset.ayuda;
+                
+                if (textoAyuda) {
+                    divAyudaSeleccion.innerHTML = `<i class="fas fa-info-circle"></i> <b>Descripción:</b> ${textoAyuda}`;
+                    divAyudaSeleccion.style.display = 'block';
+                } else {
+                    divAyudaSeleccion.innerHTML = '';
+                    divAyudaSeleccion.style.display = 'none';
+                }
+            });
+
             controlesIncremental.appendChild(selectActividad);
             controlesIncremental.appendChild(btnAgregar);
-            div.appendChild(controlesIncremental);
+            
+            wrapperControles.appendChild(controlesIncremental);
+            wrapperControles.appendChild(divAyudaSeleccion); // Añadimos la ayuda abajo
+            div.appendChild(wrapperControles);
         }
 
+        // =========================================================
+        // 2. ESTRUCTURA DE LA TABLA
+        // =========================================================
         const tableContainer = document.createElement('div');
         tableContainer.style.overflowX = 'auto'; 
         tableContainer.style.border = '1px solid #ddd';
@@ -554,7 +593,6 @@ function crearHTMLPregunta(p) {
         tabla.style.fontSize = '0.85em';
         if (!p.invertir_ejes) tabla.style.minWidth = '800px'; 
 
-        // ESTRUCTURA BASE
         const thead = document.createElement('thead');
         tabla.appendChild(thead);
         const tbody = document.createElement('tbody');
@@ -564,33 +602,38 @@ function crearHTMLPregunta(p) {
         tableContainer.appendChild(tabla);
         div.appendChild(tableContainer);
 
-        // LÓGICA DE ESCUCHA Y RENDERIZADO
+        // =========================================================
+        // 3. LÓGICA DE RENDERIZADO Y RECUPERACIÓN
+        // =========================================================
         setTimeout(() => {
             const inputsOrigen = document.querySelectorAll(`.input-multiple[data-id-pregunta="${p.id_pregunta_origen}"]`);
-            
-            // CONJUNTO PARA RASTREAR FILAS YA AGREGADAS (MODO INCREMENTAL)
-            const filasAgregadas = new Set();
+            const filasAgregadas = new Set(); // Set para control de duplicados
 
-            // FUNCIÓN PARA CREAR UNA FILA (Reutilizable)
+            // --- FUNCIÓN HELPER: CREAR FILA ---
             const crearFila = (idFila, textoFila, herramientasSeleccionadas, valoresPrevios = {}) => {
                 const tr = document.createElement('tr');
-                tr.dataset.idFila = idFila; // Para identificarla
+                tr.dataset.idFila = idFila;
 
-                // Nombre Actividad / Fila
+                // Nombre Actividad
                 const tdNombre = document.createElement('td');
-                tdNombre.innerHTML = `<b>${textoFila}</b>`;
-                tdNombre.style.cssText = 'padding:8px; border:1px solid #ddd; background:#fff; position:relative;';
+                // Si hay ayuda en el JSON, la mostramos también aquí chiquita
+                const colData = p.columnas.find(c => c.id == idFila);
+                let htmlNombre = `<b>${textoFila}</b>`;
+                if(colData && colData.ayuda) htmlNombre += `<div style="font-size:0.75em; color:#888; font-weight:normal;">${colData.ayuda}</div>`;
                 
-                // Botón eliminar (solo modo incremental)
+                tdNombre.innerHTML = htmlNombre;
+                tdNombre.style.cssText = 'padding:8px; border:1px solid #ddd; background:#fff; position:relative; min-width:180px;';
+                
+                // Botón Eliminar Fila (Solo Incremental)
                 if (p.modo_incremental) {
                     const btnEliminar = document.createElement('button');
                     btnEliminar.innerHTML = '×';
                     btnEliminar.title = 'Quitar fila';
-                    btnEliminar.style.cssText = 'position:absolute; right:5px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:red; font-weight:bold; cursor:pointer; font-size:1.2em;';
+                    btnEliminar.style.cssText = 'position:absolute; right:5px; top:5px; background:#ffeeee; border:1px solid #ffcccc; color:red; font-weight:bold; cursor:pointer; width:20px; height:20px; line-height:18px; border-radius:50%;';
                     btnEliminar.onclick = () => {
                         tr.remove();
                         filasAgregadas.delete(String(idFila));
-                        // Restaurar opción en el select
+                        // Rehabilitar opción en el select
                         const select = document.getElementById(`select_actividad_${p.id}`);
                         if(select) {
                             const op = Array.from(select.options).find(o => o.value == idFila);
@@ -601,7 +644,7 @@ function crearHTMLPregunta(p) {
                 }
                 tr.appendChild(tdNombre);
 
-                // Celdas
+                // Celdas (Herramientas)
                 herramientasSeleccionadas.forEach(herr => {
                     const td = document.createElement('td');
                     td.style.cssText = 'border:1px solid #ddd; text-align:center; padding:5px;';
@@ -609,8 +652,6 @@ function crearHTMLPregunta(p) {
                     const select = document.createElement('select');
                     select.className = 'input-matriz-celda';
                     select.dataset.idPregunta = p.id;
-                    
-                    // En matriz invertida: Fila=Actividad, Col=Herramienta
                     select.dataset.idFila = idFila;       
                     select.dataset.idColumna = herr.id;         
 
@@ -619,7 +660,7 @@ function crearHTMLPregunta(p) {
                     [1,2,3,4,5].forEach(num => select.appendChild(new Option(num, num)));
                     select.style.width = '100%';
                     
-                    // Restaurar valor previo
+                    // Recuperar valor
                     const key = `${idFila}_${herr.id}`;
                     if (valoresPrevios[key]) select.value = valoresPrevios[key];
 
@@ -630,32 +671,44 @@ function crearHTMLPregunta(p) {
                 return tr;
             };
 
+            // --- FUNCIÓN PRINCIPAL: ACTUALIZAR TABLA ---
             const actualizarTabla = () => {
-                // 1. BACKUP DE RESPUESTAS ACTUALES
+                // 1. LEER VALORES ACTUALES (Para no borrar lo que el usuario acaba de escribir)
                 const valoresPrevios = {};
+                // Buscamos en el DOM actual
                 tbody.querySelectorAll('.input-matriz-celda').forEach(select => {
                     const key = `${select.dataset.idFila}_${select.dataset.idColumna}`;
                     if (select.value) valoresPrevios[key] = select.value;
                 });
+                
+                // 🔥 RECUPERACIÓN DE BD (CRÍTICO): 
+                // Si la tabla está vacía visualmente, intentamos leer datos guardados del servidor
+                // que quizás se cargaron antes de que este script corriera.
+                if (Object.keys(valoresPrevios).length === 0 && window.RESPUESTAS_PREVIAS_CACHE) {
+                     window.RESPUESTAS_PREVIAS_CACHE.forEach(r => {
+                         if (r.id_pregunta == p.id) {
+                             const key = `${r.id_fila}_${r.id_columna}`;
+                             valoresPrevios[key] = r.valor;
+                         }
+                     });
+                }
 
-                // 2. IDENTIFICAR HERRAMIENTAS (COLUMNAS)
-                // Ojo: Filtramos la opción "Ninguna" (3899)
+                // 2. DETECTAR HERRAMIENTAS SELECCIONADAS (COLUMNAS)
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
                     .filter(chk => chk.checked && chk.value != '99' && chk.value != '3899') 
                     .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
 
-                // Si no hay herramientas, limpiar y mostrar aviso
+                // Si no hay herramientas, ocultar todo
                 if (herramientasSeleccionadas.length === 0) {
                     thead.innerHTML = '';
                     tbody.innerHTML = '';
-                    if (controlesIncremental) controlesIncremental.style.display = 'none';
+                    if (controlesIncremental) controlesIncremental.parentElement.style.display = 'none';
                     return;
                 }
                 
-                // Mostrar controles si hay herramientas
-                if (controlesIncremental) controlesIncremental.style.display = 'flex';
+                if (controlesIncremental) controlesIncremental.parentElement.style.display = 'block';
 
-                // 3. RECONSTRUIR CABECERA (Siempre se reconstruye porque las herramientas cambian)
+                // 3. RECONSTRUIR HEADER
                 thead.innerHTML = '';
                 const trHead = document.createElement('tr');
                 const thEsq = document.createElement('th');
@@ -671,32 +724,24 @@ function crearHTMLPregunta(p) {
                 });
                 thead.appendChild(trHead);
 
-                // 4. RECONSTRUIR CUERPO
-                // A. Si es MODO INCREMENTAL: Solo reconstruimos las filas que el usuario YA había agregado
+                // 4. RECONSTRUIR BODY
                 if (p.modo_incremental) {
-                    // Limpiamos tbody visualmente pero mantenemos lógica de qué filas existen en 'filasAgregadas'
-                    // Sin embargo, como las herramientas (columnas) pueden haber cambiado, 
-                    // necesitamos redibujar TODAS las filas existentes con las nuevas columnas.
                     tbody.innerHTML = '';
                     
-                    // Redibujamos las filas que están en el Set 'filasAgregadas'
-                    // OJO: Si es la primera vez (carga inicial), 'filasAgregadas' estará vacío.
-                    // Pero si venimos de 'valoresPrevios' (recuperación de BD), debemos detectarlas.
-                    
-                    // Lógica de recuperación inicial desde BD:
-                    if (filasAgregadas.size === 0 && Object.keys(valoresPrevios).length > 0) {
-                        Object.keys(valoresPrevios).forEach(key => {
-                            const idFila = key.split('_')[0];
-                            filasAgregadas.add(idFila);
-                        });
-                    }
+                    // 🔥 REHIDRATACIÓN: Si hay datos guardados (valoresPrevios), 
+                    // debemos asegurarnos de que esas filas existan en 'filasAgregadas'.
+                    Object.keys(valoresPrevios).forEach(key => {
+                        const idFila = key.split('_')[0]; // Extraer ID Actividad
+                        filasAgregadas.add(idFila);
+                    });
 
                     filasAgregadas.forEach(idFila => {
                         const colConfig = p.columnas.find(c => c.id == idFila);
                         if (colConfig) {
                             const tr = crearFila(idFila, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
                             tbody.appendChild(tr);
-                            // Deshabilitar opción en select
+                            
+                            // Deshabilitar del select
                             const select = document.getElementById(`select_actividad_${p.id}`);
                             if(select) {
                                 const op = Array.from(select.options).find(o => o.value == idFila);
@@ -705,10 +750,9 @@ function crearHTMLPregunta(p) {
                         }
                     });
 
-                    // EVENTO DEL BOTÓN AGREGAR (Definido aquí para tener acceso al closure de herramientas)
+                    // Reactivar lógica del botón Agregar
                     const btnAgregar = controlesIncremental.querySelector('.btn-agregar-fila');
-                    // Limpiamos eventos previos clonando
-                    const nuevoBtn = btnAgregar.cloneNode(true);
+                    const nuevoBtn = btnAgregar.cloneNode(true); // Clonar para limpiar eventos viejos
                     btnAgregar.parentNode.replaceChild(nuevoBtn, btnAgregar);
                     
                     nuevoBtn.onclick = () => {
@@ -718,19 +762,21 @@ function crearHTMLPregunta(p) {
 
                         if (!filasAgregadas.has(idActividad)) {
                             const colConfig = p.columnas.find(c => c.id == idActividad);
-                            const tr = crearFila(idActividad, colConfig.texto, herramientasSeleccionadas, {}); // Sin valores previos
+                            const tr = crearFila(idActividad, colConfig.texto, herramientasSeleccionadas, {});
                             tbody.appendChild(tr);
                             filasAgregadas.add(idActividad);
                             
-                            // Deshabilitar opción para no repetirla
-                            select.options[select.selectedIndex].disabled = true;
-                            select.value = ''; // Reset select
+                            // UX: Deshabilitar opción y limpiar selección
+                            const op = Array.from(select.options).find(o => o.value == idActividad);
+                            if(op) op.disabled = true;
+                            select.value = '';
+                            if(divAyudaSeleccion) divAyudaSeleccion.innerHTML = ''; // Limpiar ayuda
                         }
                     };
 
                 } else {
-                    // B. MODO NORMAL (Tabla Estática Completa)
-                    tbody.innerHTML = ''; // Limpiar todo
+                    // MODO NORMAL (Tabla completa)
+                    tbody.innerHTML = ''; 
                     p.columnas.forEach(actividad => {
                         const tr = crearFila(actividad.id, actividad.texto, herramientasSeleccionadas, valoresPrevios);
                         tbody.appendChild(tr);
@@ -738,13 +784,13 @@ function crearHTMLPregunta(p) {
                 }
             };
 
-            // Escuchar cambios en los checkboxes de origen
+            // Listeners
             inputsOrigen.forEach(chk => chk.addEventListener('change', actualizarTabla));
             
             // Ejecución inicial
             actualizarTabla(); 
 
-        }, 500); 
+        }, 600); // Un poco más de tiempo para asegurar carga de datos previos
     }
 
     // --- H. CATÁLOGO TIPO TABLA (HÍBRIDO + AYUDA EN COLUMNA DERECHA) ---
