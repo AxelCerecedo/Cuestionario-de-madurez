@@ -224,13 +224,16 @@
             "coahuila": ["coahuila de zaragoza"]
         };
 
+        // =========================================================
+        // LÓGICA DE COLORES TIPO SEMÁFORO (KPIs)
+        // =========================================================
         function obtenerColor(d) {
-            return d > 50 ? '#4a0b16' :  // Más de 50 (Oscuro)
-                   d > 20 ? '#7c1225' :  // Más de 20 (Vino Fuerte)
-                   d > 10 ? '#a83246' :  // Más de 10
-                   d > 5  ? '#d16d7e' :  // Más de 5
-                   d > 0  ? '#4a0b16' :  // 🔥 CAMBIO: 1 o más = Vino Oficial directo
-                            'transparent';
+            return d > 20 ? '#198754' :  // VERDE FUERTE (Excelente - Más de 20)
+                   d > 10 ? '#20c997' :  // VERDE AGUA (Bueno - 11 a 20)
+                   d > 5  ? '#ffc107' :  // AMARILLO (Regular - 6 a 10)
+                   d > 2  ? '#fd7e14' :  // NARANJA (Bajo - 3 a 5)
+                   d > 0  ? '#dc3545' :  // ROJO (Crítico - 1 a 2 usuarios)
+                            'transparent'; // SIN DATOS (Se queda gris)
         }
 
         function estiloEstado(feature) {
