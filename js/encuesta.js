@@ -162,32 +162,38 @@ function crearHTMLPregunta(p) {
     // TIPOS DE INPUTS
     // =========================================================
 
-    // --- A. RANGO DE FECHAS (CORREGIDO) ---
+    // --- A. RANGO DE FECHAS ---
     if (p.tipo === 'rango_fechas') {
         const containerFechas = document.createElement('div');
         containerFechas.style.display = 'flex';
         containerFechas.style.gap = '20px';
         
-        // Input 1: INICIO
-        const inputInicio = document.createElement('input');
-        inputInicio.type = 'number'; // Usamos number para Años (Ej. 1950)
-        inputInicio.className = 'form-control input-rango-inicio'; 
-        // ID CLAVE para encontrarlo después
-        inputInicio.id = `p_${p.id}_inicio`; 
-        inputInicio.placeholder = "Año Inicio (Ej. 1920)";
-        inputInicio.style.width = '48%'; 
+        // Input 1 (ESTE SÍ SE GUARDA)
+        const input1 = document.createElement('input');
+        input1.type = 'date'; 
+        input1.className = 'input-respuesta'; // <--- ESTE SÍ TIENE LA CLASE
+        input1.dataset.idPregunta = p.id; 
+        input1.dataset.tipo = 'texto';
+        input1.style.width = '48%'; 
         
-        // Input 2: FIN
-        const inputFin = document.createElement('input');
-        inputFin.type = 'number'; 
-        inputFin.className = 'form-control input-rango-fin';
-        // ID CLAVE para encontrarlo después
-        inputFin.id = `p_${p.id}_fin`; 
-        inputFin.placeholder = "Año Fin (Ej. 1980)";
-        inputFin.style.width = '48%';
+        // Input 2 (ESTE ES SOLO VISUAL)
+        const input2 = document.createElement('input');
+        input2.type = 'date'; 
+        // input2.className = 'input-respuesta'; // <--- ❌ BORRA O COMENTA ESTA LÍNEA
+        input2.className = 'input-auxiliar';     // <--- ✅ PONLE OTRA CLASE QUE NO SEA 'input-respuesta'
+        input2.style.width = '48%';
+        
+        const actualizarRango = () => { 
+            if(input1.value && input2.value) {
+                // Guardamos todo en el input 1
+                input1.dataset.rangoValor = `${input1.value} al ${input2.value}`; 
+            }
+        };
+        input1.addEventListener('change', actualizarRango);
+        input2.addEventListener('change', actualizarRango);
 
-        containerFechas.appendChild(inputInicio);
-        containerFechas.appendChild(inputFin);
+        containerFechas.appendChild(input1);
+        containerFechas.appendChild(input2);
         div.appendChild(containerFechas);
     }
 
@@ -1099,22 +1105,7 @@ async function cargarRespuestasPrevias(idUsuario) {
         // 1. RECUPERAR RESPUESTAS SIMPLES
         if (data.simples) {
             data.simples.forEach(r => {
-                
-                // --- 🟢 NUEVO: DETECTAR RANGO DE FECHAS (FORMATO 1950|1980) ---
-                if (r.respuesta_texto && r.respuesta_texto.includes('|')) {
-                    const partes = r.respuesta_texto.split('|'); // [0]=Inicio, [1]=Fin
-                    
-                    // Buscamos los inputs por los IDs que definimos en el paso anterior
-                    const inputInicio = document.getElementById(`p_${r.id_pregunta}_inicio`);
-                    const inputFin = document.getElementById(`p_${r.id_pregunta}_fin`);
-
-                    if (inputInicio) inputInicio.value = partes[0];
-                    if (inputFin) inputFin.value = partes[1];
-
-                    return; // Terminamos con esta respuesta, pasamos a la siguiente
-                }
-                // -------------------------------------------------------------
-                
+                // ... (Tu código actual de simples está bien, déjalo igual) ...
                 if (r.id_opcion_seleccionada == 99) {
                     const chkNinguno = document.querySelector(`.input-ninguno-manual[data-id-pregunta="${r.id_pregunta}"]`);
                     if (chkNinguno) {
@@ -1304,16 +1295,6 @@ async function enviarFormulario(e) {
                      const inputsTexto = Array.from(container.querySelectorAll('input[type="text"]')).filter(i => i.value.trim() !== '');
                      const ningunCheck = container.querySelector('.input-ninguno-manual:checked');
                      if (inputsTexto.length > 0 || ningunCheck) contestada = true;
-                }
-                else if (p.tipo === 'rango_fechas') {
-                    // Buscamos los inputs por su ID específico
-                    const inInicio = container.querySelector(`input[id$="_inicio"]`); // Termina en _inicio
-                    const inFin = container.querySelector(`input[id$="_fin"]`);       // Termina en _fin
-                    
-                    // Solo cuenta como contestada si AMBOS tienen valor
-                    if (inInicio && inFin && inInicio.value !== '' && inFin.value !== '') {
-                        contestada = true;
-                    }
                 }
                 // 5. Texto / Fecha / Número / Textarea
                 else {
