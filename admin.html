@@ -189,116 +189,119 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
-        // 1. Configuración Básica
+        // 1. Configuración Básica del Mapa
         const mapContainer = document.getElementById('mapaUsuarios');
         if(!mapContainer.style.height) mapContainer.style.height = "500px";
 
         const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            attribution: '&copy; CARTO',
             subdomains: 'abcd',
             maxZoom: 19
         }).addTo(map);
 
         // =========================================================
-        // 2. FUNCIÓN DE LIMPIEZA (Mejorada)
+        // 2. HERRAMIENTAS DE COINCIDENCIA
         // =========================================================
+        
+        // Limpia texto: "México, D.F." -> "mexico df"
         function limpiar(texto) {
             if (!texto) return "";
             return texto.toLowerCase()
                         .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
+                        .replace(/,/g, "") // Quitar comas
+                        .replace(/\./g, "") // Quitar puntos
                         .trim();
         }
+
+        // DICCIONARIO DE ALIAS: 
+        // Clave = Nombre en el GeoJSON (Mapa)
+        // Valor = Posibles nombres en tu Base de Datos
+        const aliasEstados = {
+            "distrito federal": ["ciudad de mexico", "cdmx", "df", "capital", "delegacion"],
+            "mexico": ["estado de mexico", "edo mex", "edomex"],
+            "veracruz": ["veracruz de ignacio de la llave"],
+            "michoacan": ["michoacan de ocampo"],
+            "coahuila": ["coahuila de zaragoza"]
+        };
 
         function obtenerColor(d) {
             return d > 20 ? '#4a0b16' :
                    d > 10 ? '#7c1225' :
                    d > 5  ? '#a83246' :
                    d > 2  ? '#d16d7e' :
-                   d > 0  ? '#eebbc4' : // Color para 1 o 2 usuarios
-                            'transparent';
+                   d > 0  ? '#eebbc4' : 'transparent';
         }
 
         function estiloEstado(feature) {
             return {
                 fillColor: obtenerColor(feature.properties.cantidad_usuarios),
-                weight: 1,
-                opacity: 1,
-                color: '#999',
-                dashArray: '3',
-                fillOpacity: 0.7
+                weight: 1, opacity: 1, color: '#999', dashArray: '3', fillOpacity: 0.7
             };
         }
 
         // =========================================================
-        // 3. LOGICA PRINCIPAL
+        // 3. PROCESO DE CRUCE DE DATOS
         // =========================================================
         try {
             const API_URL = 'https://api-cuestionario.onrender.com';
             
-            // A. Usuarios
+            // A. Cargar Usuarios
             const resUsers = await fetch(`${API_URL}/api/ubicaciones`);
             const usuarios = await resUsers.json();
             
-            // B. Mapa GeoJSON
+            // B. Cargar Mapa
             const resGeo = await fetch('https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json');
             const datosMexico = await resGeo.json();
 
-            console.group("🗺️ DIAGNÓSTICO DETALLADO");
-            
-            // C. CRUCE DE DATOS
+            console.group("🗺️ DIAGNÓSTICO DE COINCIDENCIAS");
+            console.log(`Procesando ${usuarios.length} usuarios...`);
+
+            // C. Loop por cada Estado del Mapa
             datosMexico.features.forEach(estado => {
-                const nombreMap = estado.properties.name; 
-                const nombreMapLimpio = limpiar(nombreMap); 
+                const nombreMapaOriginal = estado.properties.name; 
+                const nombreMapaLimpio = limpiar(nombreMapaOriginal);
                 
                 let contador = 0;
 
+                // Revisamos cada usuario contra este estado
                 usuarios.forEach(u => {
                     const ubicacionUser = limpiar(u.ubicacion_texto);
-                    
-                    // LÓGICA DE COINCIDENCIA
-                    let coincide = false;
 
-                    // 1. Coincidencia Directa (Ej: "Nuevo Leon" en "Monterrey, Nuevo Leon")
-                    if (ubicacionUser.includes(nombreMapLimpio)) {
-                        coincide = true;
-                    }
-                    // 2. CASO CDMX (El mapa dice 'distrito federal')
-                    else if (nombreMapLimpio === "distrito federal") {
-                        if (ubicacionUser.includes("ciudad de mexico") || 
-                            ubicacionUser.includes("cdmx") || 
-                            ubicacionUser.includes("d.f.") ||
-                            ubicacionUser.includes("delegacion")) {
-                            coincide = true;
-                        }
-                    }
-                    // 3. CASO ESTADO DE MÉXICO (El mapa dice 'mexico')
-                    else if (nombreMapLimpio === "mexico") {
-                        // Evitar confundir con "Ciudad de México" o el país "México"
-                        if (ubicacionUser.includes("estado de mexico") || ubicacionUser.includes("edo mex")) {
-                            coincide = true;
+                    // 1. Coincidencia Directa (Ej: "puebla" en "puebla de zaragoza")
+                    let esMatch = ubicacionUser.includes(nombreMapaLimpio);
+
+                    // 2. Coincidencia por Alias (Ej: "ciudad de mexico" -> "distrito federal")
+                    if (!esMatch && aliasEstados[nombreMapaLimpio]) {
+                        // Revisamos si la ubicación del usuario contiene alguno de los alias
+                        const aliasLista = aliasEstados[nombreMapaLimpio];
+                        for (let alias of aliasLista) {
+                            if (ubicacionUser.includes(alias)) {
+                                esMatch = true;
+                                break; 
+                            }
                         }
                     }
 
-                    if (coincide) {
+                    if (esMatch) {
                         contador++;
-                        // Log para confirmar que encontró a alguien
-                        console.log(`✅ MATCH! Usuario en "${u.ubicacion_texto}" asignado a estado "${nombreMap}"`);
+                        // Solo logueamos si encontramos algo para no llenar la consola
+                        console.log(`✅ MATCH: Estado Mapa [${nombreMapaOriginal}] <== Usuario [${u.ubicacion_texto}]`);
                     }
                 });
 
+                // Guardamos el dato en el estado
                 estado.properties.cantidad_usuarios = contador;
             });
             console.groupEnd();
 
-            // D. DIBUJAR
+            // D. Pintar el Mapa
             const capaEstados = L.geoJson(datosMexico, {
                 style: estiloEstado,
                 onEachFeature: function(feature, layer) {
                     const cant = feature.properties.cantidad_usuarios;
                     
-                    // Popup
                     layer.bindPopup(`
                         <div style="text-align:center;">
                             <b style="color:#7c1225;">${feature.properties.name}</b><br>
@@ -306,7 +309,6 @@
                         </div>
                     `);
 
-                    // Hover solo si tiene usuarios o para resaltar bordes
                     layer.on({
                         mouseover: function(e) {
                             e.target.setStyle({ weight: 3, color: '#7c1225', fillOpacity: 0.9 });
@@ -319,7 +321,7 @@
             }).addTo(map);
 
         } catch (error) {
-            console.error("Error mapa:", error);
+            console.error("Error crítico en mapa:", error);
         }
     });
 </script>
