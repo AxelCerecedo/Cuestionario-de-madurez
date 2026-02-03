@@ -6,18 +6,21 @@
     <title>Sección 6: Recursos humanos</title>
     
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
-    <link rel="stylesheet" href="css/encuesta.css">
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <link rel="stylesheet" href="css/encuesta.css">
+
     <style>
         :root {
-            --primary: #7c1225; /* Tu color vino */
+            --primary: #7c1225;
+            --primary-light: #a83246;
             --bg-body: #f4f6f9;
             --text-main: #333;
+            --header-height: 70px;
         }
 
         body {
@@ -26,85 +29,108 @@
             background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;
-            display: flex;
-            align-items: center; 
-            justify-content: center;
-            padding: 20px;
+            padding-top: var(--header-height); 
+            box-sizing: border-box;
         }
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            padding: 0; 
-            overflow: hidden; 
-            margin: 0 auto;
-        }
-
-        /* --- BARRA ROJA INTERNA --- */
-        .card-header {
+        /* --- 1. BARRA SUPERIOR FIJA --- */
+        .fixed-header {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            height: var(--header-height);
             background-color: var(--primary);
-            color: #ffffff; 
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            color: white;
+            z-index: 1000;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-sizing: border-box;
         }
 
-        .header-logo {
-            width: 200px;
-            height: 40px;
-            object-fit: contain;
-            background: white;
-            border-radius: 8px;
-            margin-left: 10px;
-            padding: 3px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .header-center { text-align: center; }
-        
-        .header-section-title { 
-            margin: 0; 
-            font-size: 1.1em; 
-            font-weight: 700; 
-            letter-spacing: 0.5px; 
-            text-transform: uppercase;
-            color: #ffffff !important;
-        }
-        
-        .header-progress { 
-            font-size: 0.8em; 
-            opacity: 0.9; 
-            margin: 2px 0 0 0; 
-            color: #ffffff !important;
-            font-weight: 400;
-        }
+        .header-logo { height: 45px; background: white; border-radius: 6px; padding: 2px 8px; }
+        .header-title-box { text-align: center; }
+        .header-main-title { font-size: 1.1em; font-weight: 700; text-transform: uppercase; margin: 0; }
+        .header-subtitle { font-size: 0.8em; opacity: 0.9; margin: 0; }
 
         .btn-logout {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85em;
-            font-weight: 600;
-            display: flex; align-items: center; gap: 8px;
-            transition: all 0.2s;
+            background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.85em;
+            display: flex; align-items: center; gap: 8px; transition: all 0.2s;
         }
         .btn-logout:hover { background: rgba(255,255,255,0.3); }
 
-        .card-body {
-            padding: 40px; 
+        /* --- 2. LAYOUT MAESTRO --- */
+        .layout-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
-        /* --- NAVEGACIÓN INFERIOR (Botones separados) --- */
+        /* --- 3. CONTENIDO PRINCIPAL --- */
+        .container {
+            flex: 1;
+            max-width: 800px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            padding: 40px;
+        }
+
+        /* --- 4. SIDEBAR DE PROGRESO (STICKY) --- */
+        .sidebar-progress {
+            width: 260px;
+            position: -webkit-sticky;
+            position: sticky; 
+            top: 100px; 
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            padding: 20px;
+            z-index: 900;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .progress-title {
+            font-size: 0.95em; font-weight: 700; color: var(--primary);
+            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0;
+        }
+
+        .step-list { list-style: none; padding: 0; margin: 0; }
+        
+        .step-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px; border-radius: 8px; margin-bottom: 5px;
+            color: #666; font-size: 0.85em; transition: all 0.2s;
+        }
+
+        .step-number {
+            background: #eee; color: #666; width: 24px; height: 24px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.9em;
+        }
+
+        /* Estilo Activo */
+        .step-item.active {
+            background: #fff0f3; color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary);
+        }
+        .step-item.active .step-number { background: var(--primary); color: white; }
+        
+        /* Estilo Completado (Verde) */
+        .step-item.completed .step-number { background: #28a745; color: white; }
+        .step-item.completed { color: #28a745; }
+
+        /* --- NAVEGACIÓN INFERIOR --- */
         .footer-navegacion {
             display: flex;
-            justify-content: space-between; /* CLAVE: Separa extremos */
+            justify-content: space-between;
             align-items: center;
             margin-top: 50px;
             padding-top: 20px;
@@ -112,24 +138,21 @@
         }
 
         .btn-guardar {
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 12px 35px;
-            font-size: 16px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            box-shadow: 0 4px 6px rgba(124, 18, 37, 0.2); 
-            transition: transform 0.2s;
+            background: var(--primary); color: white; border: none; padding: 12px 35px;
+            font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: 600;
+            box-shadow: 0 4px 6px rgba(124, 18, 37, 0.2); transition: transform 0.2s;
         }
         .btn-guardar:hover { transform: translateY(-2px); opacity: 0.95; }
 
-        @media (max-width: 600px) {
-            .card-header { flex-direction: column; gap: 15px; text-align: center; padding: 20px; }
-            .header-center { order: 2; margin-bottom: 10px; }
-            .btn-logout { order: 3; width: 100%; justify-content: center; }
-            .card-body { padding: 20px; }
+        /* RESPONSIVIDAD */
+        @media (max-width: 1000px) {
+            .layout-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-progress {
+                width: 100%; max-width: 800px; position: static; 
+                margin-bottom: 20px; order: -1;
+            }
+            .step-list { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; }
+            .step-item { min-width: 140px; border: 1px solid #eee; }
             
             .footer-navegacion { flex-direction: column-reverse; gap: 15px; }
             .btn-guardar { width: 100%; }
@@ -139,27 +162,24 @@
 </head>
 <body>
 
-    <div class="container">
-
-        <div class="card-header">
-            <div>
-                <img src="Imagenes/logo.png" alt="Logo" class="header-logo">
-            </div>
-
-            <div class="header-center">
-                <h2 class="header-section-title" style="margin-right: 60px;">Sección 6</h2>
-                <p class="header-progress" style="margin-right: 60px;">Progreso: 6 de 9</p>
-            </div>
-
-            <div>
-                <button type="button" id="btnCerrarSesion" class="btn-logout">
-                    Salir <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </div>
+    <header class="fixed-header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <img src="Imagenes/logo.png" alt="Logo" class="header-logo">
         </div>
+        <div class="header-title-box">
+            <h1 class="header-main-title">Sección 6</h1>
+            <p class="header-subtitle">Recursos humanos</p>
+        </div>
+        <div>
+            <button type="button" id="btnCerrarSesion" class="btn-logout">
+                Salir <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </header>
 
-        <div class="card-body">
-            
+    <div class="layout-wrapper">
+
+        <div class="container">
             <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.6em;">
                 6. Recursos humanos
             </h2>
@@ -168,28 +188,64 @@
 
             <form id="formularioDinamico">
                 <div id="contenedorPreguntas">
-                    <p style="text-align:center; color:#666;">Cargando preguntas...</p>
+                    <p style="text-align:center; color:#666; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando preguntas...
+                    </p>
                 </div>
 
                 <div class="footer-navegacion">
-                    
-                    <div id="areaBotonRegresar"></div>
-
-                    <div>
+                    <div id="areaBotonRegresar"></div> <div>
                         <button type="submit" class="btn-guardar">
-                            Guardar y Continuar
+                            Guardar y Continuar <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
-
                 </div>
             </form>
         </div>
+
+        <aside class="sidebar-progress">
+            <div class="progress-title">Tu Progreso</div>
+            <ul class="step-list">
+                <li class="step-item completed">
+                    <span class="step-number"><i class="fas fa-check"></i></span>
+                    <span>Identificación</span>
+                </li>
+                <li class="step-item completed">
+                    <span class="step-number"><i class="fas fa-check"></i></span>
+                    <span>Gestión Institucional</span>
+                </li>
+                <li class="step-item completed">
+                    <span class="step-number"><i class="fas fa-check"></i></span>
+                    <span>Caracterización</span>
+                </li>
+                <li class="step-item completed">
+                    <span class="step-number"><i class="fas fa-check"></i></span>
+                    <span>Documentación</span>
+                </li>
+                <li class="step-item completed">
+                    <span class="step-number"><i class="fas fa-check"></i></span>
+                    <span>Info. y Software</span>
+                </li>
+                
+                <li class="step-item active">
+                    <span class="step-number">6</span>
+                    <span>Recursos Humanos</span>
+                </li>
+
+                <li class="step-item"><span class="step-number">7</span><span>Tecnología</span></li>
+                <li class="step-item"><span class="step-number">8</span><span>Normatividad</span></li>
+                <li class="step-item"><span class="step-number">9</span><span>Servicios</span></li>
+            </ul>
+            
+            <div style="margin-top: 20px; font-size: 0.8em; color: #888; text-align: center;">
+                <i class="fas fa-info-circle"></i> Tu avance se guarda automáticamente.
+            </div>
+        </aside>
 
     </div>
 
     <script src="js/seccion6.js"></script> 
     <script>
-        // Importante: Este nombre debe coincidir con el definido en tu JS
         window.NOMBRE_SECCION = "6. Recursos humanos";
     </script>
     <script src="js/encuesta.js"></script>
