@@ -187,115 +187,64 @@
 
     <script src="js/admin.js"></script> 
 
-<script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        // 1. Configuración Básica
-        const mapContainer = document.getElementById('mapaUsuarios');
-        if(!mapContainer.style.height) mapContainer.style.height = "500px";
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            
+            // Inicializar Mapa con estilo CartoDB (Gris limpio)
+            const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
 
-        const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
 
-        // Fondo Gris (CartoDB Positron)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(map);
+            // Crear grupo de clusters
+            const markers = L.markerClusterGroup();
 
-        // =========================================================
-        // 2. LÓGICA DE COLORES (ESCALA DE TU COLOR VINO #7c1225)
-        // =========================================================
-        function obtenerColor(d) {
-            return d > 20 ? '#4a0b16' :  // Muy alto (Vino oscuro)
-                   d > 10 ? '#7c1225' :  // Alto (Tu color)
-                   d > 5  ? '#a83246' :  // Medio
-                   d > 2  ? '#d16d7e' :  // Bajo
-                   d > 0  ? '#eebbc4' :  // Mínimo
-                            'transparent'; // 0 usuarios
-        }
+            try {
+                // Usamos una variable local para no chocar con la de admin.js
+                const API_MAPA = 'https://api-cuestionario.onrender.com'; 
+                
+                const response = await fetch(`${API_MAPA}/api/ubicaciones`);
+                const usuarios = await response.json();
 
-        function estiloEstado(feature) {
-            return {
-                fillColor: obtenerColor(feature.properties.cantidad_usuarios),
-                weight: 1,
-                opacity: 1,
-                color: '#666', // Borde gris del estado
-                dashArray: '3',
-                fillOpacity: 0.7
-            };
-        }
+                // Filtrar solo los que tienen coordenadas válidas
+                const validos = usuarios.filter(u => u.latitud && u.longitud && !isNaN(u.latitud));
+                console.log(`📍 Se encontraron ${validos.length} ubicaciones válidas para el mapa.`);
 
-        // =========================================================
-        // 3. CARGAR DATOS Y DIBUJAR
-        // =========================================================
-        try {
-            // A. Obtener tus usuarios
-            const API_URL = 'https://api-cuestionario.onrender.com';
-            const resUsers = await fetch(`${API_URL}/api/ubicaciones`);
-            const usuarios = await resUsers.json();
+                validos.forEach(u => {
+                    const lat = parseFloat(u.latitud);
+                    const lon = parseFloat(u.longitud);
+                    const marker = L.marker([lat, lon]);
+                    
+                    const nombre = u.nombre || u.nombre_completo || 'Usuario';
+                    const ubicacion = u.ubicacion || u.ubicacion_texto || 'Ubicación registrada';
+                    const puntaje = (u.puntaje !== undefined) ? u.puntaje : '0';
 
-            // B. Obtener Fronteras de México (GeoJSON público)
-            const resGeo = await fetch('https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json');
-            const datosMexico = await resGeo.json();
-
-            // C. CRUCE DE DATOS: Contar usuarios por estado
-            // Recorremos cada estado del mapa
-            datosMexico.features.forEach(estado => {
-                const nombreEstado = estado.properties.name; // Ej: "Nuevo León"
-                let contador = 0;
-
-                // Buscamos cuántos usuarios tienen ese nombre en su ubicación
-                usuarios.forEach(u => {
-                    if (u.ubicacion_texto && u.ubicacion_texto.includes(nombreEstado)) {
-                        contador++;
-                    }
-                    // Caso especial CDMX (A veces viene como Distrito Federal en mapas viejos)
-                    else if (nombreEstado === "Distrito Federal" && u.ubicacion_texto.includes("Ciudad de México")) {
-                        contador++;
-                    }
-                });
-
-                // Guardamos el conteo dentro de las propiedades del mapa
-                estado.properties.cantidad_usuarios = contador;
-            });
-
-            // D. DIBUJAR EN EL MAPA
-            const capaEstados = L.geoJson(datosMexico, {
-                style: estiloEstado,
-                onEachFeature: function(feature, layer) {
-                    // Popup al dar clic
-                    layer.bindPopup(`
-                        <div style="text-align:center;">
-                            <b style="color:#7c1225; font-size:1.1em;">${feature.properties.name}</b>
-                            <br>
-                            Usuarios registrados: <b>${feature.properties.cantidad_usuarios}</b>
+                    marker.bindPopup(`
+                        <div style="text-align:center; min-width: 150px;">
+                            <strong style="color:#7c1225; font-size:1.1em;">${nombre}</strong><br>
+                            <span style="color:#666; font-size:0.9em;">${ubicacion}</span>
+                            <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+                            📊 Puntaje: <b>${puntaje}</b>
                         </div>
                     `);
                     
-                    // Efecto Hover (Resaltar al pasar el mouse)
-                    layer.on({
-                        mouseover: function(e) {
-                            var layer = e.target;
-                            layer.setStyle({
-                                weight: 3,
-                                color: '#7c1225',
-                                dashArray: '',
-                                fillOpacity: 0.9
-                            });
-                        },
-                        mouseout: function(e) {
-                            capaEstados.resetStyle(e.target);
-                        }
-                    });
-                }
-            }).addTo(map);
+                    markers.addLayer(marker);
+                });
 
-            console.log("🗺️ Mapa de estados generado correctamente.");
+                map.addLayer(markers);
 
-        } catch (error) {
-            console.error("Error al generar mapa de calor:", error);
-        }
-    });
-</script>
+                
+            } catch (error) {
+                console.error("Error cargando mapa:", error);
+            }
+            
+            // FIX: Forzar redibujado después de un segundo para asegurar que se vea bien
+            // aunque el contenedor haya cargado oculto.
+            setTimeout(() => { map.invalidateSize(); }, 1000);
+        });
+    </script>
 </body>
 </html>
