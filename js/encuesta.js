@@ -1586,7 +1586,7 @@ async function enviarFormulario(e) {
 }
 
 // =========================================================
-// FUNCIÓN: ACTIVAR MODO SOLO LECTURA (CORREGIDO ANCHO)
+// FUNCIÓN: ACTIVAR MODO SOLO LECTURA (ADAPTADO A NUEVO DISEÑO)
 // =========================================================
 function activarModoSoloLectura() {
     console.log("🔒 Activando modo solo lectura...");
@@ -1595,52 +1595,48 @@ function activarModoSoloLectura() {
     const inputs = document.querySelectorAll('#formularioDinamico input, #formularioDinamico select, #formularioDinamico textarea');
     inputs.forEach(input => {
         input.disabled = true;
-        input.style.backgroundColor = "#f2f2f2"; 
+        input.style.backgroundColor = "#f9f9f9"; // Un gris más suave
         input.style.cursor = "not-allowed";
-        input.style.opacity = "0.7";
+        input.style.opacity = "0.8";
+        input.style.borderColor = "#ddd";
     });
 
     // 2. OCULTAR BOTONES DE EDICIÓN
     const botonesEdicion = document.querySelectorAll('.btn-agregar, .btn-eliminar');
     botonesEdicion.forEach(btn => btn.style.display = 'none');
 
-    // 3. TRANSFORMAR EL BOTÓN PRINCIPAL
-    const btnPrincipal = document.querySelector('.btn-guardar') || document.querySelector('.btn-finalizar');
+    // 3. TRANSFORMAR EL BOTÓN PRINCIPAL (GUARDAR -> SIGUIENTE)
+    const btnPrincipal = document.querySelector('.btn-guardar');
     
     if (btnPrincipal) {
         if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
             
             const nuevoBoton = btnPrincipal.cloneNode(true);
-            btnPrincipal.parentNode.replaceChild(nuevoBoton, btnPrincipal);
+            if(btnPrincipal.parentNode) {
+                btnPrincipal.parentNode.replaceChild(nuevoBoton, btnPrincipal);
+            }
             
             nuevoBoton.type = 'button';
-            nuevoBoton.style.display = 'inline-flex'; // Usamos inline-flex para centrar icono y texto
+            nuevoBoton.style.display = 'inline-flex'; 
             nuevoBoton.style.alignItems = 'center';
             nuevoBoton.style.justifyContent = 'center';
             nuevoBoton.style.gap = '8px';
             nuevoBoton.style.cursor = 'pointer';
-            
-            // --- 🔧 FIX VISUAL: CONTROLAR EL ANCHO ---
-            nuevoBoton.style.width = 'auto';       // Importante: Que se ajuste al texto
-            nuevoBoton.style.minWidth = '140px';   // Un mínimo para que se vea bien
-            nuevoBoton.style.maxWidth = '200px';   // Un máximo para que no empuje al otro
-            nuevoBoton.style.padding = '10px 20px'; // Padding equilibrado
-            nuevoBoton.style.margin = '0';         // Quitar márgenes extraños
-            // -----------------------------------------
+            nuevoBoton.style.width = 'auto';       
+            nuevoBoton.style.minWidth = '140px';   
+            nuevoBoton.style.padding = '12px 25px'; 
 
             // CASO ESPECIAL: Última sección
             if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
-                nuevoBoton.innerHTML = 'Resumen <i class="fas fa-file-alt"></i>'; // Texto más corto para ahorrar espacio
+                nuevoBoton.innerHTML = 'Ver Resumen Final <i class="fas fa-chart-pie"></i>'; 
                 nuevoBoton.className = 'btn-guardar'; 
-                nuevoBoton.style.backgroundColor = "#17a2b8"; 
-                nuevoBoton.style.borderColor = "#17a2b8";
+                nuevoBoton.style.backgroundColor = "#17a2b8"; // Azul informativo
             } else {
-                nuevoBoton.innerHTML = 'Siguiente <i class="fas fa-arrow-right"></i>';
-                nuevoBoton.style.backgroundColor = "#6c757d"; 
-                nuevoBoton.style.borderColor = "#6c757d";
+                nuevoBoton.innerHTML = 'Siguiente Sección <i class="fas fa-arrow-right"></i>';
+                nuevoBoton.style.backgroundColor = "#6c757d"; // Gris neutro
             }
 
-            // Evento
+            // Evento click para navegar
             nuevoBoton.addEventListener('click', function(e) {
                 e.preventDefault();
                 window.location.href = CONFIG_SECCION.siguiente;
@@ -1651,20 +1647,48 @@ function activarModoSoloLectura() {
         }
     }
 
-    // 4. AVISO VISUAL (BANNER)
-    const cardBody = document.querySelector('.card-body');
-    if (cardBody && !document.getElementById('bannerSoloLectura')) {
+    // 4. AVISO VISUAL (EL CANDADITO)
+    // FIX: Ahora buscamos .container porque .card-body ya no existe en el nuevo HTML
+    const contenedor = document.querySelector('.container');
+    const tituloSeccion = contenedor.querySelector('h2'); // Buscamos el título h2
+
+    if (contenedor && !document.getElementById('bannerSoloLectura')) {
         const banner = document.createElement('div');
         banner.id = 'bannerSoloLectura';
         banner.innerHTML = `
-            <div style="background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-lock"></i>
+            <div style="
+                background: #fff3cd; 
+                color: #856404; 
+                border: 1px solid #ffeeba; 
+                padding: 15px 20px; 
+                margin-bottom: 30px; 
+                border-radius: 10px; 
+                display: flex; 
+                align-items: center; 
+                gap: 15px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            ">
+                <div style="
+                    background: rgba(255,255,255,0.6); 
+                    width: 45px; height: 45px; 
+                    border-radius: 50%; 
+                    display: flex; align-items: center; justify-content: center;
+                    flex-shrink: 0;
+                ">
+                    <i class="fas fa-lock" style="font-size: 1.4em; color: #856404;"></i>
+                </div>
                 <div>
-                    <strong>Modo Visualización</strong>
-                    <br>Cuestionario finalizado.
+                    <strong style="font-size: 1.05em; display:block;">Cuestionario Finalizado</strong>
+                    <span style="font-size: 0.9em; opacity: 0.9;">Estás en modo visualización. Ya no es posible editar las respuestas.</span>
                 </div>
             </div>
         `;
-        cardBody.insertBefore(banner, cardBody.firstChild);
+        
+        // Insertamos el banner ANTES del título de la sección
+        if (tituloSeccion) {
+            contenedor.insertBefore(banner, tituloSeccion);
+        } else {
+            contenedor.insertBefore(banner, contenedor.firstChild);
+        }
     }
 }
