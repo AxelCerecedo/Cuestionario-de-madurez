@@ -179,8 +179,8 @@ function crearHTMLPregunta(p) {
         // Input 2 (ESTE ES SOLO VISUAL)
         const input2 = document.createElement('input');
         input2.type = 'date'; 
-        // input2.className = 'input-respuesta'; // <--- ❌ BORRA O COMENTA ESTA LÍNEA
-        input2.className = 'input-auxiliar';     // <--- ✅ PONLE OTRA CLASE QUE NO SEA 'input-respuesta'
+        // input2.className = 'input-respuesta'; 
+        input2.className = 'input-auxiliar';    
         input2.style.width = '48%';
         
         const actualizarRango = () => { 
@@ -1096,9 +1096,6 @@ async function cargarRespuestasPrevias(idUsuario) {
         console.log("Cargando datos previos...", data);
         localStorage.setItem('datosCargados', 'true'); 
 
-        // 🔥🔥🔥 LÍNEA CRÍTICA AGREGADA 🔥🔥🔥
-        // Guardamos los datos de matriz en una variable global para que
-        // la Matriz Dinámica Incremental pueda consultarlos al dibujarse.
         window.RESPUESTAS_PREVIAS_CACHE = data.matriz || []; 
         // ----------------------------------------------------
 
@@ -1127,9 +1124,26 @@ async function cargarRespuestasPrevias(idUsuario) {
                         if (input.value === r.respuesta_texto || input.value == r.id_opcion_seleccionada) input.checked = true;
                     }
                     else if (input.type === 'date') {
-                        // ... (Tu lógica de fechas está bien) ...
+        
+                    // 🟢 FIX: DETECTAR SI ES UN RANGO COMPUESTO
+                    if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
+                        // Separamos el texto: "2020-01-01 al 2020-12-31"
+                        const partes = r.respuesta_texto.split(' al ');
+                        
+                        // 1. Asignamos la primera parte al input principal (input1)
+                        input.value = partes[0]; 
+
+                        // 2. Buscamos al input vecino (input2/auxiliar) que creaste al lado
+                        const inputAuxiliar = input.nextElementSibling;
+                        if (inputAuxiliar && inputAuxiliar.tagName === 'INPUT') {
+                            inputAuxiliar.value = partes[1]; // Asignamos la segunda parte
+                        }
+                    } 
+                    else {
+                        // Si no tiene " al ", es una fecha normal solita
                         input.value = r.respuesta_texto;
                     }
+                }
                     else if (input.dataset.tipo === 'texto') {
                         input.value = r.respuesta_texto;
                     }
