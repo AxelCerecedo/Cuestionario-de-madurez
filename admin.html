@@ -225,11 +225,12 @@
         };
 
         function obtenerColor(d) {
-            return d > 20 ? '#4a0b16' :
-                   d > 10 ? '#7c1225' :
-                   d > 5  ? '#a83246' :
-                   d > 2  ? '#d16d7e' :
-                   d > 0  ? '#eebbc4' : 'transparent';
+            return d > 50 ? '#4a0b16' :  // Más de 50 (Oscuro)
+                   d > 20 ? '#7c1225' :  // Más de 20 (Vino Fuerte)
+                   d > 10 ? '#a83246' :  // Más de 10
+                   d > 5  ? '#d16d7e' :  // Más de 5
+                   d > 0  ? '#7c1225' :  // 🔥 CAMBIO: 1 o más = Vino Oficial directo
+                            'transparent';
         }
 
         function estiloEstado(feature) {
