@@ -2,7 +2,7 @@
 
 const API_URL_SAVE = 'https://api-cuestionario.onrender.com'; 
 
-document.addEventListener('DOMContentLoaded', async function() { // <--- AHORA ES ASYNC
+document.addEventListener('DOMContentLoaded', async function() { 
     
     // 1. VERIFICAR USUARIO
     const idUsuario = localStorage.getItem('idUsuario');
@@ -13,37 +13,39 @@ document.addEventListener('DOMContentLoaded', async function() { // <--- AHORA E
         return;
     }
 
-    // 2. BIENVENIDA (SOLO EN SECCIÓN 1)
+    // 2. BIENVENIDA
     const divBienvenida = document.getElementById('mensajeBienvenida');
     const esSeccionUno = window.location.href.includes('seccion1.html');
-
     if (nombreUsuario && divBienvenida && esSeccionUno) {
-        divBienvenida.innerHTML = `👋 ¡Hola, <b>${nombreUsuario}</b>! \n Tu progreso se guardará automáticamente.`;
+        divBienvenida.innerHTML = `👋 ¡Hola, <b>${nombreUsuario}</b>! <br> Tu progreso se guardará automáticamente.`;
         divBienvenida.style.display = 'block';
-    } else if (divBienvenida) {
-        divBienvenida.style.display = 'none';
     }
 
-    // 3. CONFIGURAR BOTONES DE NAVEGACIÓN
+    // 3. CONFIGURAR UI
     configurarBotonesNavegacion();
 
-    // 4. CARGAR PREGUNTAS
+    // 4. CARGAR ESTRUCTURA DE PREGUNTAS
     cargarCuestionarioLocal();
 
-    // 5. RECUPERAR PROGRESO (Esperamos a que termine de llenar los datos)
+    // 5. RECUPERAR PROGRESO (AWAIT ES CLAVE AQUÍ)
+    console.log("⏳ Esperando datos del servidor...");
     await cargarRespuestasPrevias(idUsuario); 
+    console.log("✅ Datos cargados y cacheados.");
 
-    // =========================================================
-    // 🔒 6. VERIFICAR SI ESTÁ FINALIZADA (CANDADO)
-    // =========================================================
+    const inputsOrigenActivados = document.querySelectorAll('.input-multiple:checked');
+    if (inputsOrigenActivados.length > 0) {
+        // Solo necesitamos dispararlo en uno para que la tabla se entere
+        inputsOrigenActivados[0].dispatchEvent(new Event('change'));
+        console.log("🔄 Disparador de matriz ejecutado.");
+    }
+
+    // 6. VERIFICAR SI ESTÁ FINALIZADA
     const estaFinalizada = localStorage.getItem('encuestaFinalizada');
-
     if (estaFinalizada === '1') {
-        // Si ya acabó, bloqueamos todo visualmente
         activarModoSoloLectura();
     }
     
-    // 7. EVENTO SUBMIT (Solo si no está finalizada, aunque ocultamos el botón)
+    // 7. EVENTO SUBMIT
     const form = document.getElementById('formularioDinamico');
     if (form) form.addEventListener('submit', enviarFormulario);
 });
