@@ -191,13 +191,17 @@
         document.addEventListener('DOMContentLoaded', async () => {
         
         // 1. Inicializar Mapa
+        // 1. Inicializar Mapa
         const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+        // 🔥 CAMBIO AQUÍ: Usamos CartoDB Positron (Gris y Minimalista)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
         }).addTo(map);
 
-        // Corregir renderizado si carga oculto
+        // Corregir renderizado
         setTimeout(() => { map.invalidateSize(); }, 500);
 
         // 🔥 NUEVO: Creamos el Grupo de Clusters
