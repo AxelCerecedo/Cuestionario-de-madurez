@@ -195,7 +195,7 @@
 
         const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
 
-        // Fondo Gris (CartoDB Positron)
+        // Fondo Gris
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap &copy; CARTO',
             subdomains: 'abcd',
@@ -203,15 +203,25 @@
         }).addTo(map);
 
         // =========================================================
-        // 2. LÓGICA DE COLORES (ESCALA DE TU COLOR VINO #7c1225)
+        // 2. FUNCIÓN DE LIMPIEZA DE TEXTO (MAGIA 🪄)
+        // =========================================================
+        // Convierte "México" -> "mexico", "Nuevo León" -> "nuevo leon"
+        function limpiarTexto(texto) {
+            if (!texto) return "";
+            return texto.toLowerCase()
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        // =========================================================
+        // 3. LÓGICA DE COLORES
         // =========================================================
         function obtenerColor(d) {
-            return d > 20 ? '#4a0b16' :  // Muy alto (Vino oscuro)
-                   d > 10 ? '#7c1225' :  // Alto (Tu color)
-                   d > 5  ? '#a83246' :  // Medio
-                   d > 2  ? '#d16d7e' :  // Bajo
-                   d > 0  ? '#eebbc4' :  // Mínimo
-                            'transparent'; // 0 usuarios
+            return d > 20 ? '#4a0b16' :
+                   d > 10 ? '#7c1225' :
+                   d > 5  ? '#a83246' :
+                   d > 2  ? '#d16d7e' :
+                   d > 0  ? '#eebbc4' : // Color para 1 o 2 usuarios
+                            'transparent';
         }
 
         function estiloEstado(feature) {
@@ -219,69 +229,85 @@
                 fillColor: obtenerColor(feature.properties.cantidad_usuarios),
                 weight: 1,
                 opacity: 1,
-                color: '#666', // Borde gris del estado
+                color: '#999',
                 dashArray: '3',
                 fillOpacity: 0.7
             };
         }
 
         // =========================================================
-        // 3. CARGAR DATOS Y DIBUJAR
+        // 4. CARGAR DATOS Y DIBUJAR
         // =========================================================
         try {
-            // A. Obtener tus usuarios
             const API_URL = 'https://api-cuestionario.onrender.com';
+            
+            // A. Usuarios
             const resUsers = await fetch(`${API_URL}/api/ubicaciones`);
             const usuarios = await resUsers.json();
-
-            // B. Obtener Fronteras de México (GeoJSON público)
+            
+            // B. Mapa de México
             const resGeo = await fetch('https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json');
             const datosMexico = await resGeo.json();
 
-            // C. CRUCE DE DATOS: Contar usuarios por estado
-            // Recorremos cada estado del mapa
+            console.group("🗺️ DIAGNÓSTICO DEL MAPA");
+            console.log(`Analizando ${usuarios.length} usuarios contra 32 estados...`);
+
+            // C. CRUCE INTELIGENTE
             datosMexico.features.forEach(estado => {
-                const nombreEstado = estado.properties.name; // Ej: "Nuevo León"
+                const nombreEstadoOriginal = estado.properties.name; 
+                // Limpiamos el nombre del estado (ej. "Yucatán" -> "yucatan")
+                const nombreEstadoLimpio = limpiarTexto(nombreEstadoOriginal); 
+                
                 let contador = 0;
 
-                // Buscamos cuántos usuarios tienen ese nombre en su ubicación
                 usuarios.forEach(u => {
-                    if (u.ubicacion_texto && u.ubicacion_texto.includes(nombreEstado)) {
+                    // Limpiamos la dirección del usuario
+                    const ubicacionUser = limpiarTexto(u.ubicacion_texto);
+
+                    // 1. COMPARACIÓN ESTÁNDAR (Flexible)
+                    if (ubicacionUser.includes(nombreEstadoLimpio)) {
                         contador++;
                     }
-                    // Caso especial CDMX (A veces viene como Distrito Federal en mapas viejos)
-                    else if (nombreEstado === "Distrito Federal" && u.ubicacion_texto.includes("Ciudad de México")) {
-                        contador++;
+                    // 2. CASO ESPECIAL: CDMX (El GeoJSON dice "Distrito Federal")
+                    else if (nombreEstadoOriginal === "Distrito Federal") {
+                        if (ubicacionUser.includes("ciudad de mexico") || ubicacionUser.includes("cdmx")) {
+                            contador++;
+                        }
+                    }
+                    // 3. CASO ESPECIAL: ESTADO DE MÉXICO (Para no confundir con "Ciudad de México")
+                    else if (nombreEstadoOriginal === "México") {
+                         // Solo contamos si dice "Estado de Mexico" o similar, para no contar "Mexico" país
+                         if (ubicacionUser.includes("estado de mexico") || (ubicacionUser.includes("mexico") && !ubicacionUser.includes("ciudad"))) {
+                             // Lógica simple, puede mejorarse
+                         }
                     }
                 });
 
-                // Guardamos el conteo dentro de las propiedades del mapa
+                // Si encontramos gente, avisamos en consola
+                if (contador > 0) {
+                    console.log(`✅ ¡MATCH! Estado: ${nombreEstadoOriginal} -> ${contador} usuarios.`);
+                }
+
                 estado.properties.cantidad_usuarios = contador;
             });
+            console.groupEnd();
 
-            // D. DIBUJAR EN EL MAPA
+            // D. DIBUJAR CAPA
             const capaEstados = L.geoJson(datosMexico, {
                 style: estiloEstado,
                 onEachFeature: function(feature, layer) {
-                    // Popup al dar clic
                     layer.bindPopup(`
-                        <div style="text-align:center;">
+                        <div style="text-align:center; font-family:sans-serif;">
                             <b style="color:#7c1225; font-size:1.1em;">${feature.properties.name}</b>
                             <br>
-                            Usuarios registrados: <b>${feature.properties.cantidad_usuarios}</b>
+                            Usuarios: <b>${feature.properties.cantidad_usuarios}</b>
                         </div>
                     `);
                     
-                    // Efecto Hover (Resaltar al pasar el mouse)
                     layer.on({
                         mouseover: function(e) {
                             var layer = e.target;
-                            layer.setStyle({
-                                weight: 3,
-                                color: '#7c1225',
-                                dashArray: '',
-                                fillOpacity: 0.9
-                            });
+                            layer.setStyle({ weight: 3, color: '#7c1225', fillOpacity: 0.9 });
                         },
                         mouseout: function(e) {
                             capaEstados.resetStyle(e.target);
@@ -290,10 +316,8 @@
                 }
             }).addTo(map);
 
-            console.log("🗺️ Mapa de estados generado correctamente.");
-
         } catch (error) {
-            console.error("Error al generar mapa de calor:", error);
+            console.error("Error mapa:", error);
         }
     });
 </script>
