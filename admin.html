@@ -189,51 +189,66 @@
     <script src="js/admin.js"></script> 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
+        
+        // 1. Inicializar Mapa
+        const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Corregir renderizado si carga oculto
+        setTimeout(() => { map.invalidateSize(); }, 500);
+
+        // 🔥 NUEVO: Creamos el Grupo de Clusters
+        // Esto se encargará de agrupar y colorear automáticamente
+        const markers = L.markerClusterGroup();
+
+        try {
+            const API_URL = 'https://api-cuestionario.onrender.com'; 
             
-            const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
+            const response = await fetch(`${API_URL}/api/ubicaciones`);
+            const usuarios = await response.json();
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            console.log(`📍 Se encontraron ${usuarios.length} ubicaciones.`);
 
-            setTimeout(() => { map.invalidateSize(); }, 500);
+            usuarios.forEach(u => {
+                const lat = parseFloat(u.latitud);
+                const lon = parseFloat(u.longitud);
 
-            try {
-                const API_URL = 'https://api-cuestionario.onrender.com'; 
-                
-                const response = await fetch(`${API_URL}/api/ubicaciones`);
-                const usuarios = await response.json();
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    
+                    // Creamos el marcador normal
+                    const marker = L.marker([lat, lon]);
+                    
+                    const nombreFinal = u.nombre || u.nombre_completo || 'Usuario';
+                    const ubicacionFinal = u.ubicacion || u.ubicacion_texto || 'Ubicación no especificada';
+                    const puntajeFinal = (u.puntaje !== undefined) ? u.puntaje : '0';
 
-                // --- 🔍 DIAGNÓSTICO EN CONSOLA ---
-                // Si vuelve a fallar, presiona F12 y mira qué dice aquí:
-                console.log("Datos recibidos del servidor:", usuarios); 
+                    marker.bindPopup(`
+                        <div style="text-align:center; font-family:sans-serif;">
+                            <strong style="color:#7c1225; font-size:1.1em;">${nombreFinal}</strong><br>
+                            <span style="font-size:0.9em; color:#666;">${ubicacionFinal}</span>
+                            <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+                            📊 Puntaje Actual: <b>${puntajeFinal}</b>
+                        </div>
+                    `);
 
-                usuarios.forEach(u => {
-                    const lat = parseFloat(u.latitud);
-                    const lon = parseFloat(u.longitud);
+                    // 🔥 CAMBIO CRÍTICO:
+                    // En lugar de agregarlo al mapa (map.addLayer), 
+                    // lo agregamos al grupo de clusters (markers.addLayer)
+                    markers.addLayer(marker);
+                }
+            });
 
-                    if (!isNaN(lat) && !isNaN(lon)) {
-                        const marker = L.marker([lat, lon]).addTo(map);
-                        
-                        // Usamos operadores || para tener un plan B si algo viene vacío
-                        const nombreFinal = u.nombre || u.nombre_completo || 'Usuario Desconocido';
-                        const ubicacionFinal = u.ubicacion || u.ubicacion_texto || 'Ubicación no especificada';
-                        const puntajeFinal = (u.puntaje !== undefined) ? u.puntaje : '0';
+            // 🔥 FINALMENTE: Agregamos el grupo de clusters al mapa
+            map.addLayer(markers);
 
-                        marker.bindPopup(`
-                            <div style="text-align:center; font-family:sans-serif;">
-                                <strong style="color:#7c1225; font-size:1.1em;">${nombreFinal}</strong><br>
-                                <span style="font-size:0.9em; color:#666;">${ubicacionFinal}</span>
-                                <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
-                                📊 Puntaje Actual: <b>${puntajeFinal}</b>
-                            </div>
-                        `);
-                    }
-                });
-            } catch (error) {
-                console.error("Error cargando el mapa:", error);
-            }
-        });
-    </script>
+        } catch (error) {
+            console.error("Error cargando el mapa:", error);
+            document.getElementById('mapaUsuarios').innerHTML = '<p style="text-align:center; padding:20px;">No se pudo cargar el mapa de usuarios.</p>';
+        }
+    });
+</script>
 </body>
 </html>
