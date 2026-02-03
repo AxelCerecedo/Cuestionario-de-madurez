@@ -202,7 +202,7 @@
         }).addTo(map);
 
         // =========================================================
-        // 2. HERRAMIENTAS DE COINCIDENCIA
+        // 2. HERRAMIENTAS DE LIMPIEZA
         // =========================================================
         
         function limpiar(texto) {
@@ -214,9 +214,11 @@
                         .trim();
         }
 
+        // ALIAS ESTRICTOS
         const aliasEstados = {
             "distrito federal": ["ciudad de mexico", "cdmx", "df", "capital", "delegacion"],
-            "mexico": ["estado de mexico", "edo mex", "edomex"],
+            "ciudad de mexico": ["distrito federal", "cdmx", "df"], // Por si el GeoJSON es moderno
+            "mexico": ["estado de mexico", "edo mex", "edomex", "toluca", "naucalpan", "tlalnepantla", "ecatepec"], // Solo municipios o "estado de"
             "veracruz": ["veracruz de ignacio de la llave"],
             "michoacan": ["michoacan de ocampo"],
             "coahuila": ["coahuila de zaragoza"]
@@ -238,7 +240,7 @@
         }
 
         // =========================================================
-        // 3. PROCESO DE CRUCE DE DATOS
+        // 3. LÓGICA DE CRUCE (CON FILTRO ANTI-EDOMEX)
         // =========================================================
         try {
             const API_URL = 'https://api-cuestionario.onrender.com';
@@ -251,37 +253,40 @@
             const resGeo = await fetch('https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json');
             const datosMexico = await resGeo.json();
 
-            console.group("🗺️ DEPURACIÓN PROFUNDA");
-            
-            // --- DIAGNÓSTICO DEL PRIMER USUARIO ---
-            if(usuarios.length > 0) {
-                console.log("🔎 Estructura del primer usuario recibido:", usuarios[0]);
-            }
+            console.group("🗺️ DIAGNÓSTICO FINAL");
 
-            // C. Loop por cada Estado del Mapa
+            // C. Procesar
             datosMexico.features.forEach(estado => {
-                const nombreMapaOriginal = estado.properties.name; 
-                const nombreMapaLimpio = limpiar(nombreMapaOriginal);
+                const nombreMapOriginal = estado.properties.name; 
+                const nombreMapLimpio = limpiar(nombreMapOriginal);
                 
                 let contador = 0;
 
                 usuarios.forEach(u => {
-                    // 🔥 FIX: Intentamos leer la ubicación de múltiples campos posibles
-                    // para asegurar que no falle si la API cambió el nombre.
-                    const textoRaw = u.ubicacion_texto || u.ubicacion || u.direccion || u.lugar || "";
+                    // Detectar campo correcto (tus logs decían que es 'ubicacion')
+                    const textoRaw = u.ubicacion || u.ubicacion_texto || u.direccion || "";
                     const ubicacionUser = limpiar(textoRaw);
 
-                    // Si es la CDMX, imprimimos qué estamos comparando para ver si falla
-                    if (nombreMapaLimpio === "distrito federal" && ubicacionUser.length > 0) {
-                        console.log(`Comparando: Mapa[${nombreMapaLimpio}] vs Usuario[${ubicacionUser}]`);
+                    let esMatch = false;
+
+                    // --- REGLA ESPECIAL PARA "MÉXICO" (EDOMEX) ---
+                    // Si el estado es "México", PROHIBIMOS la coincidencia directa
+                    // para evitar confundirlo con "Ciudad de México" o el país.
+                    if (nombreMapLimpio === "mexico") {
+                        // Solo permitimos match si coincide con los ALIAS específicos (estado de mexico, edo mex, etc)
+                        // NO hacemos: if (ubicacionUser.includes("mexico"))
+                        esMatch = false; 
+                    } 
+                    else {
+                        // Para el resto de estados (Puebla, Sonora, etc.) coincidencia normal
+                        if (ubicacionUser.includes(nombreMapLimpio)) {
+                            esMatch = true;
+                        }
                     }
 
-                    // 1. Coincidencia Directa
-                    let esMatch = ubicacionUser.includes(nombreMapaLimpio);
-
-                    // 2. Coincidencia por Alias
-                    if (!esMatch && aliasEstados[nombreMapaLimpio]) {
-                        const aliasLista = aliasEstados[nombreMapaLimpio];
+                    // --- REVISIÓN DE ALIAS (Aquí es donde entra el Edomex real) ---
+                    if (!esMatch && aliasEstados[nombreMapLimpio]) {
+                        const aliasLista = aliasEstados[nombreMapLimpio];
                         for (let alias of aliasLista) {
                             if (ubicacionUser.includes(alias)) {
                                 esMatch = true;
@@ -292,7 +297,7 @@
 
                     if (esMatch) {
                         contador++;
-                        console.log(`✅ MATCH CONFIRMADO: ${nombreMapaOriginal} <== ${textoRaw}`);
+                        // console.log(`✅ ${nombreMapOriginal} <== ${textoRaw}`);
                     }
                 });
 
@@ -300,7 +305,7 @@
             });
             console.groupEnd();
 
-            // D. Pintar el Mapa
+            // D. Dibujar
             const capaEstados = L.geoJson(datosMexico, {
                 style: estiloEstado,
                 onEachFeature: function(feature, layer) {
@@ -325,7 +330,7 @@
             }).addTo(map);
 
         } catch (error) {
-            console.error("Error crítico en mapa:", error);
+            console.error("Error mapa:", error);
         }
     });
 </script>
