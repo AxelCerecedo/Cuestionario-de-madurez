@@ -674,32 +674,32 @@ function crearHTMLPregunta(p) {
             };
 
             // --- FUNCIÓN PRINCIPAL: ACTUALIZAR TABLA CON LOGS ---
+            // --- FUNCIÓN PRINCIPAL: ACTUALIZAR TABLA (CORREGIDA) ---
             const actualizarTabla = () => {
-                console.group("🔍 DEPURACIÓN MATRIZ 39"); // Agrupa los logs
+                console.group("🔍 DEPURACIÓN MATRIZ 39"); 
                 
-                // 1. INICIALIZAR DICCIONARIO
                 const valoresPrevios = {};
 
-                // A. RECUPERAR DEL CACHE (BD)
+                // 1. RECUPERAR DEL CACHE (BD)
                 if (window.RESPUESTAS_PREVIAS_CACHE && Array.isArray(window.RESPUESTAS_PREVIAS_CACHE)) {
-                    console.log(`📥 Cache global tiene ${window.RESPUESTAS_PREVIAS_CACHE.length} respuestas.`);
                     
                     window.RESPUESTAS_PREVIAS_CACHE.forEach(r => {
-                        // Verificamos si es de ESTA pregunta (39)
-                        if (r.id_pregunta == p.id) {
+                        // 🔥 CORRECCIÓN AQUÍ: 
+                        // El servidor a veces manda 'id_pregunta' y a veces 'id_pregunta_matriz'.
+                        // Usamos || para que funcione con cualquiera de los dos.
+                        const idPreguntaRegistro = r.id_pregunta || r.id_pregunta_matriz;
+
+                        if (idPreguntaRegistro == p.id) {
                             const key = `${r.id_fila}_${r.id_columna}`;
                             const valor = String(r.valor);
                             valoresPrevios[key] = valor;
                             
-                            // LOG: Ver qué estamos recuperando
-                            console.log(`✅ Recuperado BD -> Fila(Actividad): ${r.id_fila}, Col(Herr): ${r.id_columna}, Valor: ${valor}, Key: ${key}`);
+                            console.log(`✅ Recuperado: Fila ${r.id_fila}, Col ${r.id_columna} = ${valor}`);
                         }
                     });
-                } else {
-                    console.warn("⚠️ RESPUESTAS_PREVIAS_CACHE está vacío o no es un array.");
                 }
 
-                // B. PRESERVAR LO QUE EL USUARIO YA ESCRIBIÓ
+                // 2. PRESERVAR LO QUE EL USUARIO YA ESCRIBIÓ EN PANTALLA
                 tbody.querySelectorAll('.input-matriz-celda').forEach(select => {
                     if (select.value) {
                         const key = `${select.dataset.idFila}_${select.dataset.idColumna}`;
@@ -707,12 +707,10 @@ function crearHTMLPregunta(p) {
                     }
                 });
 
-                // 2. DETECTAR HERRAMIENTAS (COLUMNAS)
+                // 3. DETECTAR HERRAMIENTAS (COLUMNAS)
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
                     .filter(chk => chk.checked && chk.value != '99' && chk.value != '3899') 
                     .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
-
-                console.log("🛠️ Herramientas seleccionadas (Columnas):", tools = herramientasSeleccionadas.map(h => h.id));
 
                 if (herramientasSeleccionadas.length === 0) {
                     thead.innerHTML = '';
@@ -724,7 +722,7 @@ function crearHTMLPregunta(p) {
                 
                 if (controlesIncremental) controlesIncremental.parentElement.style.display = 'block';
 
-                // 3. RECONSTRUIR HEADER
+                // 4. RECONSTRUIR HEADER
                 thead.innerHTML = '';
                 const trHead = document.createElement('tr');
                 const thEsq = document.createElement('th');
@@ -740,16 +738,15 @@ function crearHTMLPregunta(p) {
                 });
                 thead.appendChild(trHead);
 
-                // 4. RECONSTRUIR BODY
+                // 5. RECONSTRUIR BODY
                 if (p.modo_incremental) {
                     tbody.innerHTML = '';
                     
                     // REHIDRATACIÓN
-                    console.log("🔄 Rehidratando filas...");
                     Object.keys(valoresPrevios).forEach(key => {
                         const idFila = key.split('_')[0]; 
                         if (!filasAgregadas.has(idFila)) {
-                            console.log(`➕ Agregando fila recuperada ID: ${idFila} porque existe en BD.`);
+                            console.log(`➕ Rehidratando Actividad ID: ${idFila}`);
                             filasAgregadas.add(idFila);
                         }
                     });
@@ -761,28 +758,12 @@ function crearHTMLPregunta(p) {
                             const tr = crearFila(idFila, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
                             tbody.appendChild(tr);
                             
-                            // VERIFICACIÓN VISUAL
-                            // Buscamos si los selects dentro del TR realmente tomaron el valor
-                            tr.querySelectorAll('select').forEach(sel => {
-                                const k = `${sel.dataset.idFila}_${sel.dataset.idColumna}`;
-                                const valEsperado = valoresPrevios[k];
-                                if (valEsperado) {
-                                    if (sel.value === valEsperado) {
-                                        console.log(`🟢 ÉXITO VISUAL: Celda [${k}] tiene valor ${sel.value}`);
-                                    } else {
-                                        console.error(`🔴 FALLO VISUAL: Celda [${k}] debería tener ${valEsperado} pero tiene ${sel.value}. ¿Coinciden los options?`);
-                                    }
-                                }
-                            });
-
                             // Deshabilitar opción del select
                             const select = document.getElementById(`select_actividad_${p.id}`);
                             if(select) {
                                 const op = Array.from(select.options).find(o => o.value == idFila);
                                 if(op) op.disabled = true;
                             }
-                        } else {
-                            console.warn(`⚠️ Fila con ID ${idFila} existe en datos pero no en JSON de columnas.`);
                         }
                     });
 
@@ -817,7 +798,7 @@ function crearHTMLPregunta(p) {
                         tbody.appendChild(tr);
                     });
                 }
-                console.groupEnd(); // Fin de los logs
+                console.groupEnd(); 
             };
 
             // Listeners
