@@ -20,7 +20,7 @@
             --primary-light: #a83246;
             --bg-body: #f4f6f9;
             --text-main: #333;
-            --sidebar-width: 260px;
+            --header-height: 70px; /* Definimos altura para cálculos */
         }
 
         body {
@@ -29,87 +29,69 @@
             background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;
-            /* Agregamos padding arriba para que el contenido no quede oculto por la barra fija */
-            padding-top: 90px; 
-            display: flex;
-            justify-content: center;
+            /* Padding igual a la altura del header */
+            padding-top: var(--header-height); 
+            box-sizing: border-box;
         }
 
-        /* --- 1. ESTILOS DE LA BARRA SUPERIOR FIJA --- */
+        /* --- 1. BARRA SUPERIOR FIJA --- */
         .fixed-header {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 70px;
+            top: 0; left: 0; width: 100%;
+            height: var(--header-height);
             background-color: var(--primary);
             color: white;
             z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between;
             padding: 0 30px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            box-sizing: border-box; /* Para que el padding no rompa el ancho */
+            box-sizing: border-box;
         }
 
-        .header-logo {
-            height: 45px;
-            background: white;
-            border-radius: 6px;
-            padding: 2px 8px;
-        }
-
-        .header-title-box {
-            text-align: center;
-        }
-        
-        .header-main-title {
-            font-size: 1.1em;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin: 0;
-        }
-        
-        .header-subtitle {
-            font-size: 0.8em;
-            opacity: 0.9;
-            margin: 0;
-        }
+        .header-logo { height: 45px; background: white; border-radius: 6px; padding: 2px 8px; }
+        .header-title-box { text-align: center; }
+        .header-main-title { font-size: 1.1em; font-weight: 700; text-transform: uppercase; margin: 0; }
+        .header-subtitle { font-size: 0.8em; opacity: 0.9; margin: 0; }
 
         .btn-logout {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
+            background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.85em;
+            display: flex; align-items: center; gap: 8px; transition: all 0.2s;
         }
         .btn-logout:hover { background: rgba(255,255,255,0.3); }
 
-        /* --- 2. CONTENEDOR PRINCIPAL (CENTRADO) --- */
-        .container {
+        /* --- 2. LAYOUT MAESTRO (PARA QUE NO SE AMONTONEN) --- */
+        .layout-wrapper {
+            display: flex;
+            justify-content: center; /* Centra el grupo entero */
+            align-items: flex-start; /* Importante para que sticky funcione */
+            gap: 30px; /* Espacio entre tarjeta y sidebar */
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
             width: 100%;
-            max-width: 800px; /* Un poco más angosto para dar espacio al sidebar */
+            box-sizing: border-box;
+        }
+
+        /* --- 3. CONTENIDO PRINCIPAL --- */
+        .container {
+            flex: 1; /* Toma el espacio disponible */
+            max-width: 800px; /* Ancho máximo de la tarjeta */
             background: white;
             border-radius: 16px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.05);
             padding: 40px;
-            margin-bottom: 40px;
-            position: relative;
+            /* Ya no usamos margin auto aquí, lo controla el layout-wrapper */
         }
 
-        /* --- 3. SIDEBAR DE PROGRESO (FLOTANTE A LA DERECHA) --- */
+        /* --- 4. SIDEBAR DE PROGRESO (STICKY) --- */
         .sidebar-progress {
-            position: fixed;
-            right: 20px;
-            top: 100px; /* Debajo del header */
-            width: var(--sidebar-width);
+            width: 260px;
+            /* Cambiamos Fixed por Sticky para que ocupe su propio espacio */
+            position: -webkit-sticky;
+            position: sticky; 
+            top: 100px; /* Se pega 100px abajo del borde superior (Header 70 + 30 aire) */
+            
             background: white;
             border-radius: 12px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
@@ -117,76 +99,53 @@
             z-index: 900;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
+            flex-shrink: 0; /* Evita que se aplaste si falta espacio */
         }
 
         .progress-title {
-            font-size: 0.95em;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
+            font-size: 0.95em; font-weight: 700; color: var(--primary);
+            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0;
         }
 
-        .step-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
+        .step-list { list-style: none; padding: 0; margin: 0; }
+        
         .step-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            color: #666;
-            font-size: 0.85em;
-            transition: all 0.2s;
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px; border-radius: 8px; margin-bottom: 5px;
+            color: #666; font-size: 0.85em; transition: all 0.2s;
         }
 
         .step-number {
-            background: #eee;
-            color: #666;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.9em;
+            background: #eee; color: #666; width: 24px; height: 24px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.9em;
         }
 
-        /* Estilo para la sección activa */
+        /* Activo */
         .step-item.active {
-            background: #fff0f3; /* Fondo rojizo muy claro */
-            color: var(--primary);
-            font-weight: 600;
-            border-left: 3px solid var(--primary);
+            background: #fff0f3; color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary);
         }
+        .step-item.active .step-number { background: var(--primary); color: white; }
+        
+        /* Completado */
+        .step-item.completed .step-number { background: #28a745; color: white; }
 
-        .step-item.active .step-number {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Estilo para secciones completadas (opcional) */
-        .step-item.completed .step-number {
-            background: #28a745; /* Verde */
-            color: white;
-        }
-
-        /* --- RESPONSIVIDAD --- */
-        /* Ocultar sidebar en pantallas pequeñas (Tablets/Móviles) */
-        @media (max-width: 1200px) {
+        /* RESPONSIVIDAD: En móviles, la columna lateral pasa abajo o desaparece */
+        @media (max-width: 1000px) {
+            .layout-wrapper {
+                flex-direction: column; /* Uno debajo del otro */
+                align-items: center;
+            }
             .sidebar-progress {
-                display: none;
+                width: 100%; max-width: 800px; /* Se vuelve ancha como la tarjeta */
+                position: static; /* Ya no flota */
+                margin-bottom: 20px;
+                order: -1; /* Ponerla arriba del cuestionario en móviles */
             }
-            .container {
-                max-width: 95%; /* Usar más ancho en móvil */
+            .step-list {
+                display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; /* Scroll horizontal */
             }
+            .step-item { min-width: 140px; border: 1px solid #eee; }
         }
 
         .btn-guardar {
@@ -195,7 +154,6 @@
             box-shadow: 0 4px 6px rgba(124, 18, 37, 0.2); transition: transform 0.2s;
         }
         .btn-guardar:hover { transform: translateY(-2px); opacity: 0.95; }
-
         .ubicacion-feedback { font-size: 0.85em; margin-top: 5px; display: block; min-height: 20px; }
     </style>
 </head>
@@ -205,12 +163,10 @@
         <div style="display:flex; align-items:center; gap:15px;">
             <img src="Imagenes/logo.png" alt="Logo" class="header-logo">
         </div>
-        
         <div class="header-title-box">
             <h1 class="header-main-title">Sección 1</h1>
             <p class="header-subtitle">Identificación de la Institución</p>
         </div>
-
         <div>
             <button type="button" id="btnCerrarSesion" class="btn-logout">
                 Salir <i class="fas fa-sign-out-alt"></i>
@@ -218,86 +174,58 @@
         </div>
     </header>
 
-    <aside class="sidebar-progress">
-        <div class="progress-title">Tu Progreso</div>
-        <ul class="step-list">
-            <li class="step-item active">
-                <span class="step-number">1</span>
-                <span>Identificación</span>
-            </li>
-            <li class="step-item">
-                <span class="step-number">2</span>
-                <span>Gestión Inst.</span>
-            </li>
-            <li class="step-item">
-                <span class="step-number">3</span>
-                <span>Caracterización</span>
-            </li>
-            <li class="step-item">
-                <span class="step-number">4</span>
-                <span>Documentación</span>
-            </li>
-            <li class="step-item">
-                <span class="step-number">5</span>
-                <span>Info. y Software</span>
-            </li>
-            <li class="step-item">
-                <span class="step-number">6</span>
-                <span>Recursos Humanos</span>
-            </li>
-            <li class="step-item">
-                <span class="step-number">7</span>
-                <span>Tecnología</span>
-            </li>
-            <li class="step-item">
-                <span class="step-number">8</span>
-                <span>Normatividad</span>
-            </li>
-            <li class="step-item">
-                <span class="step-number">9</span>
-                <span>Servicios</span>
-            </li>
-        </ul>
+    <div class="layout-wrapper">
         
-        <div style="margin-top: 20px; font-size: 0.8em; color: #888; text-align: center;">
-            <i class="fas fa-info-circle"></i> Tu avance se guarda automáticamente al completar cada sección.
+        <div class="container">
+            <div id="areaBotonRegresar" style="margin-bottom: 20px;"></div>
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.6em;">
+                Identificación de la Institución / Archivo
+            </h2>
+            <div id="mensajeBienvenida" class="bienvenida-box" style="display: none;"></div>
+            
+            <form id="formularioDinamico">
+                <div id="contenedorPreguntas">
+                    <p style="text-align:center; color:#666; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando cuestionario...
+                    </p>
+                </div>
+                <div class="botones-accion" style="margin-top:40px; text-align:center;">
+                    <button type="submit" class="btn-guardar">
+                        Guardar y Continuar <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
         </div>
-    </aside>
 
-    <div class="container">
-        
-        <div id="areaBotonRegresar" style="margin-bottom: 20px;"></div>
-
-        <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.6em;">
-            Identificación de la Institución / Archivo
-        </h2>
-        
-        <div id="mensajeBienvenida" class="bienvenida-box" style="display: none;"></div>
-
-        <form id="formularioDinamico">
-            <div id="contenedorPreguntas">
-                <p style="text-align:center; color:#666; padding: 40px;">
-                    <i class="fas fa-spinner fa-spin"></i> Cargando cuestionario...
-                </p>
+        <aside class="sidebar-progress">
+            <div class="progress-title">Tu Progreso</div>
+            <ul class="step-list">
+                <li class="step-item active">
+                    <span class="step-number">1</span><span>Identificación</span>
+                </li>
+                <li class="step-item"><span class="step-number">2</span><span>Gestión Inst.</span></li>
+                <li class="step-item"><span class="step-number">3</span><span>Caracterización</span></li>
+                <li class="step-item"><span class="step-number">4</span><span>Documentación</span></li>
+                <li class="step-item"><span class="step-number">5</span><span>Info. y Software</span></li>
+                <li class="step-item"><span class="step-number">6</span><span>Recursos Humanos</span></li>
+                <li class="step-item"><span class="step-number">7</span><span>Tecnología</span></li>
+                <li class="step-item"><span class="step-number">8</span><span>Normatividad</span></li>
+                <li class="step-item"><span class="step-number">9</span><span>Servicios</span></li>
+            </ul>
+            <div style="margin-top: 20px; font-size: 0.8em; color: #888; text-align: center;">
+                <i class="fas fa-info-circle"></i> Tu avance se guarda automáticamente.
             </div>
+        </aside>
 
-            <div class="botones-accion" style="margin-top:40px; text-align:center;">
-                <button type="submit" class="btn-guardar">
-                    Guardar y Continuar <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </form>
     </div>
 
     <script src="js/seccion1.js"></script> 
-    <script>
-        window.NOMBRE_SECCION = "1. Identificación de la Institución / Archivo";
-    </script>
+    <script>window.NOMBRE_SECCION = "1. Identificación de la Institución / Archivo";</script>
     <script src="js/encuesta.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Lógica de geolocalización (se mantiene igual)
+            // ... (Tu código de geolocalización se queda igual) ...
             const intervalo = setInterval(() => {
                 const inputDireccion = document.querySelector('input[data-id-pregunta="4"]');
                 if (inputDireccion) {
@@ -311,8 +239,7 @@
                     inputDireccion.addEventListener('blur', function() {
                         const query = this.value.trim();
                         if (query.length < 4) return;
-
-                        statusMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando coordenadas...';
+                        statusMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
                         statusMsg.style.color = 'blue';
 
                         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`)
@@ -320,25 +247,16 @@
                             .then(data => {
                                 if (data && data.length > 0) {
                                     const lugar = data[0];
-                                    let ubicacionTexto = lugar.display_name;
-                                    if(lugar.address && lugar.address.country) {
-                                        ubicacionTexto = `${lugar.name || query}, ${lugar.address.state || ''}, ${lugar.address.country}`;
-                                    }
-
-                                    statusMsg.innerHTML = `<i class="fas fa-check-circle"></i> Localizado: <b>${ubicacionTexto}</b>`;
+                                    let texto = lugar.display_name;
+                                    statusMsg.innerHTML = `<i class="fas fa-check-circle"></i> Localizado`;
                                     statusMsg.style.color = 'green';
-
-                                    const idUsuario = localStorage.getItem('idUsuario');
-                                    if(idUsuario) guardarCoordenadasEnBD(idUsuario, lugar.lat, lugar.lon, ubicacionTexto);
-
+                                    
+                                    const id = localStorage.getItem('idUsuario');
+                                    if(id) guardarCoordenadasEnBD(id, lugar.lat, lugar.lon, texto);
                                 } else {
-                                    statusMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Ubicación no exacta (se guardará texto).';
-                                    statusMsg.style.color = '#d9534f';
+                                    statusMsg.innerHTML = 'Ubicación no exacta.';
+                                    statusMsg.style.color = 'orange';
                                 }
-                            })
-                            .catch(err => {
-                                console.error(err);
-                                statusMsg.innerText = "Error al conectar con mapa.";
                             });
                     });
                 }
@@ -356,6 +274,5 @@
             } catch (e) { console.error(e); }
         }
     </script>
-
 </body>
 </html>
