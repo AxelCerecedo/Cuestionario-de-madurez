@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control</title>
+    <title>Panel de Control - Auditoría</title>
     
     <link rel="stylesheet" href="css/admin.css"> 
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
@@ -12,39 +12,43 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     
     <style>
-        /* Estilo para integrar el mapa como una "Tarjeta" del dashboard */
+        /* Estilos específicos del Dashboard */
         .mapa-dashboard-card {
             background: white;
             padding: 20px;
-            border-radius: 12px; /* Mismo radio que tus otras tarjetas */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra suave */
-            margin-top: 25px; /* Separación de las gráficas de arriba */
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-top: 25px;
             width: 100%;
             box-sizing: border-box;
+            border-left: 4px solid #7c1225; /* Detalle estético extra */
         }
 
         .mapa-titulo {
             font-size: 1.1em;
-            font-weight: 600;
+            font-weight: 700;
             color: #333;
             margin-bottom: 15px;
             font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
+        /* Definimos la altura aquí para no depender de JS */
         #mapaUsuarios { 
-            height: 400px; /* Altura controlada */
+            height: 500px; 
             width: 100%; 
             border-radius: 8px; 
             z-index: 1; 
+            background-color: #f4f4f4; /* Fondo mientras carga */
         }
     </style>
-
 </head>
 <body>
 
@@ -64,32 +68,30 @@
 
         <div class="header-center">
             <h1 class="header-title">Panel de Auditoría y Resultados</h1> 
-            <p class="header-subtitle">Cuestionario de evaluación de madurez en gestión de acervos fotográficos</p>
+            <p class="header-subtitle">Evaluación de madurez en gestión de acervos</p>
         </div>
 
         <div class="header-right">
-            <a href="login.html" class="btn-logout">
+            <button id="btnCerrarSesionAdmin" class="btn-logout" onclick="localStorage.clear(); window.location.href='login.html'">
                 <span>Cerrar Sesión</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </a>
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
     </header>
-
 
     <div class="app-shell">
         
         <aside class="sidebar">
             <div class="sidebar-actions">
-                <h3 class="sidebar-section-title">Instituciones Evaluadas</h3>
+                <h3 class="sidebar-section-title">Instituciones</h3>
 
                 <button class="btn-ver-global" onclick="mostrarVistaGlobal()">
-                   🌎 Página Global 
+                   🌎 Panorama Global 
                 </button>
 
                 <div style="position: relative; margin-top: 15px;">
                     <input type="text" id="inputBusqueda" placeholder="Buscar institución..." 
                            style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Inter'; font-size: 0.9em; box-sizing: border-box;">
-                    
                     <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #999;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -97,8 +99,7 @@
                 </div>
             </div>
 
-            <ul class="user-list" id="listaUsuarios">
-                </ul>
+            <ul class="user-list" id="listaUsuarios"></ul>
         </aside>
 
         <main class="main-content">
@@ -133,17 +134,16 @@
                         <div style="height: 300px;"><canvas id="chartPieGlobal"></canvas></div>
                     </div>
                     <div class="chart-card">
-                        <div class="chart-title-sm">Promedio por Sección (Todas las instituciones)</div>
+                        <div class="chart-title-sm">Promedio por Sección (Global)</div>
                         <div style="height: 300px;"><canvas id="chartBarGlobal"></canvas></div>
                     </div>
                 </div>
 
                 <div class="mapa-dashboard-card">
-                    <h2 class="mapa-titulo">🌍 Ubicación de Usuarios Registrados</h2>
-                    <div id="mapaUsuarios"></div>
-                </div>
-
+                    <h2 class="mapa-titulo">🌍 Ubicación Geográfica</h2>
+                    <div id="mapaUsuarios"></div> </div>
             </div>
+
             <div id="vistaInstitucion" class="view-section">
                 <div class="dashboard-header">
                     <div>
@@ -162,9 +162,7 @@
                 </div>
 
                 <h3 style="color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">Auditar por Sección</h3>
-                
-                <div id="gridSecciones" class="sections-nav-grid">
-                </div>
+                <div id="gridSecciones" class="sections-nav-grid"></div>
             </div>
 
             <div id="vistaDetalleSeccion" class="view-section">
@@ -178,84 +176,82 @@
                     </div>
                 </div>
 
-                <div id="contenedorGraficasDetalle">
-                </div>
+                <div id="contenedorGraficasDetalle"></div>
             </div>
 
         </main>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 
     <script src="js/admin.js"></script> 
+
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-        
-        // 1. Inicializar Mapa
-        // 1. Inicializar Mapa
-        const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
-
-        // 🔥 CAMBIO AQUÍ: Usamos CartoDB Positron (Gris y Minimalista)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(map);
-
-        // Corregir renderizado
-        setTimeout(() => { map.invalidateSize(); }, 500);
-
-        // 🔥 NUEVO: Creamos el Grupo de Clusters
-        // Esto se encargará de agrupar y colorear automáticamente
-        const markers = L.markerClusterGroup();
-
-        try {
-            const API_URL = 'https://api-cuestionario.onrender.com'; 
             
-            const response = await fetch(`${API_URL}/api/ubicaciones`);
-            const usuarios = await response.json();
+            // Inicializar Mapa con estilo CartoDB (Gris limpio)
+            const map = L.map('mapaUsuarios').setView([23.6345, -102.5528], 5);
 
-            console.log(`📍 Se encontraron ${usuarios.length} ubicaciones.`);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
 
-            usuarios.forEach(u => {
-                const lat = parseFloat(u.latitud);
-                const lon = parseFloat(u.longitud);
+            // Crear grupo de clusters
+            const markers = L.markerClusterGroup();
 
-                if (!isNaN(lat) && !isNaN(lon)) {
-                    
-                    // Creamos el marcador normal
+            try {
+                // Usamos una variable local para no chocar con la de admin.js
+                const API_MAPA = 'https://api-cuestionario.onrender.com'; 
+                
+                const response = await fetch(`${API_MAPA}/api/ubicaciones`);
+                const usuarios = await response.json();
+
+                // Filtrar solo los que tienen coordenadas válidas
+                const validos = usuarios.filter(u => u.latitud && u.longitud && !isNaN(u.latitud));
+                console.log(`📍 Se encontraron ${validos.length} ubicaciones válidas para el mapa.`);
+
+                validos.forEach(u => {
+                    const lat = parseFloat(u.latitud);
+                    const lon = parseFloat(u.longitud);
                     const marker = L.marker([lat, lon]);
                     
-                    const nombreFinal = u.nombre || u.nombre_completo || 'Usuario';
-                    const ubicacionFinal = u.ubicacion || u.ubicacion_texto || 'Ubicación no especificada';
-                    const puntajeFinal = (u.puntaje !== undefined) ? u.puntaje : '0';
+                    const nombre = u.nombre || u.nombre_completo || 'Usuario';
+                    const ubicacion = u.ubicacion || u.ubicacion_texto || 'Ubicación registrada';
+                    const puntaje = (u.puntaje !== undefined) ? u.puntaje : '0';
 
                     marker.bindPopup(`
-                        <div style="text-align:center; font-family:sans-serif;">
-                            <strong style="color:#7c1225; font-size:1.1em;">${nombreFinal}</strong><br>
-                            <span style="font-size:0.9em; color:#666;">${ubicacionFinal}</span>
+                        <div style="text-align:center; min-width: 150px;">
+                            <strong style="color:#7c1225; font-size:1.1em;">${nombre}</strong><br>
+                            <span style="color:#666; font-size:0.9em;">${ubicacion}</span>
                             <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
-                            📊 Puntaje Actual: <b>${puntajeFinal}</b>
+                            📊 Puntaje: <b>${puntaje}</b>
                         </div>
                     `);
-
-                    // 🔥 CAMBIO CRÍTICO:
-                    // En lugar de agregarlo al mapa (map.addLayer), 
-                    // lo agregamos al grupo de clusters (markers.addLayer)
+                    
                     markers.addLayer(marker);
+                });
+
+                map.addLayer(markers);
+
+                // AUTO-ZOOM: Ajustar el mapa para ver todos los puntos si hay datos
+                if (validos.length > 0) {
+                    const bounds = markers.getBounds();
+                    if (bounds.isValid()) {
+                        map.fitBounds(bounds, { padding: [50, 50] });
+                    }
                 }
-            });
 
-            // 🔥 FINALMENTE: Agregamos el grupo de clusters al mapa
-            map.addLayer(markers);
-
-        } catch (error) {
-            console.error("Error cargando el mapa:", error);
-            document.getElementById('mapaUsuarios').innerHTML = '<p style="text-align:center; padding:20px;">No se pudo cargar el mapa de usuarios.</p>';
-        }
-    });
-</script>
+            } catch (error) {
+                console.error("Error cargando mapa:", error);
+            }
+            
+            // FIX: Forzar redibujado después de un segundo para asegurar que se vea bien
+            // aunque el contenedor haya cargado oculto.
+            setTimeout(() => { map.invalidateSize(); }, 1000);
+        });
+    </script>
 </body>
 </html>
