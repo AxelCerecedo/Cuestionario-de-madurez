@@ -189,7 +189,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
-        // 1. Configuración Básica del Mapa
+        // 1. Configuración Básica
         const mapContainer = document.getElementById('mapaUsuarios');
         if(!mapContainer.style.height) mapContainer.style.height = "500px";
 
@@ -205,19 +205,15 @@
         // 2. HERRAMIENTAS DE COINCIDENCIA
         // =========================================================
         
-        // Limpia texto: "México, D.F." -> "mexico df"
         function limpiar(texto) {
             if (!texto) return "";
             return texto.toLowerCase()
-                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-                        .replace(/,/g, "") // Quitar comas
-                        .replace(/\./g, "") // Quitar puntos
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+                        .replace(/,/g, "") 
+                        .replace(/\./g, "") 
                         .trim();
         }
 
-        // DICCIONARIO DE ALIAS: 
-        // Clave = Nombre en el GeoJSON (Mapa)
-        // Valor = Posibles nombres en tu Base de Datos
         const aliasEstados = {
             "distrito federal": ["ciudad de mexico", "cdmx", "df", "capital", "delegacion"],
             "mexico": ["estado de mexico", "edo mex", "edomex"],
@@ -255,8 +251,12 @@
             const resGeo = await fetch('https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json');
             const datosMexico = await resGeo.json();
 
-            console.group("🗺️ DIAGNÓSTICO DE COINCIDENCIAS");
-            console.log(`Procesando ${usuarios.length} usuarios...`);
+            console.group("🗺️ DEPURACIÓN PROFUNDA");
+            
+            // --- DIAGNÓSTICO DEL PRIMER USUARIO ---
+            if(usuarios.length > 0) {
+                console.log("🔎 Estructura del primer usuario recibido:", usuarios[0]);
+            }
 
             // C. Loop por cada Estado del Mapa
             datosMexico.features.forEach(estado => {
@@ -265,16 +265,22 @@
                 
                 let contador = 0;
 
-                // Revisamos cada usuario contra este estado
                 usuarios.forEach(u => {
-                    const ubicacionUser = limpiar(u.ubicacion_texto);
+                    // 🔥 FIX: Intentamos leer la ubicación de múltiples campos posibles
+                    // para asegurar que no falle si la API cambió el nombre.
+                    const textoRaw = u.ubicacion_texto || u.ubicacion || u.direccion || u.lugar || "";
+                    const ubicacionUser = limpiar(textoRaw);
 
-                    // 1. Coincidencia Directa (Ej: "puebla" en "puebla de zaragoza")
+                    // Si es la CDMX, imprimimos qué estamos comparando para ver si falla
+                    if (nombreMapaLimpio === "distrito federal" && ubicacionUser.length > 0) {
+                        console.log(`Comparando: Mapa[${nombreMapaLimpio}] vs Usuario[${ubicacionUser}]`);
+                    }
+
+                    // 1. Coincidencia Directa
                     let esMatch = ubicacionUser.includes(nombreMapaLimpio);
 
-                    // 2. Coincidencia por Alias (Ej: "ciudad de mexico" -> "distrito federal")
+                    // 2. Coincidencia por Alias
                     if (!esMatch && aliasEstados[nombreMapaLimpio]) {
-                        // Revisamos si la ubicación del usuario contiene alguno de los alias
                         const aliasLista = aliasEstados[nombreMapaLimpio];
                         for (let alias of aliasLista) {
                             if (ubicacionUser.includes(alias)) {
@@ -286,12 +292,10 @@
 
                     if (esMatch) {
                         contador++;
-                        // Solo logueamos si encontramos algo para no llenar la consola
-                        console.log(`✅ MATCH: Estado Mapa [${nombreMapaOriginal}] <== Usuario [${u.ubicacion_texto}]`);
+                        console.log(`✅ MATCH CONFIRMADO: ${nombreMapaOriginal} <== ${textoRaw}`);
                     }
                 });
 
-                // Guardamos el dato en el estado
                 estado.properties.cantidad_usuarios = contador;
             });
             console.groupEnd();
