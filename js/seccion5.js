@@ -9,7 +9,7 @@ const CONFIG_SECCION = {
         {
             id: 38,
             orden: 38,
-            texto: "De la siguiente lista de herramientas, seleccione las que usa para gestionar la información de su acervo para la gestión de información:",
+            texto: "De la siguiente lista, seleccione las herramientas utilizadas para resolver las necesidades de gestión de información de su acervo:",
             tipo: "catalogo_multiple",
             obligatorio: true,
             graficar: true,
