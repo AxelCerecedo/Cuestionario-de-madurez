@@ -236,14 +236,7 @@
 
                 map.addLayer(markers);
 
-                // AUTO-ZOOM: Ajustar el mapa para ver todos los puntos si hay datos
-                if (validos.length > 0) {
-                    const bounds = markers.getBounds();
-                    if (bounds.isValid()) {
-                        map.fitBounds(bounds, { padding: [50, 50] });
-                    }
-                }
-
+                
             } catch (error) {
                 console.error("Error cargando mapa:", error);
             }
