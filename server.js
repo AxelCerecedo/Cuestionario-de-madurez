@@ -24,23 +24,23 @@ app.use(session({
 
 
 // ==========================================
-// CONFIGURACIÓN DE NODEMAILER (MODO COMPATIBILIDAD)
+// CONFIGURACIÓN DE NODEMAILER (FIX IPv4)
 // ==========================================
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,               // Usamos 587 (TLS estándar) en lugar de 465
-    secure: false,           // false para puerto 587
+    port: 587,
+    secure: false, 
     auth: {
         user: process.env.EMAIL_USER, 
         pass: process.env.EMAIL_PASS
     },
+    // --- ESTAS 3 LÍNEAS SON LA CLAVE ---
     tls: {
-        // IMPORTANTE: Esto ayuda si el certificado SSL de Render da problemas
-        rejectUnauthorized: false,
-        ciphers: 'SSLv3'
+        rejectUnauthorized: false
     },
-    // Forzamos tiempos de espera
-    connectionTimeout: 10000, 
+    family: 4, // <--- ESTO OBLIGA A USAR IPv4 (Evita el bloqueo de IPv6 en Render)
+    // -----------------------------------
+    connectionTimeout: 10000,
     greetingTimeout: 10000
 });
 
