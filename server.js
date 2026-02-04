@@ -1111,36 +1111,55 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =========================================================
-// 📧 ENDPOINT: ENVIAR CORREO CON BREVO (API PUERTO 443)
+// 📧 ENDPOINT: ENVIAR CORREO (DISEÑO TARJETA)
 // =========================================================
-
-// No necesitas instalar nada extra, Node.js ya trae 'fetch'
-
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
     
-    console.log("----------------------------------------------------");
-    console.log(`📩 [1/3] Solicitud recibida para ID: ${idUsuario}`);
+    // Ajusta este valor al máximo real de tu cuestionario (ej. 187)
+    const MAX_PUNTOS = 187; 
+
+    console.log(`📩 Solicitud de correo para ID: ${idUsuario}`);
 
     try {
         // 1. Obtener datos del usuario
         const [users] = await db.query('SELECT * FROM usuarios_registrados WHERE id = ?', [idUsuario]);
+        
         if (users.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
         const usuario = users[0];
-        console.log(`👤 Usuario encontrado: ${usuario.nombre_completo} (${usuario.email})`);
 
-        // 2. Calcular puntaje
-        const [respuestas] = await db.query('SELECT SUM(puntos_otorgados) as total FROM respuestas WHERE id_institucion = ?', [idUsuario]);
-        const puntaje = respuestas[0].total || 0;
-
-        let nivel = "Inicial";
-        if (puntaje >= 140) nivel = "Avanzado";
-        else if (puntaje >= 90) nivel = "Intermedio";
-        else if (puntaje >= 45) nivel = "Básico";
-
-        // 3. ENVIAR CORREO USANDO BREVO API
-        console.log(`🚀 [2/3] Enviando petición a Brevo...`);
+        // 2. Calcular puntaje (CORREGIDO CON TU SCHEMA)
+        // Usamos COALESCE para asegurar que si es null, devuelva 0
+        const [respuestas] = await db.query(
+            'SELECT COALESCE(SUM(puntos_otorgados), 0) as total FROM respuestas WHERE id_institucion = ?', 
+            [idUsuario]
+        );
         
+        const puntaje = parseInt(respuestas[0].total);
+        const porcentaje = Math.min(Math.round((puntaje / MAX_PUNTOS) * 100), 100);
+
+        console.log(`🏆 Puntaje recuperado: ${puntaje} (${porcentaje}%)`);
+
+        // 3. Definir Nivel y Colores (Semáforo)
+        let nivel = "Inicial";
+        let colorFondo = "#dc3545"; // Rojo
+        let mensaje = "Se requiere atención inmediata.";
+
+        if (puntaje >= 140) {
+            nivel = "Avanzado";
+            colorFondo = "#198754"; // Verde fuerte
+            mensaje = "Su institución demuestra un nivel de gestión ejemplar.";
+        } else if (puntaje >= 90) {
+            nivel = "Intermedio";
+            colorFondo = "#fd7e14"; // Naranja
+            mensaje = "Buen progreso, con áreas de oportunidad detectadas.";
+        } else if (puntaje >= 45) {
+            nivel = "Básico";
+            colorFondo = "#ffc107"; // Amarillo
+            mensaje = "Se han establecido las bases, pero falta formalización.";
+        }
+
+        // 4. HTML DEL CORREO (DISEÑO TARJETA VISUAL)
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
         
         const emailData = {
@@ -1152,30 +1171,82 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
             ],
-            subject: "📊 Tus Resultados de Diagnóstico",
+            subject: `📊 Resultados: ${puntaje} puntos - Nivel ${nivel}`,
             htmlContent: `
-                <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-                    <div style="background-color: #7c1225; padding: 20px; text-align: center; color: white;">
-                        <h1>Resultados del Diagnóstico</h1>
-                    </div>
-                    <div style="padding: 20px;">
-                        <p>Hola <strong>${usuario.nombre_completo || 'Usuario'}</strong>,</p>
-                        <p>Aquí tienes el respaldo de tus resultados.</p>
-                        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                            <h2 style="color: #7c1225; margin: 0; font-size: 2.5em;">${puntaje} pts</h2>
-                            <p style="margin: 5px 0 0 0; text-transform: uppercase; font-weight: bold; color: #555;">Nivel: ${nivel}</p>
-                        </div>
-                        <p style="font-size: 0.9em; color: #777;">Este correo fue generado automáticamente por el Sistema de Auditoría.</p>
-                    </div>
-                </div>
+            <!DOCTYPE html>
+            <html>
+            <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+                
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td align="center" style="padding: 40px 0;">
+                            
+                            <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.12);">
+                                
+                                <tr>
+                                    <td align="center" style="background-color: ${colorFondo}; padding: 50px 30px; color: #ffffff;">
+                                        
+                                        <div style="background-color: rgba(255,255,255,0.2); display: inline-block; padding: 10px 25px; border-radius: 50px; font-weight: bold; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">
+                                            ${nivel}
+                                        </div>
+                                        
+                                        <div style="font-size: 90px; font-weight: 800; line-height: 1; margin-bottom: 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                                            ${puntaje}
+                                        </div>
+                                        
+                                        <div style="font-size: 18px; opacity: 0.9; margin-bottom: 30px;">
+                                            puntos de <strong>${MAX_PUNTOS}</strong> posibles
+                                        </div>
+
+                                        <table width="80%" height="14" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(255,255,255,0.3); border-radius: 7px; overflow: hidden;">
+                                            <tr>
+                                                <td width="${porcentaje}%" style="background-color: #ffffff;"></td>
+                                                <td width="${100 - porcentaje}%"></td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <p style="margin-top: 25px; font-size: 16px; font-weight: 500;">
+                                            ${mensaje}
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 40px 40px; text-align: center; color: #333333;">
+                                        <h3 style="margin: 0 0 15px 0; color: #333;">Hola, ${usuario.nombre_completo || 'Usuario'}</h3>
+                                        <p style="margin: 0 0 25px 0; line-height: 1.6; color: #666;">
+                                            Gracias por completar el diagnóstico de madurez en gestión de acervos. 
+                                            Hemos registrado tus respuestas correctamente en nuestra base de datos.
+                                        </p>
+                                        
+                                        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 12px; color: #999; margin-top: 30px;">
+                                            Fecha de evaluación: ${new Date().toLocaleDateString('es-MX')}
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td align="center" style="background-color: #333; padding: 15px; color: #888; font-size: 12px;">
+                                        © 2026 Sistema de Auditoría
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+                </table>
+                
+            </body>
+            </html>
             `
         };
 
+        // 5. ENVIAR A BREVO
         const response = await fetch(brevoUrl, {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
-                'api-key': process.env.BREVO_API_KEY, // Render leerá la clave que acabas de guardar
+                'api-key': process.env.BREVO_API_KEY,
                 'content-type': 'application/json'
             },
             body: JSON.stringify(emailData)
@@ -1183,11 +1254,11 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("❌ [ERROR BREVO]:", errorData);
-            return res.status(500).json({ error: 'Error al enviar correo: ' + (errorData.message || 'Desconocido') });
+            console.error("❌ Error Brevo:", errorData);
+            return res.status(500).json({ error: 'Error al enviar correo' });
         }
 
-        console.log("✅ [3/3] ¡CORREO ENVIADO EXITOSAMENTE!");
+        console.log("✅ Correo enviado con éxito.");
         res.json({ message: 'Correo enviado correctamente' });
 
     } catch (error) {
