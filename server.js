@@ -1115,7 +1115,7 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 // =========================================================
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
-    const MAX_PUNTOS = 187; // El máximo posible de tu cuestionario
+    const MAX_PUNTOS = 200; // El máximo posible de tu cuestionario
 
     console.log(`📩 Solicitud de correo para ID: ${idUsuario}`);
 
