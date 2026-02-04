@@ -1111,28 +1111,29 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =========================================================
-// 📧 ENDPOINT: ENVIAR CORREO CON DETALLE Y TARJETA
+// 📧 ENDPOINT: ENVIAR CORREO CON DESGLOSE POR PREGUNTA
 // =========================================================
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
     const MAX_PUNTOS = 187; 
 
     console.log("----------------------------------------------------");
-    console.log(`📩 Solicitud de correo para ID Usuario: ${idUsuario}`);
+    console.log(`📩 Solicitud de correo para ID: ${idUsuario}`);
 
     try {
-        // 1. OBTENER USUARIO
+        // 1. OBTENER DATOS DEL USUARIO
         const [users] = await db.query('SELECT * FROM usuarios_registrados WHERE id = ?', [idUsuario]);
+        
         if (users.length === 0) {
-            console.error("❌ Usuario no encontrado en tabla usuarios_registrados");
+            console.error("❌ Usuario no encontrado.");
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
         const usuario = users[0];
-        console.log(`👤 Usuario: ${usuario.nombre_completo} | Email: ${usuario.email}`);
+        console.log(`👤 Usuario: ${usuario.nombre_completo} (${usuario.email})`);
 
-        // 2. OBTENER TODAS LAS RESPUESTAS (Para calcular suma y mostrar detalle)
-        // NOTA: Traemos respuesta_texto para mostrar qué contestó
-        const [filasRespuestas] = await db.query(
+        // 2. OBTENER TODAS LAS RESPUESTAS (DESGLOSE)
+        // Pedimos el texto y los puntos de cada pregunta
+        const [respuestas] = await db.query(
             `SELECT id_pregunta, respuesta_texto, puntos_otorgados 
              FROM respuestas 
              WHERE id_institucion = ? 
@@ -1140,110 +1141,111 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             [idUsuario]
         );
 
-        console.log(`🔍 Respuestas encontradas en BD: ${filasRespuestas.length}`);
+        console.log(`🔍 Se encontraron ${respuestas.length} respuestas.`);
 
-        // 3. CALCULAR PUNTAJE Y GENERAR HTML DE DETALLES
-        let puntaje = 0;
-        let htmlFilas = '';
+        // 3. CALCULAR PUNTAJE Y GENERAR HTML DE LA TABLA
+        let puntajeTotal = 0;
+        let filasTablaHTML = '';
 
-        filasRespuestas.forEach(r => {
-            const pts = r.puntos_otorgados ? parseInt(r.puntos_otorgados) : 0;
-            const respuesta = r.respuesta_texto || "(Sin texto)";
-            
-            puntaje += pts;
+        if (respuestas.length === 0) {
+            console.warn("⚠️ Este usuario no tiene respuestas registradas. El puntaje será 0.");
+            filasTablaHTML = '<tr><td colspan="3" style="padding:15px; text-align:center;">No hay respuestas registradas.</td></tr>';
+        } else {
+            respuestas.forEach(r => {
+                const puntos = r.puntos_otorgados ? parseInt(r.puntos_otorgados) : 0;
+                puntajeTotal += puntos;
 
-            // Solo agregamos a la tabla si la pregunta dio puntos o si quieres ver todas
-            // Aquí mostramos TODAS para que vean su desglose completo
-            // Color verde si tuvo puntos, gris si no.
-            const colorPuntos = pts > 0 ? '#198754' : '#999';
-            const bgFila = pts > 0 ? '#f0fff4' : '#ffffff';
+                // Estilos para la fila
+                const bg = puntos > 0 ? '#e8f5e9' : '#ffffff'; // Verde clarito si sumó puntos
+                const colorPuntos = puntos > 0 ? '#198754' : '#999';
+                const textoRespuesta = r.respuesta_texto ? r.respuesta_texto.substring(0, 40) + (r.respuesta_texto.length > 40 ? '...' : '') : '<i>(Sin texto)</i>';
 
-            htmlFilas += `
-                <tr style="background-color: ${bgFila}; border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px; font-size: 13px; color: #555;">Pregunta ${r.id_pregunta}</td>
-                    <td style="padding: 10px; font-size: 13px; color: #333; font-style: italic;">"${respuesta.substring(0, 50)}..."</td>
-                    <td style="padding: 10px; font-weight: bold; color: ${colorPuntos}; text-align: right;">+${pts}</td>
-                </tr>
-            `;
-        });
-
-        const porcentaje = Math.min(Math.round((puntaje / MAX_PUNTOS) * 100), 100);
-        console.log(`🏆 Puntaje Calculado JS: ${puntaje}`);
-
-        // 4. DEFINIR NIVEL (SEMÁFORO)
-        let nivel = "Inicial";
-        let colorFondo = "#dc3545"; 
-        let mensaje = "Se requiere atención inmediata.";
-
-        if (puntaje >= 140) {
-            nivel = "Avanzado";
-            colorFondo = "#198754";
-            mensaje = "Gestión ejemplar.";
-        } else if (puntaje >= 90) {
-            nivel = "Intermedio";
-            colorFondo = "#fd7e14";
-            mensaje = "Buen progreso.";
-        } else if (puntaje >= 45) {
-            nivel = "Básico";
-            colorFondo = "#ffc107";
-            mensaje = "Bases establecidas.";
+                filasTablaHTML += `
+                    <tr style="background-color: ${bg}; border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px; font-size: 12px; color: #555;">Pregunta ${r.id_pregunta}</td>
+                        <td style="padding: 8px; font-size: 12px; color: #333;">${textoRespuesta}</td>
+                        <td style="padding: 8px; font-weight: bold; color: ${colorPuntos}; text-align: right;">+${puntos}</td>
+                    </tr>
+                `;
+            });
         }
 
-        // 5. ENVIAR A BREVO
+        const porcentaje = Math.min(Math.round((puntajeTotal / MAX_PUNTOS) * 100), 100);
+        console.log(`🏆 Puntaje Final Calculado: ${puntajeTotal}`);
+
+        // 4. DEFINIR NIVEL Y COLOR
+        let nivel = "Inicial";
+        let colorFondo = "#dc3545"; // Rojo
+        let mensaje = "Se requiere atención inmediata.";
+
+        if (puntajeTotal >= 140) {
+            nivel = "Avanzado"; colorFondo = "#198754"; mensaje = "Nivel de gestión ejemplar.";
+        } else if (puntajeTotal >= 90) {
+            nivel = "Intermedio"; colorFondo = "#fd7e14"; mensaje = "Buen progreso, continuar mejorando.";
+        } else if (puntajeTotal >= 45) {
+            nivel = "Básico"; colorFondo = "#ffc107"; mensaje = "Bases establecidas, falta formalización.";
+        }
+
+        // 5. ENVIAR A BREVO (HTML COMPLETO)
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
         
         const emailData = {
             sender: { 
                 name: "Sistema de Auditoría", 
-                email: "axelcerecedo117@gmail.com" // <--- ¡CÁMBIALO!
+                email: "axelcerecedo117@gmail.com" // <--- ¡OJO! CAMBIA ESTO
             },
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
             ],
-            subject: `📊 Resultados Detallados: ${puntaje} pts`,
+            subject: `📊 Detalle de Resultados: ${puntajeTotal} pts`,
             htmlContent: `
             <!DOCTYPE html>
             <html>
             <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
-                        <td align="center" style="padding: 40px 0;">
+                        <td align="center" style="padding: 20px 0;">
                             
-                            <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.12);">
+                            <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                                 
                                 <tr>
-                                    <td align="center" style="background-color: ${colorFondo}; padding: 40px 30px; color: #ffffff;">
-                                        <div style="background-color: rgba(255,255,255,0.2); display: inline-block; padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 16px; margin-bottom: 15px;">
+                                    <td align="center" style="background-color: ${colorFondo}; padding: 30px; color: #ffffff;">
+                                        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px;">Nivel Obtenido</div>
+                                        <div style="font-size: 24px; font-weight: 800; background: rgba(255,255,255,0.2); display: inline-block; padding: 5px 20px; border-radius: 50px; margin-bottom: 15px;">
                                             ${nivel}
                                         </div>
-                                        <div style="font-size: 80px; font-weight: 800; line-height: 1; margin-bottom: 10px;">${puntaje}</div>
-                                        <div style="font-size: 16px; opacity: 0.9;">puntos de <strong>${MAX_PUNTOS}</strong></div>
+                                        <div style="font-size: 80px; font-weight: 800; line-height: 1;">${puntajeTotal}</div>
+                                        <div style="opacity: 0.9;">puntos de ${MAX_PUNTOS} posibles</div>
                                         
-                                        <table width="80%" height="10" style="margin-top: 20px; background: rgba(255,255,255,0.3); border-radius: 5px;">
-                                            <tr><td width="${porcentaje}%" style="background: #fff; border-radius: 5px;"></td><td></td></tr>
+                                        <table width="80%" height="8" style="margin-top: 20px; background: rgba(255,255,255,0.3); border-radius: 4px;">
+                                            <tr><td width="${porcentaje}%" style="background: #fff; border-radius: 4px;"></td><td></td></tr>
                                         </table>
                                     </td>
                                 </tr>
 
                                 <tr>
-                                    <td style="padding: 30px;">
-                                        <h3 style="color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;">Desglose de Puntos</h3>
-                                        
-                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                            <thead>
-                                                <tr style="background: #f8f9fa; color: #777; font-size: 12px; text-transform: uppercase;">
-                                                    <th align="left" style="padding: 10px;">Pregunta</th>
-                                                    <th align="left" style="padding: 10px;">Respuesta</th>
-                                                    <th align="right" style="padding: 10px;">Pts</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                ${htmlFilas} </tbody>
-                                        </table>
-
-                                        <div style="margin-top: 30px; text-align: center; color: #999; font-size: 12px;">
-                                            Fin del reporte
+                                    <td style="padding: 20px;">
+                                        <h3 style="color: #333; margin-top: 0;">Desglose por Pregunta</h3>
+                                        <div style="background: #fafafa; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                <thead style="background: #eee; color: #666; font-size: 11px; text-transform: uppercase;">
+                                                    <tr>
+                                                        <th align="left" style="padding: 10px;">ID</th>
+                                                        <th align="left" style="padding: 10px;">Respuesta</th>
+                                                        <th align="right" style="padding: 10px;">Pts</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${filasTablaHTML}
+                                                </tbody>
+                                            </table>
                                         </div>
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td align="center" style="background-color: #333; padding: 15px; color: #777; font-size: 11px;">
+                                        © 2026 Auditoría de Acervos | Generado Automáticamente
                                     </td>
                                 </tr>
                             </table>
@@ -1268,15 +1270,15 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         if (!response.ok) {
             const errorData = await response.json();
             console.error("❌ Error Brevo:", errorData);
-            return res.status(500).json({ error: errorData.message || 'Error envío' });
+            return res.status(500).json({ error: errorData.message });
         }
 
-        console.log("✅ Correo enviado con detalle.");
+        console.log("✅ Correo enviado con desglose.");
         res.json({ message: 'Enviado correctamente' });
 
     } catch (error) {
         console.error("❌ Error interno:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Error del servidor' });
     }
 });
 
