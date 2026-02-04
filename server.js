@@ -27,11 +27,11 @@ app.use(session({
 // Configuración de Nodemailer
 // ==========================
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'axelcerecedo117@gmail.com',
-    pass: 'chmd dxpn plnt bxzk' // ⚠️ mejor usar variables de entorno
-  }
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER, // Lee de la variable de entorno
+        pass: process.env.EMAIL_PASS  // Lee de la variable de entorno
+    }
 });
 
 // ==========================
