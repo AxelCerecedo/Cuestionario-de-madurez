@@ -1145,81 +1145,88 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =========================================================
-// 📧 ENDPOINT: ENVIAR CORREO CON RESULTADOS
+// 📧 ENDPOINT: ENVIAR CORREO CON BREVO (API PUERTO 443)
 // =========================================================
+
+// No necesitas instalar nada extra, Node.js ya trae 'fetch'
 
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
     
     console.log("----------------------------------------------------");
-    console.log(`📩 [1/5] Solicitud de correo recibida. ID Usuario: ${idUsuario}`);
+    console.log(`📩 [1/3] Solicitud recibida para ID: ${idUsuario}`);
 
     try {
-        // A. Obtener datos del usuario
-        console.log("🔍 [2/5] Buscando usuario en BD...");
+        // 1. Obtener datos del usuario
         const [users] = await db.query('SELECT * FROM usuarios_registrados WHERE id = ?', [idUsuario]);
-        
-        if (users.length === 0) {
-            console.warn("⚠️ Usuario no encontrado en BD.");
-            return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
+        if (users.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
         const usuario = users[0];
         console.log(`👤 Usuario encontrado: ${usuario.nombre_completo} (${usuario.email})`);
 
-        // B. Calcular puntaje
-        console.log("🧮 [3/5] Calculando puntaje...");
+        // 2. Calcular puntaje
         const [respuestas] = await db.query('SELECT SUM(puntos_otorgados) as total FROM respuestas WHERE id_institucion = ?', [idUsuario]);
         const puntaje = respuestas[0].total || 0;
-        console.log(`🏆 Puntaje calculado: ${puntaje}`);
 
-        // C. Definir Nivel
         let nivel = "Inicial";
         if (puntaje >= 140) nivel = "Avanzado";
         else if (puntaje >= 90) nivel = "Intermedio";
         else if (puntaje >= 45) nivel = "Básico";
 
-        // D. Configurar el correo
-        const mailOptions = {
-            from: '"Sistema de Auditoría" <tu_correo@gmail.com>', // Cambia esto si quieres que salga bonito
-            to: usuario.email, 
-            subject: '📊 Tus Resultados de Diagnóstico',
-            html: `
+        // 3. ENVIAR CORREO USANDO BREVO API
+        console.log(`🚀 [2/3] Enviando petición a Brevo...`);
+        
+        const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
+        
+        const emailData = {
+            sender: { 
+                name: "Sistema de Auditoría", 
+                
+                email: "axelcerecedo117@gmail.com" 
+            },
+            to: [
+                { email: usuario.email, name: usuario.nombre_completo }
+            ],
+            subject: "📊 Tus Resultados de Diagnóstico",
+            htmlContent: `
                 <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
                     <div style="background-color: #7c1225; padding: 20px; text-align: center; color: white;">
                         <h1>Resultados del Diagnóstico</h1>
                     </div>
                     <div style="padding: 20px;">
                         <p>Hola <strong>${usuario.nombre_completo || 'Usuario'}</strong>,</p>
-                        <p>Gracias por completar el diagnóstico de madurez en gestión de acervos.</p>
-                        
+                        <p>Aquí tienes el respaldo de tus resultados.</p>
                         <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
                             <h2 style="color: #7c1225; margin: 0; font-size: 2.5em;">${puntaje} pts</h2>
-                            <p style="margin: 5px 0 0 0; text-transform: uppercase; font-weight: bold; color: #555;">Nivel Obtenido: ${nivel}</p>
+                            <p style="margin: 5px 0 0 0; text-transform: uppercase; font-weight: bold; color: #555;">Nivel: ${nivel}</p>
                         </div>
-                        <p>Atentamente,<br>El equipo de Administración.</p>
+                        <p style="font-size: 0.9em; color: #777;">Este correo fue generado automáticamente por el Sistema de Auditoría.</p>
                     </div>
                 </div>
             `
         };
 
-        // E. Enviar
-        console.log(`🚀 [4/5] Conectando con Gmail para enviar a: ${usuario.email}...`);
-        
-        // Aquí es donde suele tardar, usamos await
-        const info = await transporter.sendMail(mailOptions);
+        const response = await fetch(brevoUrl, {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': process.env.BREVO_API_KEY, // Render leerá la clave que acabas de guardar
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify(emailData)
+        });
 
-        console.log("✅ [5/5] ¡CORREO ENVIADO CON ÉXITO!");
-        console.log("📨 ID del mensaje:", info.messageId);
-        console.log("----------------------------------------------------");
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("❌ [ERROR BREVO]:", errorData);
+            return res.status(500).json({ error: 'Error al enviar correo: ' + (errorData.message || 'Desconocido') });
+        }
 
-        res.json({ message: 'Correo enviado correctamente', info: info.messageId });
+        console.log("✅ [3/3] ¡CORREO ENVIADO EXITOSAMENTE!");
+        res.json({ message: 'Correo enviado correctamente' });
 
     } catch (error) {
-        console.error("❌ [ERROR FATAL] Falló el envío del correo:");
-        console.error(error); // Imprime el error completo para ver el código (EAUTH, ETIMEDOUT, etc.)
-        
-        // Importante: Responder al frontend para que el botón deje de cargar
-        res.status(500).json({ error: 'Error al enviar el correo: ' + error.message });
+        console.error("❌ Error interno:", error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
