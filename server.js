@@ -5,6 +5,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const session = require('express-session');
+const nodemailer = require('nodemailer');
 
 // ==========================
 // 2. Configuración general
