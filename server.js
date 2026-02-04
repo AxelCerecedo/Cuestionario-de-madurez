@@ -23,40 +23,6 @@ app.use(session({
 }));
 
 
-// ==========================================
-// CONFIGURACIÓN DE NODEMAILER (OUTLOOK / HOTMAIL)
-// ==========================================
-const transporter = nodemailer.createTransport({
-    host: "smtp-mail.outlook.com", // Servidor oficial de Outlook
-    port: 587,                     // Puerto estándar TLS
-    secure: false,                 // false para el puerto 587 (STARTTLS)
-    auth: {
-        user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        // TRUCO CLAVE PARA OUTLOOK:
-        // Outlook usa cifrados antiguos que Node.js a veces rechaza. 
-        // Esta línea lo obliga a aceptar la conexión.
-        ciphers: 'SSLv3',
-        rejectUnauthorized: false
-    },
-    // Tiempos de espera para evitar cortes en la nube
-    connectionTimeout: 10000, 
-    greetingTimeout: 10000
-});
-
-// 🔍 VERIFICACIÓN INICIAL DE CONEXIÓN SMTP
-// Esto corre al iniciar el servidor para ver si las credenciales funcionan
-transporter.verify(function (error, success) {
-    if (error) {
-        console.log("❌ [NODEMAILER] Error de conexión al inicio:");
-        console.error(error);
-    } else {
-        console.log("✅ [NODEMAILER] Servidor listo para enviar correos.");
-    }
-});
-
 // ==========================
 // LOGS GLOBALES (NUEVO)
 // ==========================
