@@ -305,3 +305,34 @@
         color: white !important; /* Número en blanco */
         font-weight: bold;
     }
+
+    /* --- ESTILOS DEL BOTÓN CERRAR SESIÓN --- */
+        .btn-logout {
+            display: flex;           /* Alinea icono y texto */
+            align-items: center;     /* Centra verticalmente */
+            gap: 10px;               /* Espacio entre texto e icono */
+            
+            background-color: white; /* Fondo blanco limpio */
+            color: #7c1225;          /* Texto color Vino */
+            border: 2px solid #7c1225; /* Borde color Vino */
+            
+            padding: 8px 20px;       /* Tamaño cómodo */
+            border-radius: 8px;      /* Bordes redondeados */
+            
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Suaviza el hover */
+        }
+
+        .btn-logout:hover {
+            background-color: #7c1225; /* Al pasar el mouse se vuelve Vino */
+            color: white;              /* Texto blanco */
+            transform: translateY(-2px); /* Efecto de elevación */
+            box-shadow: 0 4px 8px rgba(124, 18, 37, 0.2); /* Sombra suave */
+        }
+
+        .btn-logout i {
+            font-size: 1.1em; /* Icono un poco más grande */
+        }
