@@ -34,6 +34,17 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// 🔍 VERIFICACIÓN INICIAL DE CONEXIÓN SMTP
+// Esto corre al iniciar el servidor para ver si las credenciales funcionan
+transporter.verify(function (error, success) {
+    if (error) {
+        console.log("❌ [NODEMAILER] Error de conexión al inicio:");
+        console.error(error);
+    } else {
+        console.log("✅ [NODEMAILER] Servidor listo para enviar correos.");
+    }
+});
+
 // ==========================
 // LOGS GLOBALES (NUEVO)
 // ==========================
@@ -1127,17 +1138,27 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
+    
+    console.log("----------------------------------------------------");
+    console.log(`📩 [1/5] Solicitud de correo recibida. ID Usuario: ${idUsuario}`);
 
     try {
         // A. Obtener datos del usuario
+        console.log("🔍 [2/5] Buscando usuario en BD...");
         const [users] = await db.query('SELECT * FROM usuarios_registrados WHERE id = ?', [idUsuario]);
-        if (users.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+        
+        if (users.length === 0) {
+            console.warn("⚠️ Usuario no encontrado en BD.");
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
         const usuario = users[0];
+        console.log(`👤 Usuario encontrado: ${usuario.nombre_completo} (${usuario.email})`);
 
-        // B. Calcular puntaje (Reutilizamos lógica o hacemos query rápida)
-        // Nota: Simplificado para el ejemplo. Idealmente reutilizas tu función de calcular puntaje.
+        // B. Calcular puntaje
+        console.log("🧮 [3/5] Calculando puntaje...");
         const [respuestas] = await db.query('SELECT SUM(puntos_otorgados) as total FROM respuestas WHERE id_institucion = ?', [idUsuario]);
         const puntaje = respuestas[0].total || 0;
+        console.log(`🏆 Puntaje calculado: ${puntaje}`);
 
         // C. Definir Nivel
         let nivel = "Inicial";
@@ -1145,10 +1166,10 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         else if (puntaje >= 90) nivel = "Intermedio";
         else if (puntaje >= 45) nivel = "Básico";
 
-        // D. Configurar el correo HTML
+        // D. Configurar el correo
         const mailOptions = {
-            from: '"Sistema de Auditoría" <tu_correo@gmail.com>',
-            to: usuario.email, // El correo del usuario registrado
+            from: '"Sistema de Auditoría" <tu_correo@gmail.com>', // Cambia esto si quieres que salga bonito
+            to: usuario.email, 
             subject: '📊 Tus Resultados de Diagnóstico',
             html: `
                 <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
@@ -1156,31 +1177,37 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                         <h1>Resultados del Diagnóstico</h1>
                     </div>
                     <div style="padding: 20px;">
-                        <p>Hola <strong>${usuario.nombre_usuario || 'Usuario'}</strong>,</p>
+                        <p>Hola <strong>${usuario.nombre_completo || 'Usuario'}</strong>,</p>
                         <p>Gracias por completar el diagnóstico de madurez en gestión de acervos.</p>
                         
                         <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
                             <h2 style="color: #7c1225; margin: 0; font-size: 2.5em;">${puntaje} pts</h2>
                             <p style="margin: 5px 0 0 0; text-transform: uppercase; font-weight: bold; color: #555;">Nivel Obtenido: ${nivel}</p>
                         </div>
-
-                        <p>Hemos registrado tus respuestas exitosamente.</p>
                         <p>Atentamente,<br>El equipo de Administración.</p>
-                    </div>
-                    <div style="background-color: #eee; padding: 10px; text-align: center; font-size: 0.8em; color: #777;">
-                        Este es un correo automático, por favor no responder.
                     </div>
                 </div>
             `
         };
 
         // E. Enviar
-        await transporter.sendMail(mailOptions);
-        res.json({ message: 'Correo enviado correctamente' });
+        console.log(`🚀 [4/5] Conectando con Gmail para enviar a: ${usuario.email}...`);
+        
+        // Aquí es donde suele tardar, usamos await
+        const info = await transporter.sendMail(mailOptions);
+
+        console.log("✅ [5/5] ¡CORREO ENVIADO CON ÉXITO!");
+        console.log("📨 ID del mensaje:", info.messageId);
+        console.log("----------------------------------------------------");
+
+        res.json({ message: 'Correo enviado correctamente', info: info.messageId });
 
     } catch (error) {
-        console.error("Error enviando correo:", error);
-        res.status(500).json({ error: 'Error al enviar el correo' });
+        console.error("❌ [ERROR FATAL] Falló el envío del correo:");
+        console.error(error); // Imprime el error completo para ver el código (EAUTH, ETIMEDOUT, etc.)
+        
+        // Importante: Responder al frontend para que el botón deje de cargar
+        res.status(500).json({ error: 'Error al enviar el correo: ' + error.message });
     }
 });
 
