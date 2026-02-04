@@ -24,23 +24,25 @@ app.use(session({
 
 
 // ==========================================
-// CONFIGURACIÓN DE NODEMAILER (FIX IPv4)
+// CONFIGURACIÓN DE NODEMAILER (OUTLOOK / HOTMAIL)
 // ==========================================
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, 
+    host: "smtp-mail.outlook.com", // Servidor oficial de Outlook
+    port: 587,                     // Puerto estándar TLS
+    secure: false,                 // false para el puerto 587 (STARTTLS)
     auth: {
         user: process.env.EMAIL_USER, 
         pass: process.env.EMAIL_PASS
     },
-    // --- ESTAS 3 LÍNEAS SON LA CLAVE ---
     tls: {
+        // TRUCO CLAVE PARA OUTLOOK:
+        // Outlook usa cifrados antiguos que Node.js a veces rechaza. 
+        // Esta línea lo obliga a aceptar la conexión.
+        ciphers: 'SSLv3',
         rejectUnauthorized: false
     },
-    family: 4, // <--- ESTO OBLIGA A USAR IPv4 (Evita el bloqueo de IPv6 en Render)
-    // -----------------------------------
-    connectionTimeout: 10000,
+    // Tiempos de espera para evitar cortes en la nube
+    connectionTimeout: 10000, 
     greetingTimeout: 10000
 });
 
