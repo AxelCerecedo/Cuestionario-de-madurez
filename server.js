@@ -24,20 +24,24 @@ app.use(session({
 
 
 // ==========================================
-// CONFIGURACIÓN DE NODEMAILER 
+// CONFIGURACIÓN DE NODEMAILER (MODO COMPATIBILIDAD)
 // ==========================================
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',  // Usamos el host explícito
-    port: 465,               // Puerto seguro SSL (El que mejor funciona en la nube)
-    secure: true,            // TRUE para el puerto 465
+    host: 'smtp.gmail.com',
+    port: 587,               // Usamos 587 (TLS estándar) en lugar de 465
+    secure: false,           // false para puerto 587
     auth: {
         user: process.env.EMAIL_USER, 
         pass: process.env.EMAIL_PASS
     },
-    // Añadimos tiempos de espera más largos para evitar el ETIMEDOUT
-    connectionTimeout: 10000, // 10 segundos
-    greetingTimeout: 10000,
-    socketTimeout: 20000 
+    tls: {
+        // IMPORTANTE: Esto ayuda si el certificado SSL de Render da problemas
+        rejectUnauthorized: false,
+        ciphers: 'SSLv3'
+    },
+    // Forzamos tiempos de espera
+    connectionTimeout: 10000, 
+    greetingTimeout: 10000
 });
 
 // 🔍 VERIFICACIÓN INICIAL DE CONEXIÓN SMTP
