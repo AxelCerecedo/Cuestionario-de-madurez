@@ -21,7 +21,6 @@
             position: relative;
         }
 
-        /* 1. EL BADGE DE NIVEL */
         .nivel-badge {
             background: rgba(255, 255, 255, 0.25); 
             color: white; 
@@ -37,7 +36,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* 2. EL NÚMERO GIGANTE (EL PROTAGONISTA) */
         .big-number {
             font-size: 3.8rem; 
             font-weight: 800; 
@@ -46,16 +44,14 @@
             text-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
-        /* 3. TEXTO DE CONTEXTO */
         .score-subtext {
             font-size: 1.1rem; 
-            opacity: 0.9; /* Un poco más suave para no competir con el grande */
+            opacity: 0.9; 
             margin-top: 5px;
             margin-bottom: 25px;
             font-weight: 400;
         }
 
-        /* USAMOS EL ID Y !IMPORTANT PARA EL MÁXIMO */
         #lblMaximo {
             font-size: 1.5rem !important; 
             font-weight: 800 !important;
@@ -68,7 +64,6 @@
             text-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* 4. BARRA DE PROGRESO */
         .progress-track {
             background: rgba(255, 255, 255, 0.2); 
             height: 12px; 
@@ -91,26 +86,27 @@
         
         .mensaje-score { font-weight: 500; line-height: 1.1; font-size: 1rem; }
 
-        /* Estilo para el puntaje obtenido (Grande y oscuro) */
-.score-actual {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #2c3e50;
-}
+        .score-actual { font-size: 1.1rem; font-weight: 800; color: #2c3e50; }
+        .score-divider { color: #aaa; font-weight: 400; font-size: 0.9rem; margin: 0 2px; }
+        .score-max { color: #888; font-size: 0.9rem; font-weight: 500; }
 
-/* Estilo para el total (Pequeño y gris) */
-.score-divider {
-    color: #aaa;
-    font-weight: 400;
-    font-size: 0.9rem;
-    margin: 0 2px;
-}
+        /* BOTÓN CORREO NUEVO */
+        .btn-correo {
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            font-weight: 600;
+            transition: background 0.2s;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn-correo:hover { background-color: #34495e; }
+        .btn-correo:disabled { background-color: #95a5a6; cursor: wait; }
 
-.score-max {
-    color: #888;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
     </style>
 </head>
 <body>
@@ -130,27 +126,26 @@
             <div class="dashboard-left">
                 
                 <div id="cardPuntaje" class="card-puntaje">
-                    
                     <div id="lblNivel" class="nivel-badge">Cargando...</div>
-                    
                     <div class="big-number" id="lblPuntaje">--</div>
-                    
-                    <div class="score-subtext">
-                        puntos de <strong id="lblMaximo">--</strong> posibles
-                    </div>
+                    <div class="score-subtext">puntos de <strong id="lblMaximo">--</strong> posibles</div>
 
                     <div class="progress-track">
                         <div class="progress-fill" id="barraProgreso"></div>
                     </div>
                     
                     <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 0;">
-                    
                     <p class="mensaje-score" id="lblMensaje">Calculando resultados...</p>
                 </div>
 
                 <div class="actions-panel">
                     <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir Reporte</button>
-                    <a href="login.html" class="link-salir">Salir</a>
+                    
+                    <button id="btnEnviarCorreo" onclick="enviarCorreo()" class="btn-correo">
+                        📧 Enviar a mi correo
+                    </button>
+
+                    <a href="login.html" class="link-salir" style="margin-top: 15px; display:block; text-align:center;">Salir</a>
                 </div>
             </div>
 
@@ -164,8 +159,7 @@
                                 <th style="text-align: right;">Puntos</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaBody">
-                            </tbody>
+                        <tbody id="tablaBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -191,57 +185,28 @@
                 if(data.error) { alert(data.error); return; }
 
                 // --- ACTUALIZACIÓN DE DATOS ---
-
-                // 1. Color de Fondo
                 document.getElementById('cardPuntaje').style.background = data.color;
-
-                // 2. Animación del Número Grande
                 animarNumero('lblPuntaje', 0, data.total, 1500);
-                
-                // 3. Texto del Máximo
                 document.getElementById('lblMaximo').innerText = data.maximo;
-                
-                // 4. Nivel (Badge arriba)
                 document.getElementById('lblNivel').innerText = `${data.nivel} (${data.porcentaje}%)`;
-                
-                // 5. Mensaje
                 document.getElementById('lblMensaje').innerText = data.mensaje;
 
-                // 6. Animación de la Barra de Progreso
                 setTimeout(() => {
                     document.getElementById('barraProgreso').style.width = `${data.porcentaje}%`;
                 }, 300);
 
-                // --- TABLA CON TOTALES ---
+                // --- TABLA ---
                 const tbody = document.getElementById('tablaBody');
                 tbody.innerHTML = '';
                 
                 const nombresSecciones = {
-                    1: "Identificación",
-                    2: "Gestión Institucional",
-                    3: "Caracterización del Acervo",
-                    4: "Inventario, catalogación y documentación",
-                    5: "Gestión de información y software",
-                    6: "Recursos Humanos",
-                    7: "Infraestructura Tecnológica",
-                    8: "Procesos de gestión de colecciones",
-                    9: "Servicios"
+                    1: "Identificación", 2: "Gestión Institucional", 3: "Caracterización del Acervo",
+                    4: "Inventario y Catalogación", 5: "Gestión de información", 6: "Recursos Humanos",
+                    7: "Infraestructura Tecnológica", 8: "Normatividad", 9: "Servicios"
                 };
 
-                // ⚠️ IMPORTANTE: AQUÍ DEBES PONER EL VALOR MÁXIMO DE CADA SECCIÓN
-                // Suma los puntos de las preguntas de cada sección y ponlos aquí.
                 const MAXIMOS_POR_SECCION = {
-                    1: "0",  // Ejemplo: La sección 1 vale 15 puntos 
-                    2: 5, 
-                    3: 21,
-                    4: 34,
-                    5: 81, // Si no sabes el máximo pon "varía"
-                    6: 40,
-                    7: 5,
-                    8: 7,
-                    9: 4
-                    //Total: 106 checar las preguntas de la seccion 5 ya que alli suman mas de 100 puntos
-                    // La suma de todo esto debería dar 187 (tu máximo total)
+                    1: "0", 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
                 };
 
                 Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
@@ -250,12 +215,10 @@
                     const tr = document.createElement('tr');
                     const nombreSec = nombresSecciones[sec] || 'General';
                     const puntajeObtenido = data.secciones[sec];
-                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || '?'; // Si no lo defines pone '?'
+                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || '?';
 
                     tr.innerHTML = `
-                        <td>
-                            <div style="font-weight:600; color:#444;">${sec}. ${nombreSec}</div>
-                        </td>
+                        <td><div style="font-weight:600; color:#444;">${sec}. ${nombreSec}</div></td>
                         <td class="col-puntos">
                             <span class="score-actual">${puntajeObtenido}</span>
                             <span class="score-divider">/</span>
@@ -279,8 +242,51 @@
             };
             window.requestAnimationFrame(step);
         }
+
+        // --- NUEVA FUNCIÓN: ENVIAR CORREO ---
+        async function enviarCorreo() {
+            const idUsuario = localStorage.getItem('idUsuario');
+            const btn = document.getElementById('btnEnviarCorreo');
+            
+            // Estado de carga
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Enviando...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/enviar-correo-resultados`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idUsuario: idUsuario })
+                });
+
+                const resultado = await response.json();
+
+                if (response.ok) {
+                    Swal.fire({
+                        title: '¡Correo Enviado!',
+                        text: 'Revisa tu bandeja de entrada (y spam por si acaso).',
+                        icon: 'success',
+                        confirmButtonColor: '#7c1225'
+                    });
+                    btn.innerHTML = '✅ Correo Enviado';
+                } else {
+                    throw new Error(resultado.error || 'Error al enviar');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo enviar el correo. Intenta más tarde.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '📧 Enviar a mi correo';
+            }
+        }
         
-        document.addEventListener('DOMContentLoaded', cargarResumen);
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarResumen();
+            
+            // OPCIONAL: Si quieres que se mande SOLO automáticamente al entrar, 
+            // descomenta la siguiente línea (pero cuidado con el spam si recargan):
+            // enviarCorreo(); 
+        });
     </script>
 </body>
 </html>

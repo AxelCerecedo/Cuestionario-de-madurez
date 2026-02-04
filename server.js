@@ -21,6 +21,18 @@ app.use(session({
   cookie: { secure: false } 
 }));
 
+
+// ==========================
+// Configuración de Nodemailer
+// ==========================
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'axelcerecedo117@gmail.com',
+    pass: 'chmd dxpn plnt bxzk' // ⚠️ mejor usar variables de entorno
+  }
+});
+
 // ==========================
 // LOGS GLOBALES (NUEVO)
 // ==========================
@@ -1105,6 +1117,69 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
     } catch (error) {
         console.error("Error actualizando ubicación:", error);
         res.status(500).json({ error: 'Error interno de base de datos' });
+    }
+});
+
+// =========================================================
+// 📧 ENDPOINT: ENVIAR CORREO CON RESULTADOS
+// =========================================================
+
+app.post('/api/enviar-correo-resultados', async (req, res) => {
+    const { idUsuario } = req.body;
+
+    try {
+        // A. Obtener datos del usuario
+        const [users] = await db.query('SELECT * FROM usuarios_registrados WHERE id = ?', [idUsuario]);
+        if (users.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+        const usuario = users[0];
+
+        // B. Calcular puntaje (Reutilizamos lógica o hacemos query rápida)
+        // Nota: Simplificado para el ejemplo. Idealmente reutilizas tu función de calcular puntaje.
+        const [respuestas] = await db.query('SELECT SUM(puntos_otorgados) as total FROM respuestas WHERE id_institucion = ?', [idUsuario]);
+        const puntaje = respuestas[0].total || 0;
+
+        // C. Definir Nivel
+        let nivel = "Inicial";
+        if (puntaje >= 140) nivel = "Avanzado";
+        else if (puntaje >= 90) nivel = "Intermedio";
+        else if (puntaje >= 45) nivel = "Básico";
+
+        // D. Configurar el correo HTML
+        const mailOptions = {
+            from: '"Sistema de Auditoría" <tu_correo@gmail.com>',
+            to: usuario.email, // El correo del usuario registrado
+            subject: '📊 Tus Resultados de Diagnóstico',
+            html: `
+                <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+                    <div style="background-color: #7c1225; padding: 20px; text-align: center; color: white;">
+                        <h1>Resultados del Diagnóstico</h1>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p>Hola <strong>${usuario.nombre_usuario || 'Usuario'}</strong>,</p>
+                        <p>Gracias por completar el diagnóstico de madurez en gestión de acervos.</p>
+                        
+                        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                            <h2 style="color: #7c1225; margin: 0; font-size: 2.5em;">${puntaje} pts</h2>
+                            <p style="margin: 5px 0 0 0; text-transform: uppercase; font-weight: bold; color: #555;">Nivel Obtenido: ${nivel}</p>
+                        </div>
+
+                        <p>Hemos registrado tus respuestas exitosamente.</p>
+                        <p>Atentamente,<br>El equipo de Administración.</p>
+                    </div>
+                    <div style="background-color: #eee; padding: 10px; text-align: center; font-size: 0.8em; color: #777;">
+                        Este es un correo automático, por favor no responder.
+                    </div>
+                </div>
+            `
+        };
+
+        // E. Enviar
+        await transporter.sendMail(mailOptions);
+        res.json({ message: 'Correo enviado correctamente' });
+
+    } catch (error) {
+        console.error("Error enviando correo:", error);
+        res.status(500).json({ error: 'Error al enviar el correo' });
     }
 });
 
