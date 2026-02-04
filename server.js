@@ -1111,118 +1111,63 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =========================================================
-// 📧 ENDPOINT: ENVIAR CORREO CON ESTILO TARJETA
+// 📧 ENDPOINT: ENVIAR CORREO CON BREVO (API PUERTO 443)
 // =========================================================
+
+// No necesitas instalar nada extra, Node.js ya trae 'fetch'
+
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
-    const MAX_PUNTOS = 200; // El máximo posible de tu cuestionario
-
-    console.log(`📩 Solicitud de correo para ID: ${idUsuario}`);
+    
+    console.log("----------------------------------------------------");
+    console.log(`📩 [1/3] Solicitud recibida para ID: ${idUsuario}`);
 
     try {
         // 1. Obtener datos del usuario
-        // NOTA: Asegúrate de que 'id' sea la llave primaria correcta en usuarios_registrados
         const [users] = await db.query('SELECT * FROM usuarios_registrados WHERE id = ?', [idUsuario]);
-        
         if (users.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
         const usuario = users[0];
+        console.log(`👤 Usuario encontrado: ${usuario.nombre_completo} (${usuario.email})`);
 
-        // 2. Calcular puntaje (CORRECCIÓN DEL ERROR "0")
-        // Asegúrate de que la columna en la tabla 'respuestas' sea 'id_institucion' o 'id_usuario'.
-        // Aquí uso 'id_institucion' porque así aparecía en tus logs anteriores.
-        const [respuestas] = await db.query(
-            'SELECT SUM(puntos_otorgados) as total FROM respuestas WHERE id_institucion = ?', 
-            [idUsuario]
-        );
-        
-        // Si devuelve null, ponemos 0
-        const puntaje = respuestas[0].total ? parseFloat(respuestas[0].total) : 0;
-        const porcentaje = Math.round((puntaje / MAX_PUNTOS) * 100);
+        // 2. Calcular puntaje
+        const [respuestas] = await db.query('SELECT SUM(puntos_otorgados) as total FROM respuestas WHERE id_institucion = ?', [idUsuario]);
+        const puntaje = respuestas[0].total || 0;
 
-        console.log(`🏆 Puntaje recuperado: ${puntaje} (${porcentaje}%)`);
-
-        // 3. Definir Nivel y Colores
         let nivel = "Inicial";
-        let colorFondo = "#dc3545"; // Rojo
-        let mensaje = "Se recomienda iniciar un plan de acción inmediato.";
+        if (puntaje >= 140) nivel = "Avanzado";
+        else if (puntaje >= 90) nivel = "Intermedio";
+        else if (puntaje >= 45) nivel = "Básico";
 
-        if (puntaje >= 140) {
-            nivel = "Avanzado";
-            colorFondo = "#198754"; // Verde
-            mensaje = "¡Excelente gestión! Su institución es un referente.";
-        } else if (puntaje >= 90) {
-            nivel = "Intermedio";
-            colorFondo = "#fd7e14"; // Naranja
-            mensaje = "Buen camino, pero existen áreas de oportunidad.";
-        } else if (puntaje >= 45) {
-            nivel = "Básico";
-            colorFondo = "#ffc107"; // Amarillo
-            mensaje = "Se han establecido las bases, pero falta formalización.";
-        }
-
-        // 4. PREPARAR EL HTML (ESTILO TARJETA)
+        // 3. ENVIAR CORREO USANDO BREVO API
+        console.log(`🚀 [2/3] Enviando petición a Brevo...`);
+        
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
         
         const emailData = {
             sender: { 
                 name: "Sistema de Auditoría", 
-                // ⚠️ RECUERDA: Poner aquí tu correo registrado en Brevo
-                email: "TU_CORREO_BREVO@GMAIL.COM" 
+                
+                email: "axelcerecedo117@gmail.com" 
             },
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
             ],
-            subject: `📊 Tus Resultados: ${puntaje} pts (${nivel})`,
+            subject: "📊 Tus Resultados de Diagnóstico",
             htmlContent: `
-                <!DOCTYPE html>
-                <html>
-                <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 40px 0;">
-                    
-                    <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                        
-                        <div style="background-color: ${colorFondo}; padding: 40px 20px; text-align: center; color: white;">
-                            
-                            <div style="background: rgba(255, 255, 255, 0.25); color: white; padding: 8px 25px; border-radius: 50px; text-transform: uppercase; font-weight: 800; font-size: 18px; display: inline-block; margin-bottom: 15px; letter-spacing: 1.5px;">
-                                ${nivel}
-                            </div>
-                            
-                            <div style="font-size: 80px; font-weight: 800; line-height: 1; margin: 10px 0;">
-                                ${puntaje}
-                            </div>
-                            
-                            <div style="font-size: 18px; opacity: 0.9; margin-bottom: 25px;">
-                                puntos de <strong>${MAX_PUNTOS}</strong> posibles
-                            </div>
-
-                            <table width="80%" align="center" border="0" cellpadding="0" cellspacing="0" style="background: rgba(255,255,255,0.3); border-radius: 10px; overflow: hidden;">
-                                <tr>
-                                    <td width="${porcentaje}%" style="background-color: #ffffff; height: 12px; border-radius: 10px;"></td>
-                                    <td width="${100 - porcentaje}%" style="height: 12px;"></td>
-                                </tr>
-                            </table>
-
-                            <p style="margin-top: 25px; font-weight: 500; font-size: 16px; opacity: 0.9;">
-                                ${mensaje}
-                            </p>
-                        </div>
-
-                        <div style="padding: 30px; text-align: center; color: #555;">
-                            <p style="margin: 0 0 10px 0;">Hola <strong>${usuario.nombre_completo || 'Usuario'}</strong>,</p>
-                            <p style="margin: 0; font-size: 14px; line-height: 1.5;">
-                                Gracias por completar el diagnóstico. Este correo sirve como comprobante de tu evaluación realizada el día de hoy.
-                            </p>
-                            <br>
-                            <a href="https://tupaginaweb.com" style="color: ${colorFondo}; text-decoration: none; font-weight: bold;">Ir al Sistema</a>
-                        </div>
-                        
+                <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+                    <div style="background-color: #7c1225; padding: 20px; text-align: center; color: white;">
+                        <h1>Resultados del Diagnóstico</h1>
                     </div>
-                    
-                    <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-                        © 2026 Sistema de Gestión de Acervos
+                    <div style="padding: 20px;">
+                        <p>Hola <strong>${usuario.nombre_completo || 'Usuario'}</strong>,</p>
+                        <p>Aquí tienes el respaldo de tus resultados.</p>
+                        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                            <h2 style="color: #7c1225; margin: 0; font-size: 2.5em;">${puntaje} pts</h2>
+                            <p style="margin: 5px 0 0 0; text-transform: uppercase; font-weight: bold; color: #555;">Nivel: ${nivel}</p>
+                        </div>
+                        <p style="font-size: 0.9em; color: #777;">Este correo fue generado automáticamente por el Sistema de Auditoría.</p>
                     </div>
-
-                </body>
-                </html>
+                </div>
             `
         };
 
@@ -1230,7 +1175,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
-                'api-key': process.env.BREVO_API_KEY,
+                'api-key': process.env.BREVO_API_KEY, // Render leerá la clave que acabas de guardar
                 'content-type': 'application/json'
             },
             body: JSON.stringify(emailData)
@@ -1238,11 +1183,11 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("❌ Error Brevo:", errorData);
-            return res.status(500).json({ error: 'Error al enviar correo' });
+            console.error("❌ [ERROR BREVO]:", errorData);
+            return res.status(500).json({ error: 'Error al enviar correo: ' + (errorData.message || 'Desconocido') });
         }
 
-        console.log("✅ Correo enviado con diseño de tarjeta.");
+        console.log("✅ [3/3] ¡CORREO ENVIADO EXITOSAMENTE!");
         res.json({ message: 'Correo enviado correctamente' });
 
     } catch (error) {
