@@ -193,13 +193,13 @@ const CONFIG_SECCION = {
                     
                     // ESCENARIO A: La tabla está vacía (0 inputs) -> Hay que dar clic en "Agregar"
                     if (inputs.length === 0) {
-                        console.log(`⚠️ Intento ${intentos}: Tabla vacía. Buscando botón .btn-agregar...`);
+                        //console.log(`⚠️ Intento ${intentos}: Tabla vacía. Buscando botón .btn-agregar...`);
                         
                         // AQUÍ USAMOS LA CLASE QUE ME DISTE
                         const btnAgregar = document.querySelector('.btn-agregar');
 
                         if (btnAgregar) {
-                            console.log("👇 Clic automático en '+ Agregar Contacto'");
+                           // console.log("👇 Clic automático en '+ Agregar Contacto'");
                             btnAgregar.click();
                             // No detenemos el intervalo todavía, esperamos al siguiente ciclo para ver los inputs
                         } else {
@@ -207,11 +207,8 @@ const CONFIG_SECCION = {
                         }
                     } 
                     
-                    // ESCENARIO B: Ya hay inputs (se creó la fila) -> Llenamos los datos
                     else {
-                        console.log("✅ Inputs detectados. Procediendo a llenar...");
 
-                        // Asumiendo orden de columnas: [0]Nombre, [1]Cargo, [2]Correo, [3]Teléfono
                         const inputNombre = inputs[0]; 
                         const inputCorreo = inputs[2]; // <--- CAMBIA A [1] SI CORREO ES LA SEGUNDA COLUMNA
 
@@ -234,12 +231,12 @@ const CONFIG_SECCION = {
                     }
 
                 } else {
-                    console.log(`⏳ Esperando a que se dibuje la tabla... (${intentos})`);
+                  //  console.log(`⏳ Esperando a que se dibuje la tabla... (${intentos})`);
                 }
 
                 if (intentos >= maxIntentos) {
                     clearInterval(intervalo);
-                    console.log("⏹️ Se acabaron los intentos.");
+                   // console.log("⏹️ Se acabaron los intentos.");
                 }
 
             }, 500); // Revisar cada medio segundo
