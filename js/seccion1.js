@@ -165,51 +165,104 @@ const CONFIG_SECCION = {
     ]
 };
 
-// Función para pre-llenar el primer contacto
-    async function prellenarContacto() {
+async function prellenarContactoConLogs() {
+        console.log("🔵 [INICIO] Iniciando script de prellenado...");
+
+        // 1. Obtener ID
         const idUsuario = localStorage.getItem('idUsuario');
-        if (!idUsuario) return;
+        console.log(`🔵 ID Usuario en LocalStorage: ${idUsuario}`);
+        
+        if (!idUsuario) {
+            console.warn("⚠️ No hay ID de usuario. No se puede prellenar.");
+            return;
+        }
 
         try {
-            // 1. Pedir datos al servidor
+            // 2. Pedir datos al servidor
+            console.log("🔵 Solicitando datos al servidor...");
             const response = await fetch(`https://api-cuestionario.onrender.com/api/usuario-basico/${idUsuario}`);
             const data = await response.json();
 
-            if (data.error) return;
+            console.log("🔵 Datos recibidos del servidor:", data);
 
+            if (data.error) {
+                console.error("❌ Error en datos:", data.error);
+                return;
+            }
 
-            setTimeout(() => {
+            // 3. INTENTAR BUSCAR LA TABLA (REINTENTOS)
+            let intentos = 0;
+            const maxIntentos = 10; // Intentar por 5 segundos
+
+            const intervalo = setInterval(() => {
+                intentos++;
+                console.log(`🔎 Intento ${intentos}/${maxIntentos} buscando la tabla de contactos...`);
+
+                // BUSCAMOS TODOS LOS INPUTS EN LA PÁGINA PARA VER QUÉ HAY
+                // Asumimos que la tabla está en la pregunta 6.
+                // Buscamos un contenedor que tenga pinta de ser la pregunta 6 o una tabla general
                 
+                // Opción A: Buscar cualquier tabla
+                const tabla = document.querySelector('table'); 
                 
-                const tabla = document.querySelector('table'); // O busca por ID específico si tienes
-                if (!tabla) return;
+                // Opción B (Más precisa): Si tu motor pone IDs tipo 'pregunta-6' o 'p6'
+                // const divPregunta = document.getElementById('pregunta-6');
+                // const tabla = divPregunta ? divPregunta.querySelector('table') : null;
 
-                const inputs = tabla.querySelectorAll('input');
-             
-                
-                if (inputs.length >= 3) {
-                    const inputNombre = inputs[0]; // Primer input (Nombre)
-                    const inputCargo = inputs[1];  // Segundo input (Cargo) - Lo dejamos blanco
-                    const inputCorreo = inputs[2]; // Tercer input (Correo)
-
-                    // Solo llenamos si están vacíos (para no sobrescribir si ya contestó)
-                    if (inputNombre && inputNombre.value === '') {
-                        inputNombre.value = data.nombre_completo;
-                    }
+                if (tabla) {
+                    console.log("✅ ¡Tabla encontrada!", tabla);
                     
-                    // El cargo lo dejamos vacío para que él lo ponga
-                    
-                    if (inputCorreo && inputCorreo.value === '') {
-                        inputCorreo.value = data.email;
+                    // Buscamos todos los inputs dentro de esa tabla
+                    const inputs = tabla.querySelectorAll('input');
+                    console.log(`✅ Se encontraron ${inputs.length} inputs dentro de la tabla.`);
+
+                    if (inputs.length > 0) {
+                        // Limpiamos el intervalo, ya encontramos lo que queríamos
+                        clearInterval(intervalo);
+
+                        // LOGICA DE LLENADO
+                        // Asumimos el orden estándar: [0]=Nombre, [1]=Cargo, [2]=Correo, [3]=Teléfono
+                        const inputNombre = inputs[0]; 
+                        const inputCorreo = inputs[2]; // Ajusta esto si el orden es diferente
+
+                        console.log("🎯 Input Nombre (Indice 0):", inputNombre);
+                        console.log("🎯 Input Correo (Indice 2):", inputCorreo);
+
+                        if (inputNombre) {
+                            if (inputNombre.value === '') {
+                                inputNombre.value = data.nombre_completo || '';
+                                console.log(`✏️ Nombre llenado con: ${data.nombre_completo}`);
+                            } else {
+                                console.log("⚠️ El input Nombre ya tenía datos, no se sobrescribió.");
+                            }
+                        }
+
+                        if (inputCorreo) {
+                            if (inputCorreo.value === '') {
+                                inputCorreo.value = data.email || '';
+                                console.log(`✏️ Correo llenado con: ${data.email}`);
+                            } else {
+                                console.log("⚠️ El input Correo ya tenía datos, no se sobrescribió.");
+                            }
+                        }
+                    } else {
+                        console.warn("⚠️ La tabla existe, pero no tiene inputs dentro todavía.");
                     }
+
+                } else {
+                    console.warn("❌ Tabla no encontrada en este intento.");
                 }
 
-            }, 1000); // Esperamos 1 segundo a que cargue el HTML dinámico
+                if (intentos >= maxIntentos) {
+                    console.error("❌ Se acabaron los intentos. No se pudo encontrar la tabla.");
+                    clearInterval(intervalo);
+                }
+
+            }, 500); // Revisar cada 500ms (medio segundo)
 
         } catch (error) {
-            console.error("No se pudo prellenar el contacto:", error);
+            console.error("❌ Error fatal en el script:", error);
         }
     }
 
-    // Ejecutar cuando cargue la página
-    document.addEventListener('DOMContentLoaded', prellenarContacto);
+    document.addEventListener('DOMContentLoaded', prellenarContactoConLogs);
