@@ -177,25 +177,15 @@ const CONFIG_SECCION = {
 
             if (data.error) return;
 
-            // 2. Esperar un poco a que el "Motor de Cuestionarios" dibuje la tabla
-            // (A veces tarda unos milisegundos en crear los inputs)
+
             setTimeout(() => {
                 
-                // NOTA: Aquí asumo que tu tabla de contactos tiene inputs.
-                // Necesitamos encontrar los inputs de la PRIMERA fila.
-                // Ajusta los selectores si tu tabla usa IDs o Clases específicas.
                 
-                // Buscamos la tabla de la pregunta 6 (id: 6 en tu config)
-                // Usualmente los motores ponen un ID tipo "tabla_6" o dentro de un div "pregunta-6"
-                
-                // Intento genérico de encontrar los inputs:
                 const tabla = document.querySelector('table'); // O busca por ID específico si tienes
                 if (!tabla) return;
 
                 const inputs = tabla.querySelectorAll('input');
-                
-                // Si la tabla tiene estructura: Nombre | Cargo | Correo | Telefono
-                // Los inputs de la primera fila suelen ser los primeros encontrados.
+             
                 
                 if (inputs.length >= 3) {
                     const inputNombre = inputs[0]; // Primer input (Nombre)
