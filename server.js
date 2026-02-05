@@ -1111,7 +1111,7 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =========================================================
-// 📧 ENDPOINT: ENVIAR CORREO (LÓGICA IDÉNTICA A RESUMEN)
+// 📧 ENDPOINT: CORREO (CORREGIDO - BONO SECCIÓN 2)
 // =========================================================
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
@@ -1129,7 +1129,12 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         9: "Servicios"
     };
 
-    // Asegúrate de que esta función esté definida arriba en tu server.js
+    // Máximos por sección (Para que aparezca ej: "5 / 5")
+    const MAXIMOS_SECCION = {
+        1: 0, 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
+    };
+
+    // Función auxiliar para saber a qué sección pertenece cada pregunta
     function identificarSeccion(idPregunta) {
         const id = parseInt(idPregunta);
         if (id >= 1 && id <= 13) return 1;
@@ -1148,8 +1153,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
     console.log(`📩 Solicitud de correo para ID Usuario: ${idUsuario}`);
 
     try {
-        // 1. OBTENER DATOS GENERALES (IGUAL QUE EN /resumen)
-        // Obtenemos el puntaje_total YA guardado en la BD
+        // 1. OBTENER DATOS GENERALES
         const queryUsuario = `
             SELECT u.nombre_completo, u.email, i.id_institucion, i.puntaje_total 
             FROM usuarios_registrados u
@@ -1162,12 +1166,13 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         
         const usuario = rows[0];
         const idInstitucion = usuario.id_institucion;
-        // Usamos el puntaje guardado, igual que tu resumen
+        
+        // El total lo tomamos directo de la BD (tal como lo haces en /resumen)
         let puntajeTotal = usuario.puntaje_total || 0; 
 
         console.log(`👤 Usuario: ${usuario.nombre_completo} | Total BD: ${puntajeTotal}`);
 
-        // 2. OBTENER DESGLOSE (SQL IDÉNTICO A TU RESUMEN)
+        // 2. OBTENER DESGLOSE DETALLADO (SQL IDÉNTICO A /resumen)
         const sqlDetalle = `
             SELECT id_pregunta, SUM(puntos_otorgados) as puntos 
             FROM (
@@ -1182,7 +1187,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 
         const [filasPuntos] = await db.query(sqlDetalle, [idInstitucion, idInstitucion, idInstitucion]);
 
-        // Sumar puntos por sección
+        // Inicializamos contador por secciones
         const reporteSecciones = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
         
         filasPuntos.forEach(fila => {
@@ -1193,16 +1198,15 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             }
         });
 
-        // 3. APLICAR EL BONO DE SECCIÓN 2 (ESTO FALTABA EN EL CORREO)
+        // 3. --- AQUÍ ESTABA EL ERROR: APLICAR EL BONO VISUALMENTE ---
+        // Ejecutamos la misma consulta de bono que en /resumen
         const sqlBono = `SELECT COUNT(*) as c FROM respuestas WHERE id_institucion=? AND id_pregunta IN (14,15) AND respuesta_texto IS NOT NULL AND respuesta_texto != ''`;
         const [rowsBono] = await db.query(sqlBono, [idInstitucion]);
         
         if(rowsBono[0].c === 2) {
-            console.log("🎁 Bono de Sección 2 aplicado (+1 punto)");
-            reporteSecciones[2] += 1;
-            // Nota: No sumamos a puntajeTotal aquí porque se supone que el puntaje_total en BD ya incluye el bono si se guardó bien.
-            // Si el total en el correo sale 1 punto menos que la suma de secciones, descomenta la siguiente línea:
-            // puntajeTotal += 1; 
+            console.log("🎁 Bono de Sección 2 aplicado en el correo (+1 punto)");
+            // ¡ESTA LÍNEA ES LA QUE HACE QUE LA TABLA SALGA BIEN!
+            reporteSecciones[2] += 1; 
         }
 
         // 4. LÓGICA DE NIVELES (COPIADA EXACTA DE TU RESUMEN)
@@ -1211,39 +1215,34 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 
         let nivel = "Inicial";
         let mensaje = "El nivel de madurez es muy bajo. Se requiere iniciar procesos básicos.";
-        let colorFondo = "#dc3545"; // Rojo (Danger)
+        let colorFondo = "#dc3545"; // Rojo
 
         if (puntajeTotal >= 140) { 
             nivel = "Avanzado"; 
-            mensaje = "¡Excelente! Nivel óptimo de cumplimiento."; 
-            colorFondo = "#28a745"; // Verde (Success)
+            mensaje = "¡Excelente! Nivel óptimo de cumplimiento, conservación y gestión digital."; 
+            colorFondo = "#28a745"; // Verde
         } 
         else if (puntajeTotal >= 90) { 
             nivel = "Intermedio"; 
-            mensaje = "Buen nivel de gestión. Enfoque sus esfuerzos en la mejora continua."; 
-            colorFondo = "#17a2b8"; // Azul Cian (Info) - COPIADO DE TU CÓDIGO
+            mensaje = "Buen nivel de gestión y control. Enfoque sus esfuerzos en la mejora continua."; 
+            colorFondo = "#17a2b8"; // Azul Cian
         } 
         else if (puntajeTotal >= 45) { 
             nivel = "Básico"; 
-            mensaje = "Existen procesos incipientes. Se requiere formalización."; 
-            colorFondo = "#ffc107"; // Amarillo (Warning)
+            mensaje = "Existen procesos incipientes. Se requiere formalización y estandarización."; 
+            colorFondo = "#ffc107"; // Amarillo
         } 
 
-        // 5. GENERAR TABLA HTML DEL DESGLOSE
+        // 5. GENERAR TABLA HTML DEL DESGLOSE (Ahora sí usará reporteSecciones[2] actualizado)
         let filasHTML = '';
         for (let i = 1; i <= 9; i++) {
-            // Aquí puedes definir los máximos por sección si los quieres mostrar (ej. 5, 21, 34...)
-            // Si no los tienes a mano, puedes quitar la parte "/ Max"
-            // Por ahora uso los que me diste antes:
-            const maximos = {1:0, 2:5, 3:21, 4:34, 5:81, 6:40, 7:5, 8:7, 9:4}; 
-            
             filasHTML += `
                 <tr style="border-bottom: 1px solid #eee;">
                     <td style="padding: 12px 10px; color: #555; font-size: 14px;">
                         ${i}. ${NOMBRES_SECCIONES[i]}
                     </td>
                     <td style="padding: 12px 10px; text-align: right; color: #333; font-weight: bold; font-size: 14px;">
-                        ${reporteSecciones[i]} <span style="color:#aaa; font-weight:normal; font-size: 12px;">/ ${maximos[i]}</span>
+                        ${reporteSecciones[i]} <span style="color:#aaa; font-weight:normal; font-size: 12px;">/ ${MAXIMOS_SECCION[i]}</span>
                     </td>
                 </tr>
             `;
@@ -1254,7 +1253,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         const emailData = {
             sender: { 
                 name: "Diagnóstico de Archivos", 
-                email: "axelcerecedo117@gmail.com" // ✅ Tu Gmail verificado
+                email: "axelcerecedo117@gmail.com" 
             },
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
@@ -1330,7 +1329,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             return res.status(500).json({ error: errorData.message });
         }
 
-        console.log("✅ Correo enviado con lógica sincronizada.");
+        console.log("✅ Correo enviado con BONO corregido.");
         res.json({ message: 'Correo enviado correctamente' });
 
     } catch (error) {
