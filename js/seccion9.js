@@ -58,7 +58,7 @@ const CONFIG_SECCION = {
                 { 
                     id: 94, texto: "Mecanismos de difusión y divulgación que realiza la institución", 
                     sub_opciones: [
-                        { id: 130, texto: "Exposición" },
+                        { id: 130, texto: "Exposiciones" },
                         { id: 131, texto: "Prensa" },
                         { id: 132, texto: "Publicaciones" },
                         { id: 133, texto: "Venta de obra" },
