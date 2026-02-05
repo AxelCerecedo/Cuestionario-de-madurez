@@ -1113,6 +1113,7 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 // =========================================================
 // 📧 ENDPOINT: ENVIAR CORREO (DISEÑO EXACTO A RESUMEN.HTML)
 // =========================================================
+
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
     const MAX_PUNTOS = 187; 
@@ -1181,7 +1182,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         const emailData = {
             sender: { 
                 name: "Sistema de Auditoría", 
-                email: "axelcerecedo117@gmail.com" // <--- ¡PON TU CORREO REAL AQUÍ!
+                email: "TU_CORREO_DE_BREVO@GMAIL.COM" // <--- ¡PON TU CORREO REAL AQUÍ!
             },
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
