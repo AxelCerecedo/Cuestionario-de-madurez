@@ -165,93 +165,86 @@ const CONFIG_SECCION = {
     ]
 };
 
-async function prellenarContactoMejorado() {
-        console.log("🔵 [INICIO] Script de auto-llenado v3");
+    async function autoLlenarPrimerContacto() {
+        console.log("🔵 [AUTO-LLENADO] Iniciando proceso...");
 
         const idUsuario = localStorage.getItem('idUsuario');
         if (!idUsuario) return;
 
         try {
-            // 1. Obtener Datos
+            // 1. OBTENER DATOS DEL USUARIO
             const response = await fetch(`https://api-cuestionario.onrender.com/api/usuario-basico/${idUsuario}`);
             const data = await response.json();
             
-            if (data.error) { console.error("Error datos:", data.error); return; }
+            if (data.error) { console.error("Error obteniendo usuario:", data.error); return; }
             
-            console.log("🔵 Datos listos para usar:", data);
+            console.log("🔵 Datos recuperados:", data);
 
-            // 2. Bucle de intentos (Polling)
+            // 2. BUCLE PARA BUSCAR TABLA Y BOTÓN (POLLING)
             let intentos = 0;
-            const maxIntentos = 10; 
+            const maxIntentos = 10; // Intentar durante 5 segundos aprox
 
             const intervalo = setInterval(() => {
                 intentos++;
-                const tabla = document.getElementById('tablaContactos'); // Usamos el ID que vimos en tu log
-
+                const tabla = document.getElementById('tablaContactos');
+                
                 if (tabla) {
                     const inputs = tabla.querySelectorAll('input');
                     
-                    // CASO A: Ya hay inputs (filas) -> Llenamos y terminamos
-                    if (inputs.length > 0) {
-                        console.log("✅ Inputs detectados. Llenando...");
+                    // ESCENARIO A: La tabla está vacía (0 inputs) -> Hay que dar clic en "Agregar"
+                    if (inputs.length === 0) {
+                        console.log(`⚠️ Intento ${intentos}: Tabla vacía. Buscando botón .btn-agregar...`);
                         
-                        // Asumiendo orden: Nombre (0), Cargo (1), Correo (2), Teléfono (3)
-                        // Ajusta los índices [0] y [2] si tu tabla tiene otro orden
-                        if (inputs[0] && inputs[0].value === '') inputs[0].value = data.nombre_completo;
-                        if (inputs[2] && inputs[2].value === '') inputs[2].value = data.email;
-                        
-                        // Disparar evento 'input' para que el motor sepa que hubo cambios (importante para guardar)
-                        inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
-                        inputs[2].dispatchEvent(new Event('input', { bubbles: true }));
-
-                        clearInterval(intervalo);
-                        console.log("✨ ¡Contacto pre-llenado con éxito!");
-                        return;
-                    } 
-                    
-                    // CASO B: Tabla vacía -> Intentamos agregar fila
-                    else {
-                        console.warn(`⚠️ Intento ${intentos}: Tabla vacía. Buscando botón 'Agregar'...`);
-                        
-                        // ESTRATEGIA PARA ENCONTRAR EL BOTÓN
-                        // 1. Buscamos botones dentro del contenedor de la pregunta
-                        // 2. Buscamos botones genéricos con texto "+" o "Agregar"
-                        
-                        // Opción 1: Buscar por clase común (ajusta esto si tu botón tiene otra clase)
-                        let btnAgregar = document.querySelector('.btn-agregar-fila') || 
-                                         document.querySelector('.btn-add') ||
-                                         document.getElementById('btnAgregarContacto');
-
-                        // Opción 2: Buscar por texto (Fuerza bruta)
-                        if (!btnAgregar) {
-                            const botones = document.querySelectorAll('button');
-                            for (let btn of botones) {
-                                if (btn.innerText.includes('Agregar') || btn.innerText.includes('+')) {
-                                    // Verificamos que esté cerca de nuestra tabla (opcional)
-                                    btnAgregar = btn;
-                                    break;
-                                }
-                            }
-                        }
+                        // AQUÍ USAMOS LA CLASE QUE ME DISTE
+                        const btnAgregar = document.querySelector('.btn-agregar');
 
                         if (btnAgregar) {
-                            console.log("👇 Haciendo clic automático en el botón:", btnAgregar);
+                            console.log("👇 Clic automático en '+ Agregar Contacto'");
                             btnAgregar.click();
-                            // No limpiamos el intervalo, esperamos al siguiente ciclo para ver si ya aparecieron los inputs
+                            // No detenemos el intervalo todavía, esperamos al siguiente ciclo para ver los inputs
                         } else {
-                            console.error("❌ No encuentro el botón de agregar. Necesito que le pongas un ID en el HTML.");
+                            console.warn("❌ No encuentro el botón con clase .btn-agregar");
                         }
+                    } 
+                    
+                    // ESCENARIO B: Ya hay inputs (se creó la fila) -> Llenamos los datos
+                    else {
+                        console.log("✅ Inputs detectados. Procediendo a llenar...");
+
+                        // Asumiendo orden de columnas: [0]Nombre, [1]Cargo, [2]Correo, [3]Teléfono
+                        const inputNombre = inputs[0]; 
+                        const inputCorreo = inputs[2]; // <--- CAMBIA A [1] SI CORREO ES LA SEGUNDA COLUMNA
+
+                        // Solo llenamos si están vacíos para no borrar lo que escriba el usuario
+                        if (inputNombre && inputNombre.value === '') {
+                            inputNombre.value = data.nombre_completo;
+                            // Disparamos evento para que el sistema detecte que se escribió algo
+                            inputNombre.dispatchEvent(new Event('input', { bubbles: true }));
+                            inputNombre.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+
+                        if (inputCorreo && inputCorreo.value === '') {
+                            inputCorreo.value = data.email;
+                            inputCorreo.dispatchEvent(new Event('input', { bubbles: true }));
+                            inputCorreo.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+
+                        console.log("✨ ¡Primer contacto llenado con éxito!");
+                        clearInterval(intervalo); // TERMINAMOS
                     }
 
                 } else {
-                    console.log(`⏳ Esperando tabla... (${intentos})`);
+                    console.log(`⏳ Esperando a que se dibuje la tabla... (${intentos})`);
                 }
 
-                if (intentos >= maxIntentos) clearInterval(intervalo);
+                if (intentos >= maxIntentos) {
+                    clearInterval(intervalo);
+                    console.log("⏹️ Se acabaron los intentos.");
+                }
 
-            }, 500); 
+            }, 500); // Revisar cada medio segundo
 
         } catch (error) { console.error(error); }
     }
 
-    document.addEventListener('DOMContentLoaded', prellenarContactoMejorado);
+    document.addEventListener('DOMContentLoaded', autoLlenarPrimerContacto);
