@@ -1117,8 +1117,7 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
 
-    // 1. CONFIGURACIÓN DE SECCIONES (Tus máximos)
-    // Ajusta los "max" si cambian en el futuro
+    // 1. CONFIGURACIÓN DE SECCIONES
     const INFO_SECCIONES = {
         1: { nombre: "Identificación", max: 0 },
         2: { nombre: "Gestión Institucional", max: 5 },
@@ -1131,61 +1130,63 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         9: { nombre: "Servicios", max: 4 }
     };
 
-    // 2. FUNCIÓN PARA IDENTIFICAR SECCIÓN (Tu lógica exacta)
+    // 2. FUNCIÓN PARA IDENTIFICAR SECCIÓN
     function identificarSeccion(idPregunta) {
         const id = parseInt(idPregunta);
-        if (id >= 1 && id <= 13) return 1;  // Identificación
-        if (id >= 14 && id <= 19) return 2; // Gestión Institucional
-        if (id >= 20 && id <= 28) return 3; // Caracterización
-        if (id >= 29 && id <= 37) return 4; // Inventario
-        if (id >= 38 && id <= 40) return 5; // Gestión Info
-        if (id >= 41 && id <= 47) return 6; // RH
-        if (id >= 48 && id <= 48) return 7; // Infraestructura
-        if (id >= 49 && id <= 49) return 8; // Normatividad (Procesos)
-        if (id >= 50 && id <= 50) return 9; // Servicios
-        return 0; // Otra
+        if (id >= 1 && id <= 13) return 1;
+        if (id >= 14 && id <= 19) return 2;
+        if (id >= 20 && id <= 28) return 3;
+        if (id >= 29 && id <= 37) return 4;
+        if (id >= 38 && id <= 40) return 5; // Aquí entra la matriz 39
+        if (id >= 41 && id <= 47) return 6; // Aquí entra la matriz 46
+        if (id >= 48 && id <= 48) return 7;
+        if (id >= 49 && id <= 49) return 8;
+        if (id >= 50 && id <= 50) return 9;
+        return 0;
     }
 
     console.log("----------------------------------------------------");
     console.log(`📩 Solicitud de correo para ID Usuario: ${idUsuario}`);
 
     try {
-        // A. OBTENER ID DE LA INSTITUCIÓN Y DATOS DEL USUARIO
-        // En tu BD, 'usuarios_registrados' se liga a 'instituciones' por 'id_usuario'
+        // A. OBTENER ID DE LA INSTITUCIÓN
         const queryUsuario = `
-            SELECT u.nombre_completo, u.email, i.id_institucion, i.puntaje_total 
+            SELECT u.nombre_completo, u.email, i.id_institucion 
             FROM usuarios_registrados u
             JOIN instituciones i ON u.id = i.id_usuario
             WHERE u.id = ?
         `;
         const [datos] = await db.query(queryUsuario, [idUsuario]);
         
-        if (datos.length === 0) {
-            return res.status(404).json({ error: 'Usuario/Institución no encontrados' });
-        }
+        if (datos.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
         
         const usuario = datos[0];
         const idInstitucion = usuario.id_institucion;
         
         console.log(`👤 Usuario: ${usuario.nombre_completo} | Institución ID: ${idInstitucion}`);
 
-        // B. OBTENER PUNTOS DE 'RESPUESTAS' (Simples) Y 'RESPUESTAS_MULTIPLES' (Checkboxes)
-        // Usamos UNION ALL para juntar todo en una sola lista
+        // B. OBTENER PUNTOS DE LAS 3 TABLAS (CORRECCIÓN AQUÍ)
+        // Usamos UNION ALL para pegar los resultados de las 3 tablas en una sola lista
         const queryPuntos = `
             SELECT id_pregunta, puntos_otorgados FROM respuestas WHERE id_institucion = ?
             UNION ALL
             SELECT id_pregunta, puntos_otorgados FROM respuestas_multiples WHERE id_institucion = ?
+            UNION ALL
+            SELECT id_pregunta_matriz AS id_pregunta, valor AS puntos_otorgados FROM respuestas_matriz WHERE id_institucion = ?
         `;
 
-        const [todasLasRespuestas] = await db.query(queryPuntos, [idInstitucion, idInstitucion]);
+        // Pasamos el ID 3 veces (una por cada ?)
+        const [todasLasRespuestas] = await db.query(queryPuntos, [idInstitucion, idInstitucion, idInstitucion]);
 
-        // C. CALCULAR SUMA POR SECCIÓN (Usando tu función JS)
+        console.log(`🔍 Registros encontrados (Total de filas): ${todasLasRespuestas.length}`);
+
+        // C. SUMAR POR SECCIÓN
         let sumaPorSeccion = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
         let granTotalCalculado = 0;
 
         todasLasRespuestas.forEach(r => {
-            const idPreg = r.id_pregunta;
-            const pts = parseInt(r.puntos_otorgados) || 0;
+            const idPreg = parseInt(r.id_pregunta);
+            const pts = parseInt(r.puntos_otorgados) || 0; // Si es null, suma 0
             
             const seccion = identificarSeccion(idPreg);
             
@@ -1195,16 +1196,14 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             }
         });
 
-        // Nota: Si usas la tabla 'respuestas_matriz' y esa NO tiene columna 'puntos_otorgados',
-        // esos puntos podrían faltar aquí. Si confías en 'puntaje_total' de la tabla instituciones,
-        // podemos usar ese para el número grande y la suma calculada para el desglose.
-        const puntajeFinal = granTotalCalculado; 
-        const MAX_POSIBLE = 187; // Total general
-        const porcentaje = Math.min(Math.round((puntajeFinal / MAX_POSIBLE) * 100), 100);
+        // NOTA: Si en tu web te sale 202/200, es posible que el Frontend esté sumando algo doble.
+        // Este cálculo de backend es el "real" basado en lo que hay guardado en la BD.
+        const MAX_POSIBLE = 187; // Total oficial
+        const porcentaje = Math.min(Math.round((granTotalCalculado / MAX_POSIBLE) * 100), 100);
 
-        console.log(`🏆 Puntaje Calculado: ${puntajeFinal}`);
+        console.log(`🏆 Puntaje Total Backend: ${granTotalCalculado}`);
 
-        // D. GENERAR FILAS DE LA TABLA HTML
+        // D. GENERAR FILAS HTML
         let filasHTML = '';
         for (let i = 1; i <= 9; i++) {
             const info = INFO_SECCIONES[i];
@@ -1222,76 +1221,59 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             `;
         }
 
-        // E. LÓGICA DE COLORES Y NIVEL
+        // E. NIVEL Y COLOR
         let nivel = "Inicial";
-        let colorFondo = "#dc3545"; // Rojo
+        let colorFondo = "#dc3545"; 
         let mensaje = "Se requiere atención inmediata.";
 
-        if (puntajeFinal >= 140) {
-            nivel = "Avanzado"; colorFondo = "#198754"; mensaje = "¡Excelente gestión! Referente institucional.";
-        } else if (puntajeFinal >= 90) {
+        if (granTotalCalculado >= 140) {
+            nivel = "Avanzado"; colorFondo = "#198754"; mensaje = "¡Excelente gestión!";
+        } else if (granTotalCalculado >= 90) {
             nivel = "Intermedio"; colorFondo = "#fd7e14"; mensaje = "Buen camino, existen áreas de oportunidad.";
-        } else if (puntajeFinal >= 45) {
-            nivel = "Básico"; colorFondo = "#ffc107"; mensaje = "Bases establecidas, falta formalización.";
+        } else if (granTotalCalculado >= 45) {
+            nivel = "Básico"; colorFondo = "#ffc107"; mensaje = "Bases establecidas.";
         }
 
-        // F. ENVIAR CORREO CON BREVO
+        // F. ENVIAR A BREVO
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
-        
         const emailData = {
             sender: { 
                 name: "Diagnóstico de Archivos", 
-                email: "axelcerecedo117@gmail.com" // ✅ Tu correo verificado
+                email: "axelcerecedo117@gmail.com" 
             },
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
             ],
-            subject: `📊 Resultados: ${puntajeFinal} pts - ${nivel}`,
+            subject: `📊 Resultados Finales: ${granTotalCalculado} pts`,
             htmlContent: `
             <!DOCTYPE html>
             <html>
-            <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-                
+            <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: sans-serif;">
                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
                         <td align="center" style="padding: 40px 10px;">
-                            
                             <table width="100%" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-                                
                                 <tr>
                                     <td align="center" style="background-color: ${colorFondo}; padding: 40px 20px; color: #ffffff;">
-                                        
-                                        <div style="background: rgba(255,255,255,0.25); padding: 8px 25px; border-radius: 50px; font-weight: 800; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; display: inline-block; margin-bottom: 15px;">
+                                        <div style="background: rgba(255,255,255,0.25); padding: 8px 25px; border-radius: 50px; font-weight: 800; font-size: 16px; text-transform: uppercase; display: inline-block; margin-bottom: 15px;">
                                             ${nivel}
                                         </div>
-                                        
-                                        <div style="font-size: 80px; font-weight: 800; line-height: 1; margin-bottom: 5px; text-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                                            ${puntajeFinal}
-                                        </div>
-                                        
+                                        <div style="font-size: 80px; font-weight: 800; line-height: 1; margin-bottom: 5px;">${granTotalCalculado}</div>
                                         <div style="font-size: 16px; opacity: 0.95; margin-bottom: 25px;">
                                             puntos de <strong>${MAX_POSIBLE}</strong> posibles
                                         </div>
-
                                         <table width="80%" height="10" border="0" cellspacing="0" cellpadding="0" style="background: rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden;">
                                             <tr>
                                                 <td width="${porcentaje}%" style="background-color: #ffffff;"></td>
                                                 <td width="${100 - porcentaje}%"></td>
                                             </tr>
                                         </table>
-                                        
-                                        <div style="margin-top: 25px; font-weight: 500; font-size: 15px; opacity: 0.95;">
-                                            ${mensaje}
-                                        </div>
+                                        <div style="margin-top: 25px; font-weight: 500; font-size: 15px;">${mensaje}</div>
                                     </td>
                                 </tr>
-
                                 <tr>
                                     <td style="padding: 30px;">
-                                        <h3 style="color: #333; margin: 0 0 20px 0; font-size: 18px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
-                                            Desglose por Sección
-                                        </h3>
-                                        
+                                        <h3 style="color: #333; margin: 0 0 20px 0; font-size: 18px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">Desglose por Sección</h3>
                                         <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
                                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <thead style="background-color: #f9f9f9; color: #888; font-size: 12px; text-transform: uppercase;">
@@ -1300,30 +1282,18 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                                                         <th align="right" style="padding: 12px 10px; font-weight: 600;">Puntos</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
-                                                    ${filasHTML}
-                                                </tbody>
+                                                <tbody>${filasHTML}</tbody>
                                             </table>
                                         </div>
-
-                                        <p style="text-align: center; color: #aaa; font-size: 12px; margin-top: 30px; line-height: 1.5;">
-                                            Este reporte fue generado automáticamente para<br>
-                                            <strong>${usuario.nombre_completo}</strong>
+                                        <p style="text-align: center; color: #aaa; font-size: 12px; margin-top: 30px;">
+                                            Reporte para <strong>${usuario.nombre_completo}</strong>
                                         </p>
                                     </td>
                                 </tr>
-                                
-                                <tr>
-                                    <td align="center" style="background-color: #333; padding: 15px; color: #666; font-size: 11px;">
-                                        © 2026 Sistema de Gestión de Acervos
-                                    </td>
-                                </tr>
-
                             </table>
                         </td>
                     </tr>
                 </table>
-
             </body>
             </html>
             `
@@ -1345,7 +1315,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             return res.status(500).json({ error: errorData.message });
         }
 
-        console.log("✅ Correo enviado correctamente.");
+        console.log("✅ Correo enviado con puntos corregidos.");
         res.json({ message: 'Correo enviado correctamente' });
 
     } catch (error) {
