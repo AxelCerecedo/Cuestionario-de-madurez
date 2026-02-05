@@ -330,7 +330,7 @@ function renderizarFichaTecnica(config, respuestas, contenedor) {
                                     <tr>
                                         <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Nombre</th>
                                         <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Cargo</th>
-                                        <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Contacto</th>
+                                        <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Email/Telefono</th>
                                     </tr>
                                 </thead>
                                 <tbody>
