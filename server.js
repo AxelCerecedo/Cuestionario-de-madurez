@@ -926,7 +926,7 @@ app.get('/resumen/:idUsuario', async (req, res) => {
         // 4. LÓGICA DE NIVELES (SINCRONIZADA CON EL ADMIN)
         // =========================================================
 
-        // Establecemos el tope teórico en 187 (según tu cálculo reciente)
+        // Establecemos el tope teórico en 187 
         const MAX_PUNTAJE = 200; 
         
         // Calculamos porcentaje solo para mostrar la barrita de progreso visual
