@@ -1182,7 +1182,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         const emailData = {
             sender: { 
                 name: "Sistema de Auditoría", 
-                email: "TU_CORREO_DE_BREVO@GMAIL.COM" // <--- ¡PON TU CORREO REAL AQUÍ!
+                email: "axelcerecedo117@gmail.com" // <--- ¡PON TU CORREO REAL AQUÍ!
             },
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
