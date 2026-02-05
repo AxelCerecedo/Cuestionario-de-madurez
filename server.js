@@ -1241,7 +1241,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         const emailData = {
             sender: { 
                 name: "Diagnóstico de Archivos", 
-                email: "axelcerecedo117@outlook.com" // ✅ Tu correo verificado
+                email: "axelcerecedo117@gmail.com" // ✅ Tu correo verificado
             },
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
