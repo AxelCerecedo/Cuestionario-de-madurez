@@ -309,21 +309,18 @@ async function abrirDetalleSeccion(configSeccion, numSeccion) {
 function renderizarFichaTecnica(config, respuestas, contenedor) {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(350px, 1fr))'; // Un poco más ancho
+    grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(350px, 1fr))';
     grid.style.gap = '20px';
 
     config.preguntas.forEach(p => {
         let contenidoHtml = '<span style="color:#ccc; font-style:italic;">Sin información registrada</span>';
         
-        // Buscamos respuestas
         const respuestasP = respuestas.filter(r => r.id_pregunta == p.id);
 
         // --- CASO ESPECIAL: TABLA DE CONTACTOS ---
         if (p.tipo === 'tabla_contactos') {
             if (respuestasP.length > 0 && respuestasP[0].respuesta_texto) {
                 try {
-                    // Intentamos convertir el texto guardado (JSON) en un objeto real
-                    // Se asume que guardaste algo como: [{"nombre":"Juan","cargo":"Director",...}]
                     const contactos = JSON.parse(respuestasP[0].respuesta_texto);
 
                     if (Array.isArray(contactos) && contactos.length > 0) {
@@ -331,24 +328,41 @@ function renderizarFichaTecnica(config, respuestas, contenedor) {
                             <table style="width:100%; font-size:0.85em; border-collapse:collapse; margin-top:5px;">
                                 <thead style="background:#f1f1f1;">
                                     <tr>
-                                        <th style="padding:4px; text-align:left;">Nombre</th>
-                                        <th style="padding:4px; text-align:left;">Cargo</th>
-                                        <th style="padding:4px; text-align:left;">Email/Tel</th>
+                                        <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Nombre</th>
+                                        <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Cargo</th>
+                                        <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Contacto</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                         `;
                         contactos.forEach(c => {
-                            // Ajusta estas claves (nombre, cargo, etc.) según como las guardes en tu encuesta.js
+                            // 1. Obtenemos datos individuales con seguridad (probando mayúsculas/minúsculas)
                             const nombre = c.nombre || c.Nombre || '-';
                             const cargo = c.cargo || c.Cargo || '-';
-                            const contacto = c.email || c.telefono || c.contacto || '-';
+                            
+                            // 2. CORRECCIÓN AQUÍ: Obtenemos AMBOS valores por separado
+                            // Probamos 'email' y 'correo' por si acaso
+                            const email = c.email || c.Email || c.correo || c.Correo || '';
+                            const telefono = c.telefono || c.Telefono || c.celular || '';
+
+                            // 3. Construimos el HTML combinando ambos
+                            let infoContacto = '';
+                            
+                            if (email) {
+                                infoContacto += `<div style="margin-bottom:2px;">📧 ${email}</div>`;
+                            }
+                            if (telefono) {
+                                infoContacto += `<div>📞 ${telefono}</div>`;
+                            }
+                            
+                            // Si no hay nada, ponemos un guión
+                            if (!infoContacto) infoContacto = '-';
                             
                             contenidoHtml += `
                                 <tr style="border-bottom:1px solid #eee;">
-                                    <td style="padding:4px;">${nombre}</td>
-                                    <td style="padding:4px;">${cargo}</td>
-                                    <td style="padding:4px;">${contacto}</td>
+                                    <td style="padding:6px; vertical-align:top;"><strong>${nombre}</strong></td>
+                                    <td style="padding:6px; vertical-align:top;">${cargo}</td>
+                                    <td style="padding:6px; vertical-align:top;">${infoContacto}</td>
                                 </tr>
                             `;
                         });
@@ -382,15 +396,13 @@ function renderizarFichaTecnica(config, respuestas, contenedor) {
             }
         }
 
-        // Renderizado de la tarjeta
         const card = document.createElement('div');
         card.style.background = 'white';
         card.style.padding = '20px';
         card.style.borderRadius = '12px';
         card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-        card.style.borderLeft = `4px solid ${COLOR_PRIMARY}`;
+        card.style.borderLeft = `4px solid #7c1225`; // Usé tu color rojo institucional
         
-        // Si es tabla, que ocupe todo el ancho si es posible
         if (p.tipo === 'tabla_contactos') {
             card.style.gridColumn = '1 / -1'; 
         }
