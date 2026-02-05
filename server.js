@@ -1111,34 +1111,33 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =========================================================
-// 📧 ENDPOINT: ENVIAR CORREO (DISEÑO EXACTO A RESUMEN.HTML)
+// 📧 ENDPOINT: ENVIAR CORREO (LÓGICA IDÉNTICA A RESUMEN)
 // =========================================================
-
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
 
-    // 1. CONFIGURACIÓN DE SECCIONES
-    const INFO_SECCIONES = {
-        1: { nombre: "Identificación", max: 0 },
-        2: { nombre: "Gestión Institucional", max: 5 },
-        3: { nombre: "Caracterización del Acervo", max: 21 },
-        4: { nombre: "Inventario y Catalogación", max: 34 },
-        5: { nombre: "Gestión de información", max: 81 },
-        6: { nombre: "Recursos Humanos", max: 40 },
-        7: { nombre: "Infraestructura Tecnológica", max: 5 },
-        8: { nombre: "Normatividad", max: 7 },
-        9: { nombre: "Servicios", max: 4 }
+    // Nombres de las secciones
+    const NOMBRES_SECCIONES = {
+        1: "Identificación",
+        2: "Gestión Institucional",
+        3: "Caracterización del Acervo",
+        4: "Inventario y Catalogación",
+        5: "Gestión de información",
+        6: "Recursos Humanos",
+        7: "Infraestructura Tecnológica",
+        8: "Normatividad",
+        9: "Servicios"
     };
 
-    // 2. FUNCIÓN PARA IDENTIFICAR SECCIÓN
+    // Asegúrate de que esta función esté definida arriba en tu server.js
     function identificarSeccion(idPregunta) {
         const id = parseInt(idPregunta);
         if (id >= 1 && id <= 13) return 1;
         if (id >= 14 && id <= 19) return 2;
         if (id >= 20 && id <= 28) return 3;
         if (id >= 29 && id <= 37) return 4;
-        if (id >= 38 && id <= 40) return 5; // Aquí entra la matriz 39
-        if (id >= 41 && id <= 47) return 6; // Aquí entra la matriz 46
+        if (id >= 38 && id <= 40) return 5;
+        if (id >= 41 && id <= 47) return 6;
         if (id >= 48 && id <= 48) return 7;
         if (id >= 49 && id <= 49) return 8;
         if (id >= 50 && id <= 50) return 9;
@@ -1149,102 +1148,118 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
     console.log(`📩 Solicitud de correo para ID Usuario: ${idUsuario}`);
 
     try {
-        // A. OBTENER ID DE LA INSTITUCIÓN
+        // 1. OBTENER DATOS GENERALES (IGUAL QUE EN /resumen)
+        // Obtenemos el puntaje_total YA guardado en la BD
         const queryUsuario = `
-            SELECT u.nombre_completo, u.email, i.id_institucion 
+            SELECT u.nombre_completo, u.email, i.id_institucion, i.puntaje_total 
             FROM usuarios_registrados u
             JOIN instituciones i ON u.id = i.id_usuario
             WHERE u.id = ?
         `;
-        const [datos] = await db.query(queryUsuario, [idUsuario]);
+        const [rows] = await db.query(queryUsuario, [idUsuario]);
         
-        if (datos.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+        if (rows.length === 0) return res.status(404).json({ error: "Institución no encontrada" });
         
-        const usuario = datos[0];
+        const usuario = rows[0];
         const idInstitucion = usuario.id_institucion;
-        
-        console.log(`👤 Usuario: ${usuario.nombre_completo} | Institución ID: ${idInstitucion}`);
+        // Usamos el puntaje guardado, igual que tu resumen
+        let puntajeTotal = usuario.puntaje_total || 0; 
 
-        // B. OBTENER PUNTOS DE LAS 3 TABLAS (CORRECCIÓN AQUÍ)
-        // Usamos UNION ALL para pegar los resultados de las 3 tablas en una sola lista
-        const queryPuntos = `
-            SELECT id_pregunta, puntos_otorgados FROM respuestas WHERE id_institucion = ?
-            UNION ALL
-            SELECT id_pregunta, puntos_otorgados FROM respuestas_multiples WHERE id_institucion = ?
-            UNION ALL
-            SELECT id_pregunta_matriz AS id_pregunta, valor AS puntos_otorgados FROM respuestas_matriz WHERE id_institucion = ?
+        console.log(`👤 Usuario: ${usuario.nombre_completo} | Total BD: ${puntajeTotal}`);
+
+        // 2. OBTENER DESGLOSE (SQL IDÉNTICO A TU RESUMEN)
+        const sqlDetalle = `
+            SELECT id_pregunta, SUM(puntos_otorgados) as puntos 
+            FROM (
+                SELECT id_pregunta, puntos_otorgados FROM respuestas WHERE id_institucion = ? 
+                UNION ALL
+                SELECT id_pregunta, puntos_otorgados FROM respuestas_multiples WHERE id_institucion = ? 
+                UNION ALL
+                SELECT id_pregunta_matriz as id_pregunta, valor as puntos FROM respuestas_matriz WHERE id_institucion = ?
+            ) as t
+            GROUP BY id_pregunta
         `;
 
-        // Pasamos el ID 3 veces (una por cada ?)
-        const [todasLasRespuestas] = await db.query(queryPuntos, [idInstitucion, idInstitucion, idInstitucion]);
+        const [filasPuntos] = await db.query(sqlDetalle, [idInstitucion, idInstitucion, idInstitucion]);
 
-        console.log(`🔍 Registros encontrados (Total de filas): ${todasLasRespuestas.length}`);
-
-        // C. SUMAR POR SECCIÓN
-        let sumaPorSeccion = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
-        let granTotalCalculado = 0;
-
-        todasLasRespuestas.forEach(r => {
-            const idPreg = parseInt(r.id_pregunta);
-            const pts = parseInt(r.puntos_otorgados) || 0; // Si es null, suma 0
-            
-            const seccion = identificarSeccion(idPreg);
-            
-            if (seccion > 0) {
-                sumaPorSeccion[seccion] += pts;
-                granTotalCalculado += pts;
+        // Sumar puntos por sección
+        const reporteSecciones = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
+        
+        filasPuntos.forEach(fila => {
+            const numSeccion = identificarSeccion(fila.id_pregunta);
+            const pts = parseInt(fila.puntos) || 0;
+            if (reporteSecciones[numSeccion] !== undefined) {
+                reporteSecciones[numSeccion] += pts;
             }
         });
 
-        // NOTA: Si en tu web te sale 202/200, es posible que el Frontend esté sumando algo doble.
-        // Este cálculo de backend es el "real" basado en lo que hay guardado en la BD.
-        const MAX_POSIBLE = 187; // Total oficial
-        const porcentaje = Math.min(Math.round((granTotalCalculado / MAX_POSIBLE) * 100), 100);
+        // 3. APLICAR EL BONO DE SECCIÓN 2 (ESTO FALTABA EN EL CORREO)
+        const sqlBono = `SELECT COUNT(*) as c FROM respuestas WHERE id_institucion=? AND id_pregunta IN (14,15) AND respuesta_texto IS NOT NULL AND respuesta_texto != ''`;
+        const [rowsBono] = await db.query(sqlBono, [idInstitucion]);
+        
+        if(rowsBono[0].c === 2) {
+            console.log("🎁 Bono de Sección 2 aplicado (+1 punto)");
+            reporteSecciones[2] += 1;
+            // Nota: No sumamos a puntajeTotal aquí porque se supone que el puntaje_total en BD ya incluye el bono si se guardó bien.
+            // Si el total en el correo sale 1 punto menos que la suma de secciones, descomenta la siguiente línea:
+            // puntajeTotal += 1; 
+        }
 
-        console.log(`🏆 Puntaje Total Backend: ${granTotalCalculado}`);
+        // 4. LÓGICA DE NIVELES (COPIADA EXACTA DE TU RESUMEN)
+        const MAX_PUNTAJE = 200; 
+        const porcentaje = MAX_PUNTAJE > 0 ? Math.round((puntajeTotal / MAX_PUNTAJE) * 100) : 0;
 
-        // D. GENERAR FILAS HTML
+        let nivel = "Inicial";
+        let mensaje = "El nivel de madurez es muy bajo. Se requiere iniciar procesos básicos.";
+        let colorFondo = "#dc3545"; // Rojo (Danger)
+
+        if (puntajeTotal >= 140) { 
+            nivel = "Avanzado"; 
+            mensaje = "¡Excelente! Nivel óptimo de cumplimiento."; 
+            colorFondo = "#28a745"; // Verde (Success)
+        } 
+        else if (puntajeTotal >= 90) { 
+            nivel = "Intermedio"; 
+            mensaje = "Buen nivel de gestión. Enfoque sus esfuerzos en la mejora continua."; 
+            colorFondo = "#17a2b8"; // Azul Cian (Info) - COPIADO DE TU CÓDIGO
+        } 
+        else if (puntajeTotal >= 45) { 
+            nivel = "Básico"; 
+            mensaje = "Existen procesos incipientes. Se requiere formalización."; 
+            colorFondo = "#ffc107"; // Amarillo (Warning)
+        } 
+
+        // 5. GENERAR TABLA HTML DEL DESGLOSE
         let filasHTML = '';
         for (let i = 1; i <= 9; i++) {
-            const info = INFO_SECCIONES[i];
-            const obtenidos = sumaPorSeccion[i];
+            // Aquí puedes definir los máximos por sección si los quieres mostrar (ej. 5, 21, 34...)
+            // Si no los tienes a mano, puedes quitar la parte "/ Max"
+            // Por ahora uso los que me diste antes:
+            const maximos = {1:0, 2:5, 3:21, 4:34, 5:81, 6:40, 7:5, 8:7, 9:4}; 
             
             filasHTML += `
                 <tr style="border-bottom: 1px solid #eee;">
                     <td style="padding: 12px 10px; color: #555; font-size: 14px;">
-                        ${i}. ${info.nombre}
+                        ${i}. ${NOMBRES_SECCIONES[i]}
                     </td>
                     <td style="padding: 12px 10px; text-align: right; color: #333; font-weight: bold; font-size: 14px;">
-                        ${obtenidos} <span style="color:#aaa; font-weight:normal; font-size: 12px;">/ ${info.max}</span>
+                        ${reporteSecciones[i]} <span style="color:#aaa; font-weight:normal; font-size: 12px;">/ ${maximos[i]}</span>
                     </td>
                 </tr>
             `;
         }
 
-        // E. NIVEL Y COLOR
-        let nivel = "Inicial";
-        let colorFondo = "#dc3545"; 
-        let mensaje = "Se requiere atención inmediata.";
-
-        if (granTotalCalculado >= 140) {
-            nivel = "Avanzado"; colorFondo = "#198754"; mensaje = "¡Excelente gestión!";
-        } else if (granTotalCalculado >= 90) {
-            nivel = "Intermedio"; colorFondo = "#fd7e14"; mensaje = "Buen camino, existen áreas de oportunidad.";
-        } else if (granTotalCalculado >= 45) {
-            nivel = "Básico"; colorFondo = "#ffc107"; mensaje = "Bases establecidas.";
-        }
-
-        // F. ENVIAR A BREVO
+        // 6. ENVIAR CORREO (BREVO)
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
         const emailData = {
             sender: { 
                 name: "Diagnóstico de Archivos", 
-                email: "axelcerecedo117@gmail.com" 
+                email: "axelcerecedo117@gmail.com" // ✅ Tu Gmail verificado
             },
             to: [
                 { email: usuario.email, name: usuario.nombre_completo }
             ],
-            subject: `📊 Resultados Finales: ${granTotalCalculado} pts`,
+            subject: `📊 Resultados Finales: ${puntajeTotal} pts`,
             htmlContent: `
             <!DOCTYPE html>
             <html>
@@ -1258,9 +1273,9 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                                         <div style="background: rgba(255,255,255,0.25); padding: 8px 25px; border-radius: 50px; font-weight: 800; font-size: 16px; text-transform: uppercase; display: inline-block; margin-bottom: 15px;">
                                             ${nivel}
                                         </div>
-                                        <div style="font-size: 80px; font-weight: 800; line-height: 1; margin-bottom: 5px;">${granTotalCalculado}</div>
+                                        <div style="font-size: 80px; font-weight: 800; line-height: 1; margin-bottom: 5px;">${puntajeTotal}</div>
                                         <div style="font-size: 16px; opacity: 0.95; margin-bottom: 25px;">
-                                            puntos de <strong>${MAX_POSIBLE}</strong> posibles
+                                            puntos de <strong>${MAX_PUNTAJE}</strong> posibles
                                         </div>
                                         <table width="80%" height="10" border="0" cellspacing="0" cellpadding="0" style="background: rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden;">
                                             <tr>
@@ -1315,7 +1330,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             return res.status(500).json({ error: errorData.message });
         }
 
-        console.log("✅ Correo enviado con puntos corregidos.");
+        console.log("✅ Correo enviado con lógica sincronizada.");
         res.json({ message: 'Correo enviado correctamente' });
 
     } catch (error) {
