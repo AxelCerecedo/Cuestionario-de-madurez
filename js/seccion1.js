@@ -165,104 +165,93 @@ const CONFIG_SECCION = {
     ]
 };
 
-async function prellenarContactoConLogs() {
-        console.log("🔵 [INICIO] Iniciando script de prellenado...");
+async function prellenarContactoMejorado() {
+        console.log("🔵 [INICIO] Script de auto-llenado v3");
 
-        // 1. Obtener ID
         const idUsuario = localStorage.getItem('idUsuario');
-        console.log(`🔵 ID Usuario en LocalStorage: ${idUsuario}`);
-        
-        if (!idUsuario) {
-            console.warn("⚠️ No hay ID de usuario. No se puede prellenar.");
-            return;
-        }
+        if (!idUsuario) return;
 
         try {
-            // 2. Pedir datos al servidor
-            console.log("🔵 Solicitando datos al servidor...");
+            // 1. Obtener Datos
             const response = await fetch(`https://api-cuestionario.onrender.com/api/usuario-basico/${idUsuario}`);
             const data = await response.json();
+            
+            if (data.error) { console.error("Error datos:", data.error); return; }
+            
+            console.log("🔵 Datos listos para usar:", data);
 
-            console.log("🔵 Datos recibidos del servidor:", data);
-
-            if (data.error) {
-                console.error("❌ Error en datos:", data.error);
-                return;
-            }
-
-            // 3. INTENTAR BUSCAR LA TABLA (REINTENTOS)
+            // 2. Bucle de intentos (Polling)
             let intentos = 0;
-            const maxIntentos = 10; // Intentar por 5 segundos
+            const maxIntentos = 10; 
 
             const intervalo = setInterval(() => {
                 intentos++;
-                console.log(`🔎 Intento ${intentos}/${maxIntentos} buscando la tabla de contactos...`);
-
-                // BUSCAMOS TODOS LOS INPUTS EN LA PÁGINA PARA VER QUÉ HAY
-                // Asumimos que la tabla está en la pregunta 6.
-                // Buscamos un contenedor que tenga pinta de ser la pregunta 6 o una tabla general
-                
-                // Opción A: Buscar cualquier tabla
-                const tabla = document.querySelector('table'); 
-                
-                // Opción B (Más precisa): Si tu motor pone IDs tipo 'pregunta-6' o 'p6'
-                // const divPregunta = document.getElementById('pregunta-6');
-                // const tabla = divPregunta ? divPregunta.querySelector('table') : null;
+                const tabla = document.getElementById('tablaContactos'); // Usamos el ID que vimos en tu log
 
                 if (tabla) {
-                    console.log("✅ ¡Tabla encontrada!", tabla);
-                    
-                    // Buscamos todos los inputs dentro de esa tabla
                     const inputs = tabla.querySelectorAll('input');
-                    console.log(`✅ Se encontraron ${inputs.length} inputs dentro de la tabla.`);
-
+                    
+                    // CASO A: Ya hay inputs (filas) -> Llenamos y terminamos
                     if (inputs.length > 0) {
-                        // Limpiamos el intervalo, ya encontramos lo que queríamos
+                        console.log("✅ Inputs detectados. Llenando...");
+                        
+                        // Asumiendo orden: Nombre (0), Cargo (1), Correo (2), Teléfono (3)
+                        // Ajusta los índices [0] y [2] si tu tabla tiene otro orden
+                        if (inputs[0] && inputs[0].value === '') inputs[0].value = data.nombre_completo;
+                        if (inputs[2] && inputs[2].value === '') inputs[2].value = data.email;
+                        
+                        // Disparar evento 'input' para que el motor sepa que hubo cambios (importante para guardar)
+                        inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                        inputs[2].dispatchEvent(new Event('input', { bubbles: true }));
+
                         clearInterval(intervalo);
+                        console.log("✨ ¡Contacto pre-llenado con éxito!");
+                        return;
+                    } 
+                    
+                    // CASO B: Tabla vacía -> Intentamos agregar fila
+                    else {
+                        console.warn(`⚠️ Intento ${intentos}: Tabla vacía. Buscando botón 'Agregar'...`);
+                        
+                        // ESTRATEGIA PARA ENCONTRAR EL BOTÓN
+                        // 1. Buscamos botones dentro del contenedor de la pregunta
+                        // 2. Buscamos botones genéricos con texto "+" o "Agregar"
+                        
+                        // Opción 1: Buscar por clase común (ajusta esto si tu botón tiene otra clase)
+                        let btnAgregar = document.querySelector('.btn-agregar-fila') || 
+                                         document.querySelector('.btn-add') ||
+                                         document.getElementById('btnAgregarContacto');
 
-                        // LOGICA DE LLENADO
-                        // Asumimos el orden estándar: [0]=Nombre, [1]=Cargo, [2]=Correo, [3]=Teléfono
-                        const inputNombre = inputs[0]; 
-                        const inputCorreo = inputs[2]; // Ajusta esto si el orden es diferente
-
-                        console.log("🎯 Input Nombre (Indice 0):", inputNombre);
-                        console.log("🎯 Input Correo (Indice 2):", inputCorreo);
-
-                        if (inputNombre) {
-                            if (inputNombre.value === '') {
-                                inputNombre.value = data.nombre_completo || '';
-                                console.log(`✏️ Nombre llenado con: ${data.nombre_completo}`);
-                            } else {
-                                console.log("⚠️ El input Nombre ya tenía datos, no se sobrescribió.");
+                        // Opción 2: Buscar por texto (Fuerza bruta)
+                        if (!btnAgregar) {
+                            const botones = document.querySelectorAll('button');
+                            for (let btn of botones) {
+                                if (btn.innerText.includes('Agregar') || btn.innerText.includes('+')) {
+                                    // Verificamos que esté cerca de nuestra tabla (opcional)
+                                    btnAgregar = btn;
+                                    break;
+                                }
                             }
                         }
 
-                        if (inputCorreo) {
-                            if (inputCorreo.value === '') {
-                                inputCorreo.value = data.email || '';
-                                console.log(`✏️ Correo llenado con: ${data.email}`);
-                            } else {
-                                console.log("⚠️ El input Correo ya tenía datos, no se sobrescribió.");
-                            }
+                        if (btnAgregar) {
+                            console.log("👇 Haciendo clic automático en el botón:", btnAgregar);
+                            btnAgregar.click();
+                            // No limpiamos el intervalo, esperamos al siguiente ciclo para ver si ya aparecieron los inputs
+                        } else {
+                            console.error("❌ No encuentro el botón de agregar. Necesito que le pongas un ID en el HTML.");
                         }
-                    } else {
-                        console.warn("⚠️ La tabla existe, pero no tiene inputs dentro todavía.");
                     }
 
                 } else {
-                    console.warn("❌ Tabla no encontrada en este intento.");
+                    console.log(`⏳ Esperando tabla... (${intentos})`);
                 }
 
-                if (intentos >= maxIntentos) {
-                    console.error("❌ Se acabaron los intentos. No se pudo encontrar la tabla.");
-                    clearInterval(intervalo);
-                }
+                if (intentos >= maxIntentos) clearInterval(intervalo);
 
-            }, 500); // Revisar cada 500ms (medio segundo)
+            }, 500); 
 
-        } catch (error) {
-            console.error("❌ Error fatal en el script:", error);
-        }
+        } catch (error) { console.error(error); }
     }
 
-    document.addEventListener('DOMContentLoaded', prellenarContactoConLogs);
+    document.addEventListener('DOMContentLoaded', prellenarContactoMejorado);
