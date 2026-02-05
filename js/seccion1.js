@@ -164,3 +164,62 @@ const CONFIG_SECCION = {
         }
     ]
 };
+
+// Función para pre-llenar el primer contacto
+    async function prellenarContacto() {
+        const idUsuario = localStorage.getItem('idUsuario');
+        if (!idUsuario) return;
+
+        try {
+            // 1. Pedir datos al servidor
+            const response = await fetch(`https://api-cuestionario.onrender.com/api/usuario-basico/${idUsuario}`);
+            const data = await response.json();
+
+            if (data.error) return;
+
+            // 2. Esperar un poco a que el "Motor de Cuestionarios" dibuje la tabla
+            // (A veces tarda unos milisegundos en crear los inputs)
+            setTimeout(() => {
+                
+                // NOTA: Aquí asumo que tu tabla de contactos tiene inputs.
+                // Necesitamos encontrar los inputs de la PRIMERA fila.
+                // Ajusta los selectores si tu tabla usa IDs o Clases específicas.
+                
+                // Buscamos la tabla de la pregunta 6 (id: 6 en tu config)
+                // Usualmente los motores ponen un ID tipo "tabla_6" o dentro de un div "pregunta-6"
+                
+                // Intento genérico de encontrar los inputs:
+                const tabla = document.querySelector('table'); // O busca por ID específico si tienes
+                if (!tabla) return;
+
+                const inputs = tabla.querySelectorAll('input');
+                
+                // Si la tabla tiene estructura: Nombre | Cargo | Correo | Telefono
+                // Los inputs de la primera fila suelen ser los primeros encontrados.
+                
+                if (inputs.length >= 3) {
+                    const inputNombre = inputs[0]; // Primer input (Nombre)
+                    const inputCargo = inputs[1];  // Segundo input (Cargo) - Lo dejamos blanco
+                    const inputCorreo = inputs[2]; // Tercer input (Correo)
+
+                    // Solo llenamos si están vacíos (para no sobrescribir si ya contestó)
+                    if (inputNombre && inputNombre.value === '') {
+                        inputNombre.value = data.nombre_completo;
+                    }
+                    
+                    // El cargo lo dejamos vacío para que él lo ponga
+                    
+                    if (inputCorreo && inputCorreo.value === '') {
+                        inputCorreo.value = data.email;
+                    }
+                }
+
+            }, 1000); // Esperamos 1 segundo a que cargue el HTML dinámico
+
+        } catch (error) {
+            console.error("No se pudo prellenar el contacto:", error);
+        }
+    }
+
+    // Ejecutar cuando cargue la página
+    document.addEventListener('DOMContentLoaded', prellenarContacto);

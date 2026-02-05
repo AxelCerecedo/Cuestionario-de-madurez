@@ -859,6 +859,23 @@ app.get('/respuestas-usuario/:id_usuario', async (req, res) => {
 });
 
 // =========================================================
+// 👤 ENDPOINT: OBTENER DATOS BÁSICOS DEL USUARIO
+// =========================================================
+app.get('/api/usuario-basico/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [rows] = await db.query('SELECT nombre_completo, email FROM usuarios_registrados WHERE id = ?', [id]);
+        
+        if (rows.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
+        
+        res.json(rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error del servidor" });
+    }
+});
+
+// =========================================================
 // 📊 ENDPOINT: OBTENER RESUMEN FINAL
 // =========================================================
 app.get('/resumen/:idUsuario', async (req, res) => {
