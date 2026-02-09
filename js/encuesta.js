@@ -21,35 +21,52 @@ document.addEventListener('DOMContentLoaded', async function() {
         divBienvenida.style.display = 'block';
     }
 
-    // 3. CONFIGURAR UI
-    configurarBotonesNavegacion();
+    // 3. CONFIGURAR UI (Botones atrás/cerrar sesión)
+    if (typeof configurarBotonesNavegacion === 'function') {
+        configurarBotonesNavegacion();
+    }
 
-    // 4. CARGAR ESTRUCTURA DE PREGUNTAS
+    // 4. CARGAR ESTRUCTURA DE PREGUNTAS (Dibuja el HTML)
     cargarCuestionarioLocal();
 
-    // 5. RECUPERAR PROGRESO (AWAIT ES CLAVE AQUÍ)
+    // 5. RECUPERAR PROGRESO (Llena los inputs con datos)
     console.log("⏳ Esperando datos del servidor...");
     await cargarRespuestasPrevias(idUsuario); 
     console.log("✅ Datos cargados y cacheados.");
 
+    // --- REFRESCAR MATRICES SI HAY DATOS PREVIOS ---
     const inputsOrigenActivados = document.querySelectorAll('.input-multiple:checked');
     if (inputsOrigenActivados.length > 0) {
-        // Solo necesitamos dispararlo en uno para que la tabla se entere
         inputsOrigenActivados[0].dispatchEvent(new Event('change'));
         console.log("🔄 Disparador de matriz ejecutado.");
     }
 
-    inicializarLogicaCondicional();
+    // 6. INICIALIZAR LÓGICA CONDICIONAL (SI/NO -> OCULTAR/MOSTRAR)
+    // Usamos un try-catch para que si esta función falla, NO detenga el resto del código
+    try {
+        if (typeof inicializarLogicaCondicional === 'function') {
+            inicializarLogicaCondicional();
+        } else {
+            console.warn("⚠️ La función 'inicializarLogicaCondicional' no está definida. Copia el código al final del archivo.");
+        }
+    } catch (e) {
+        console.error("Error al iniciar lógica condicional:", e);
+    }
 
-    // 6. VERIFICAR SI ESTÁ FINALIZADA
+    // 7. VERIFICAR SI ESTÁ FINALIZADA (MODO LECTURA)
     const estaFinalizada = localStorage.getItem('encuestaFinalizada');
     if (estaFinalizada === '1') {
         activarModoSoloLectura();
     }
     
-    // 7. EVENTO SUBMIT
+    // 8. EVENTO SUBMIT (ESTO ACTIVA LAS VALIDACIONES ROJAS)
     const form = document.getElementById('formularioDinamico');
-    if (form) form.addEventListener('submit', enviarFormulario);
+    if (form) {
+        console.log("✅ Evento Submit asignado correctamente.");
+        form.addEventListener('submit', enviarFormulario);
+    } else {
+        console.error("❌ No se encontró el formulario #formularioDinamico");
+    }
 });
 
 // =========================================================
@@ -1709,4 +1726,79 @@ function activarModoSoloLectura() {
             contenedor.insertBefore(banner, contenedor.firstChild);
         }
     }
+}
+
+// =========================================================
+// 🧠 MOTOR LÓGICO CONDICIONAL (Necesario para Secc 6)
+// =========================================================
+function inicializarLogicaCondicional() {
+    // Si no hay configuración o preguntas, no hacemos nada
+    if (typeof CONFIG_SECCION === 'undefined' || !CONFIG_SECCION.preguntas) return;
+
+    // 1. Filtramos las preguntas que tienen condiciones (Hijas)
+    const preguntasCondicionales = CONFIG_SECCION.preguntas.filter(p => p.condicion);
+
+    if (preguntasCondicionales.length === 0) return;
+
+    console.log("🧠 Inicializando lógica condicional...");
+
+    // 2. Función que evalúa si mostrar u ocultar
+    const evaluar = () => {
+        preguntasCondicionales.forEach(hija => {
+            const padreId = hija.condicion.pregunta;
+            const valorEsperado = String(hija.condicion.valor);
+            
+            // Buscamos el contenedor de la pregunta Hija
+            const divHija = document.getElementById(`pregunta-box-${hija.id}`);
+            
+            // Si no lo encuentra por ID, intenta buscarlo por atributo (Fallback)
+            const divHijaFallback = divHija || document.querySelector(`[data-id-pregunta="${hija.id}"]`)?.closest('.pregunta-box');
+
+            if (!divHijaFallback) return;
+
+            // Buscamos qué respondió el usuario en la pregunta Padre
+            let valorActual = null;
+            
+            // Intento 1: Radio Buttons (Booleanos, Catálogo Único)
+            const radioMarcado = document.querySelector(`input[name="pregunta_${padreId}"]:checked`);
+            if (radioMarcado) {
+                valorActual = radioMarcado.value;
+            } 
+            // Intento 2: Selects
+            else {
+                const select = document.querySelector(`select[data-id-pregunta="${padreId}"]`);
+                if (select) valorActual = select.value;
+            }
+
+            // 3. Comparar y Actuar
+            // Convertimos ambos a String para asegurar comparación ("1" == "1")
+            if (String(valorActual) === valorEsperado) {
+                // MOSTRAR
+                divHijaFallback.style.display = 'block';
+                // Reactivar inputs para que se guarden y sean obligatorios
+                divHijaFallback.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+            } else {
+                // OCULTAR
+                divHijaFallback.style.display = 'none';
+                // Desactivar inputs (ESTO ES LO QUE EVITA QUE TE PIDA OBLIGATORIO)
+                divHijaFallback.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+            }
+        });
+    };
+
+    // 3. Agregar "Listeners" a las preguntas Padre
+    const idsPadres = [...new Set(preguntasCondicionales.map(p => p.condicion.pregunta))];
+
+    idsPadres.forEach(idPadre => {
+        // Escuchar cambios en Radios
+        const radios = document.querySelectorAll(`input[name="pregunta_${idPadre}"]`);
+        radios.forEach(r => r.addEventListener('change', evaluar));
+
+        // Escuchar cambios en Selects
+        const select = document.querySelector(`select[data-id-pregunta="${idPadre}"]`);
+        if (select) select.addEventListener('change', evaluar);
+    });
+
+    // 4. Ejecutar una vez al inicio
+    evaluar();
 }
