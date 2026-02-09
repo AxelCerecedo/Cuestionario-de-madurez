@@ -1105,7 +1105,7 @@ window.agregarFilaContacto = function(datos = null) {
 };
 
 // =========================================================
-// FUNCIÓN: CARGAR RESPUESTAS (CORREGIDA)
+// FUNCIÓN: CARGAR RESPUESTAS (CORREGIDA COMPLETA)
 // =========================================================
 async function cargarRespuestasPrevias(idUsuario) {
     try {
@@ -1117,107 +1117,144 @@ async function cargarRespuestasPrevias(idUsuario) {
         console.log("Cargando datos previos...", data);
         localStorage.setItem('datosCargados', 'true'); 
 
+        // Guardamos la matriz en caché global para cuando se dibuje la tabla dinámica
         window.RESPUESTAS_PREVIAS_CACHE = data.matriz || []; 
+
         // ----------------------------------------------------
-
-        // 1. RECUPERAR RESPUESTAS SIMPLES
-        if (data.simples) {
-            data.simples.forEach(r => {
-                // ... (Tu código actual de simples está bien, déjalo igual) ...
-                if (r.id_opcion_seleccionada == 99) {
-                    const chkNinguno = document.querySelector(`.input-ninguno-manual[data-id-pregunta="${r.id_pregunta}"]`);
-                    if (chkNinguno) {
-                        chkNinguno.checked = true;
-                        chkNinguno.dispatchEvent(new Event('change')); 
-                        return;
-                    }
-                }
-                const inputs = document.querySelectorAll(`.input-respuesta[data-id-pregunta="${r.id_pregunta}"]`);
-                inputs.forEach(input => {
-                    if (input.dataset.tipo === 'red_social' || input.dataset.tipo === 'texto_con_id') {
-                        if (input.dataset.idOpcion == r.id_opcion_seleccionada) input.value = r.respuesta_texto;
-                    } 
-                    else if (input.tagName === 'SELECT') {
-                        input.value = r.id_opcion_seleccionada;
-                        input.dispatchEvent(new Event('change')); 
-                    }
-                    else if (input.type === 'radio') {
-                        if (input.value === r.respuesta_texto || input.value == r.id_opcion_seleccionada) input.checked = true;
-                    }
-                    else if (input.type === 'date') {
-        
-                    // 🟢 FIX: DETECTAR SI ES UN RANGO COMPUESTO
-                    if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
-                        // Separamos el texto: "2020-01-01 al 2020-12-31"
-                        const partes = r.respuesta_texto.split(' al ');
-                        
-                        // 1. Asignamos la primera parte al input principal (input1)
-                        input.value = partes[0]; 
-
-                        // 2. Buscamos al input vecino (input2/auxiliar) que creaste al lado
-                        const inputAuxiliar = input.nextElementSibling;
-                        if (inputAuxiliar && inputAuxiliar.tagName === 'INPUT') {
-                            inputAuxiliar.value = partes[1]; // Asignamos la segunda parte
-                        }
-                    } 
-                    else {
-                        // Si no tiene " al ", es una fecha normal solita
-                        input.value = r.respuesta_texto;
-                    }
-                }
-                    else if (input.dataset.tipo === 'texto') {
-                        input.value = r.respuesta_texto;
-                    }
-                });
-                
-                // Recuperar "Especifique"
-                if (r.id_opcion_seleccionada) {
-                     const inputSpec = document.querySelector(`.input-especificar[data-id-pregunta="${r.id_pregunta}"]`);
-                     if (inputSpec && r.respuesta_texto) {
-                         inputSpec.value = r.respuesta_texto;
-                         inputSpec.style.display = 'inline-block';
-                     }
-                }
-            });
-        }
-
-        // 2. RECUPERAR CHECKBOXES (MÚLTIPLES)
+        // 1. RECUPERAR CHECKBOXES (MÚLTIPLES)
+        // ----------------------------------------------------
+        // Esto va PRIMERO para asegurar que se activen las matrices dinámicas (Sección 5)
         if (data.multiples) {
             data.multiples.forEach(r => {
                 const chk = document.querySelector(`.input-multiple[data-id-pregunta="${r.id_pregunta}"][value="${r.id_opcion}"]`);
                 if (chk) {
                     chk.checked = true;
-                    // IMPORTANTE: Esto ayuda a activar la matriz 39 si marcaste herramientas en la 38
-                    chk.dispatchEvent(new Event('change')); 
+                    // 🔥 CRÍTICO PARA SECCIÓN 5: 
+                    // Disparamos el evento para que el script de la matriz detecte el cambio y cree la fila.
+                    chk.dispatchEvent(new Event('change', { bubbles: true })); 
                 }
             });
         }
 
-        // 3. RECUPERAR MATRIZ ESTÁNDAR (Para las NO incrementales)
+        // ----------------------------------------------------
+        // 2. RECUPERAR RESPUESTAS SIMPLES (TEXTOS, RADIOS Y "OTRO")
+        // ----------------------------------------------------
+        if (data.simples) {
+            data.simples.forEach(r => {
+
+                // A. CASO ESPECIAL: "NINGUNO" (Checkbox manual)
+                if (r.id_opcion_seleccionada == 99) {
+                    const chkNinguno = document.querySelector(`.input-ninguno-manual[data-id-pregunta="${r.id_pregunta}"]`);
+                    if (chkNinguno) {
+                        chkNinguno.checked = true;
+                        chkNinguno.dispatchEvent(new Event('change', { bubbles: true })); 
+                        return;
+                    }
+                }
+
+                // B. CASO ESPECIAL: TEXTO "OTRO" EN OPCIÓN MÚLTIPLE (Sección 6)
+                // El servidor devuelve el texto en 'respuesta_texto' y el ID de la opción en 'id_opcion_seleccionada'
+                if (r.id_opcion_seleccionada) {
+                    const inputSpecMultiple = document.querySelector(`.input-especificar-multiple[data-id-pregunta="${r.id_pregunta}"][data-id-opcion="${r.id_opcion_seleccionada}"]`);
+                    
+                    if (inputSpecMultiple && r.respuesta_texto) {
+                        inputSpecMultiple.value = r.respuesta_texto;
+                        inputSpecMultiple.style.display = 'block'; // 🔥 FORZAMOS VISIBILIDAD
+                        
+                        // Seguridad extra: Asegurar que el checkbox padre esté marcado
+                        const parentDiv = inputSpecMultiple.closest('.opcion-item') || inputSpecMultiple.closest('div');
+                        if (parentDiv) {
+                            const chkPadre = parentDiv.querySelector(`input[type="checkbox"][value="${r.id_opcion_seleccionada}"]`);
+                            if (chkPadre && !chkPadre.checked) {
+                                chkPadre.checked = true;
+                            }
+                        }
+                    }
+                }
+
+                // C. INPUTS ESTÁNDAR (Texto, Fecha, Radio, Select)
+                const inputs = document.querySelectorAll(`.input-respuesta[data-id-pregunta="${r.id_pregunta}"]`);
+                
+                inputs.forEach(input => {
+                    // Redes Sociales y Textos con ID
+                    if (input.dataset.tipo === 'red_social' || input.dataset.tipo === 'texto_con_id') {
+                        if (input.dataset.idOpcion == r.id_opcion_seleccionada) input.value = r.respuesta_texto;
+                    } 
+                    // Selects
+                    else if (input.tagName === 'SELECT') {
+                        input.value = r.id_opcion_seleccionada;
+                        input.dispatchEvent(new Event('change', { bubbles: true })); // Bubbles true para lógica condicional
+                    }
+                    // Radios (Booleano / Única)
+                    else if (input.type === 'radio') {
+                        if (input.value === r.respuesta_texto || input.value == r.id_opcion_seleccionada) {
+                            input.checked = true;
+                            // 🔥 CRÍTICO PARA SECCIÓN 6 (Lógica Condicional P44 -> P45):
+                            input.dispatchEvent(new Event('change', { bubbles: true })); 
+                        }
+                    }
+                    // Fechas (Rango y Simple)
+                    else if (input.type === 'date') {
+                        if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
+                            const partes = r.respuesta_texto.split(' al ');
+                            input.value = partes[0]; 
+                            const inputAuxiliar = input.nextElementSibling;
+                            if (inputAuxiliar && inputAuxiliar.tagName === 'INPUT') {
+                                inputAuxiliar.value = partes[1];
+                            }
+                        } else {
+                            input.value = r.respuesta_texto;
+                        }
+                    }
+                    // Texto libre / Números
+                    else if (input.dataset.tipo === 'texto' || input.type === 'number') {
+                        input.value = r.respuesta_texto;
+                    }
+                });
+                
+                // D. RECUPERAR "ESPECIFIQUE" DE CATÁLOGO ÚNICO (Radios)
+                if (r.id_opcion_seleccionada) {
+                     const inputSpecUnico = document.querySelector(`.input-especificar[data-id-pregunta="${r.id_pregunta}"]`);
+                     if (inputSpecUnico && r.respuesta_texto) {
+                         inputSpecUnico.value = r.respuesta_texto;
+                         inputSpecUnico.style.display = 'block'; // Forzar visibilidad
+                     }
+                }
+            });
+        }
+
+        // ----------------------------------------------------
+        // 3. RECUPERAR MATRIZ ESTÁNDAR
+        // ----------------------------------------------------
         if (data.matriz && data.matriz.length > 0) {
+            // Usamos un timeout un poco más largo para dar tiempo a que las 
+            // matrices dinámicas (generadas por los checkboxes arriba) terminen de dibujarse.
             setTimeout(() => {
                 data.matriz.forEach(m => {
+                    // Nota: Usamos || para soportar inconsistencias de nombres en BD
+                    const idPreg = m.id_pregunta_matriz || m.id_pregunta;
+
                     // Intento Selects
-                    let elSelect = document.querySelector(`.input-matriz-celda[data-id-pregunta="${m.id_pregunta_matriz}"][data-id-fila="${m.id_fila}"][data-id-columna="${m.id_columna}"]`);
+                    let elSelect = document.querySelector(`.input-matriz-celda[data-id-pregunta="${idPreg}"][data-id-fila="${m.id_fila}"][data-id-columna="${m.id_columna}"]`);
                     if (elSelect) elSelect.value = m.valor; 
 
                     // Intento Radios
-                    let elRadio = document.querySelector(`.input-matriz-radio[data-id-pregunta="${m.id_pregunta_matriz}"][data-id-fila="${m.id_fila}"][data-id-columna="${m.id_columna}"][value="${m.valor}"]`);
+                    let elRadio = document.querySelector(`.input-matriz-radio[data-id-pregunta="${idPreg}"][data-id-fila="${m.id_fila}"][data-id-columna="${m.id_columna}"][value="${m.valor}"]`);
                     if (elRadio) elRadio.checked = true;
                 });
-            }, 500); 
+            }, 600); 
         }
 
-        // =========================================================
+        // ----------------------------------------------------
         // 4. RECUPERAR CONTACTOS
-        // =========================================================
+        // ----------------------------------------------------
         const tbody = document.querySelector('#tablaContactos tbody');
         if (tbody) { 
             tbody.innerHTML = ''; 
-            if (data.contactos.length > 0) {
+            if (data.contactos && data.contactos.length > 0) {
                 data.contactos.forEach(c => agregarFilaContacto(c));
             } else {
-                agregarFilaContacto(); // Fila vacía por defecto
+                agregarFilaContacto(); 
             }
         }
 
