@@ -21,7 +21,6 @@ const CONFIG_SECCION = {
             id: 2,
             orden: 2,
             texto: "Año de creación del Archivo o fundación",
-            ayuda: "Formato AAAA",
             tipo: "fecha",
             obligatorio: true
         },
