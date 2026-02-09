@@ -70,96 +70,91 @@ const CONFIG_SECCION = {
     ]
 };
 
+// ... (Arriba va tu CONFIG_SECCION igual que siempre) ...
+
 // =========================================================
-// LÓGICA DE BLOQUEO VISUAL SECCIÓN 5
+// LÓGICA DE VISIBILIDAD SECCIÓN 5 (CORREGIDA Y ROBUSTA)
 // =========================================================
 
-function bloquearMatrizSiNinguna() {
-    const ID_NINGUNA = 3899;
+function gestionarLogicaPregunta38() {
+    const ID_NINGUNA = '3899'; // El ID de la opción "Ninguna"
+    
+    // 1. Identificar el Checkbox "Ninguna"
     const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
     
-    // Buscamos el contenedor de la Matriz (Pregunta 39)
-    let contenedorMatriz = document.getElementById('pregunta-container-39');
+    // 2. Verificar si hay otras opciones seleccionadas (diferentes a ninguna)
+    const otrasSeleccionadas = document.querySelectorAll(`input[type="checkbox"][data-id-pregunta="38"]:checked:not([value="${ID_NINGUNA}"])`);
     
-    if (!contenedorMatriz) {
-        const inputMatriz = document.querySelector('[data-id-pregunta="39"]');
-        if (inputMatriz) {
-            contenedorMatriz = inputMatriz.closest('.card') || inputMatriz.closest('.mb-4');
+    // 3. Buscar el contenedor de la Matriz (Pregunta 39)
+    // Intentamos buscar por el ID de la caja de la pregunta (generado en encuesta.js)
+    let divMatriz = document.getElementById('pregunta-box-39');
+    
+    // Fallback: Si no encuentra por ID, busca por estructura (para asegurar compatibilidad)
+    if (!divMatriz) {
+        const tabla = document.getElementById('matriz_39');
+        if (tabla) {
+            divMatriz = tabla.closest('.pregunta-box') || tabla.closest('.card') || tabla.parentElement;
         }
     }
 
-    if (contenedorMatriz && checkNinguna) {
-        if (checkNinguna.checked) {
-            // === MODO BLOQUEO ===
-            // 1. Bloquear clics (Nadie puede seleccionar nada)
-            contenedorMatriz.style.pointerEvents = 'none';
-            // 2. Hacerla transparente para indicar que está deshabilitada
-            contenedorMatriz.style.opacity = '0.4';
-            contenedorMatriz.style.filter = 'grayscale(100%)'; // Opcional: ponerla en gris
+    if (divMatriz) {
+        // --- ESCENARIO A: OCULTAR LA MATRIZ ---
+        // Si "Ninguna" está marcada O si no se ha seleccionado nada todavía.
+        if ((checkNinguna && checkNinguna.checked) || otrasSeleccionadas.length === 0) {
             
-            // 3. Deshabilitar inputs internos (Doble seguridad)
-            const inputsInternos = contenedorMatriz.querySelectorAll('input');
-            inputsInternos.forEach(input => input.disabled = true);
-
-        } else {
-            // === MODO DESBLOQUEO ===
-            // Restaurar interactividad si selecciona otra cosa
-            const hayOtras = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]:checked').length > 0;
+            // 1. Ocultar visualmente por completo
+            divMatriz.style.display = 'none'; 
             
-            if (hayOtras) {
-                contenedorMatriz.style.pointerEvents = 'auto';
-                contenedorMatriz.style.opacity = '1';
-                contenedorMatriz.style.filter = 'none';
-                
-                const inputsInternos = contenedorMatriz.querySelectorAll('input');
-                inputsInternos.forEach(input => input.disabled = false);
-            } else {
-                // Si no hay nada seleccionado, mejor la ocultamos visualmente (opcional)
-                contenedorMatriz.style.display = 'none';
-            }
+            // 2. DESACTIVAR inputs (CRÍTICO: Esto hace que la validación obligatoria se salte)
+            divMatriz.querySelectorAll('input, select, button').forEach(el => el.disabled = true);
+        } 
+        
+        // --- ESCENARIO B: MOSTRAR LA MATRIZ ---
+        // Si hay herramientas seleccionadas y NO es "Ninguna"
+        else {
+            divMatriz.style.display = 'block'; 
+            
+            // Reactivar inputs para que el usuario pueda contestar
+            divMatriz.querySelectorAll('input, select, button').forEach(el => el.disabled = false);
         }
     }
 }
 
+// Listener para detectar cambios en tiempo real
 document.addEventListener('change', function(e) {
-    // Detectamos cambios en la pregunta 38
+    // Solo nos interesa la pregunta 38
     if (e.target.type === 'checkbox' && e.target.getAttribute('data-id-pregunta') === '38') {
+        
+        const checkbox = e.target;
+        const ID_NINGUNA = '3899';
+        const todosChecks = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]');
 
-        const checkboxClickeado = e.target;
-        const valor = parseInt(checkboxClickeado.value);
-        const ID_NINGUNA = 3899; 
-        const grupoCheckboxes = document.querySelectorAll('input[type="checkbox"][data-id-pregunta="38"]');
-
-        // --- 1. LÓGICA DE EXCLUSIVIDAD (Igual que antes) ---
-        if (valor === ID_NINGUNA && checkboxClickeado.checked) {
-            grupoCheckboxes.forEach(cb => {
-                if (parseInt(cb.value) !== ID_NINGUNA) {
+        // LÓGICA DE EXCLUSIVIDAD (Igual que tenías, pero optimizada)
+        // Si marcas 'Ninguna', desmarca todas las demás
+        if (checkbox.value === ID_NINGUNA && checkbox.checked) {
+            todosChecks.forEach(cb => {
+                if (cb.value !== ID_NINGUNA) {
                     cb.checked = false;
-                    cb.dispatchEvent(new Event('change', { bubbles: true })); 
+                    // Disparamos evento change para actualizar visualmente si es necesario
+                    cb.dispatchEvent(new Event('change', { bubbles: false })); 
                 }
             });
+        } 
+        // Si marcas cualquier otra, desmarca 'Ninguna'
+        else if (checkbox.value !== ID_NINGUNA && checkbox.checked) {
+            const checkNinguna = document.querySelector(`input[value="${ID_NINGUNA}"][data-id-pregunta="38"]`);
+            if (checkNinguna && checkNinguna.checked) {
+                checkNinguna.checked = false;
+            }
         }
 
-        if (valor !== ID_NINGUNA && checkboxClickeado.checked) {
-            grupoCheckboxes.forEach(cb => {
-                if (parseInt(cb.value) === ID_NINGUNA) {
-                    cb.checked = false;
-                    cb.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-        }
-
-        // --- 2. EJECUTAR EL BLOQUEO ---
-        // Lo ejecutamos con varios retrasos para asegurar que, 
-        // aunque se dibuje la tabla, inmediatamente la bloqueemos.
-        bloquearMatrizSiNinguna();
-        setTimeout(bloquearMatrizSiNinguna, 100);
-        setTimeout(bloquearMatrizSiNinguna, 300);
-        setTimeout(bloquearMatrizSiNinguna, 500);
+        // Ejecutar la lógica de visibilidad inmediatamente
+        gestionarLogicaPregunta38();
     }
 });
 
-// Ejecutar al cargar
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(bloquearMatrizSiNinguna, 200);
+// Ejecutar al cargar la página (por si el usuario regresa a editar y ya traía datos)
+document.addEventListener('DOMContentLoaded', () => {
+    // Pequeño retardo para dar tiempo a que se dibuje el HTML de la matriz
+    setTimeout(gestionarLogicaPregunta38, 200);
 });
