@@ -119,3 +119,73 @@ const CONFIG_SECCION = {
         }
     ]
 };
+
+// =========================================================
+// 🧠 MOTOR LÓGICO CONDICIONAL (NUEVO)
+// =========================================================
+function inicializarLogicaCondicional() {
+    if (typeof CONFIG_SECCION === 'undefined' || !CONFIG_SECCION.preguntas) return;
+
+    // 1. Filtramos las preguntas que tienen condiciones (Hijas)
+    const preguntasCondicionales = CONFIG_SECCION.preguntas.filter(p => p.condicion);
+
+    if (preguntasCondicionales.length === 0) return;
+
+    console.log("🧠 Inicializando lógica condicional...");
+
+    // 2. Función que evalúa si mostrar u ocultar
+    const evaluar = () => {
+        preguntasCondicionales.forEach(hija => {
+            const padreId = hija.condicion.pregunta;
+            const valorEsperado = String(hija.condicion.valor);
+            
+            // Buscamos el contenedor de la pregunta Hija
+            const divHija = document.getElementById(`pregunta-box-${hija.id}`);
+            if (!divHija) return;
+
+            // Buscamos qué respondió el usuario en la pregunta Padre
+            let valorActual = null;
+            
+            // Intento 1: Radio Buttons (Booleanos, Catálogo Único)
+            const radioMarcado = document.querySelector(`input[name="pregunta_${padreId}"]:checked`);
+            if (radioMarcado) {
+                valorActual = radioMarcado.value;
+            } 
+            // Intento 2: Selects
+            else {
+                const select = document.querySelector(`select[data-id-pregunta="${padreId}"]`);
+                if (select) valorActual = select.value;
+            }
+
+            // 3. Comparar y Actuar
+            if (valorActual === valorEsperado) {
+                // MOSTRAR
+                divHija.style.display = 'block';
+                // Reactivar inputs para que se guarden y sean obligatorios
+                divHija.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+            } else {
+                // OCULTAR
+                divHija.style.display = 'none';
+                // Desactivar inputs (IMPORTANTE: Esto evita que validación 'obligatorio' bloquee el envío)
+                divHija.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+            }
+        });
+    };
+
+    // 3. Agregar "Listeners" a las preguntas Padre
+    // Identificamos los IDs únicos de los padres para no repetir listeners
+    const idsPadres = [...new Set(preguntasCondicionales.map(p => p.condicion.pregunta))];
+
+    idsPadres.forEach(idPadre => {
+        // Escuchar cambios en Radios
+        const radios = document.querySelectorAll(`input[name="pregunta_${idPadre}"]`);
+        radios.forEach(r => r.addEventListener('change', evaluar));
+
+        // Escuchar cambios en Selects
+        const select = document.querySelector(`select[data-id-pregunta="${idPadre}"]`);
+        if (select) select.addEventListener('change', evaluar);
+    });
+
+    // 4. Ejecutar una vez al inicio (para aplicar reglas a datos cargados)
+    evaluar();
+}

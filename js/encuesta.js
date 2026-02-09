@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log("🔄 Disparador de matriz ejecutado.");
     }
 
+    inicializarLogicaCondicional();
+
     // 6. VERIFICAR SI ESTÁ FINALIZADA
     const estaFinalizada = localStorage.getItem('encuestaFinalizada');
     if (estaFinalizada === '1') {
@@ -118,6 +120,8 @@ function cargarCuestionarioLocal() {
 
 function crearHTMLPregunta(p) {
     const div = document.createElement('div');
+
+    if (p.id) div.id = `pregunta-box-${p.id}`;
     
     // --- 1. TÍTULOS DE SUBSECCIÓN ---
     if (p.tipo === 'titulo_subseccion') {
