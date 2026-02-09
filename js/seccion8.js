@@ -38,7 +38,7 @@ const CONFIG_SECCION = {
                 // ESTA SE QUEDA MULTIPLE (CHECKBOXES) - NO AGREGAMOS NADA
                 { 
                     id: 494, 
-                    texto: "Tipo de documento que utiliza para prestamo y devulución de documentos", 
+                    texto: "Tipo de documento que utiliza para prestamo y devolución de documentos", 
                     ayuda: "Seleccione los formatos que utiliza:",
                     sub_opciones: [
                         { id: 4941, texto: "Formato institucional" },
