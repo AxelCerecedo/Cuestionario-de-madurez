@@ -250,5 +250,68 @@
     </script>
     <script src="js/encuesta.js"></script>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Esperamos un momento a que el motor dibuje las preguntas
+        setTimeout(activarLogicaCondicional, 500);
+    });
+
+    function activarLogicaCondicional() {
+        console.log("🔵 Activando lógica condicional para P44 -> P45, P46");
+
+        // 1. Identificar los elementos
+        // Asumimos que los radios de la pregunta 44 tienen names como "p_44" o ids relacionados
+        // Buscamos el contenedor de la pregunta 44 para encontrar sus inputs
+        
+        // NOTA: Ajusta el selector si tu motor usa IDs diferentes (ej: #pregunta-container-44)
+        const inputsP44 = document.querySelectorAll('input[name="respuesta_44"]'); 
+        
+        // Contenedores a ocultar (Preguntas 45 y 46)
+        // Busca los DIVs que envuelven a estas preguntas
+        // Si tu motor no les pone ID, intenta buscar por clase o estructura.
+        // Aquí asumo que tu motor genera IDs tipo "pregunta-45"
+        const divP45 = document.getElementById('pregunta-45') || document.querySelector('#card-45');
+        const divP46 = document.getElementById('pregunta-46') || document.querySelector('#card-46');
+
+        if (!inputsP44.length) {
+            console.warn("⚠️ No se encontraron los inputs de la pregunta 44. Verifica el 'name' en el HTML.");
+            return;
+        }
+
+        // Función para mostrar/ocultar
+        function evaluarCondicion() {
+            let valorSeleccionado = null;
+            inputsP44.forEach(input => {
+                if (input.checked) valorSeleccionado = input.value;
+            });
+
+            // Si es "1" (Sí), mostramos. Si es "0" (No) o null, ocultamos.
+            const mostrar = (valorSeleccionado === "1");
+
+            [divP45, divP46].forEach(div => {
+                if (div) {
+                    if (mostrar) {
+                        div.style.display = 'block'; // O 'flex'/'grid' según tu diseño
+                        // Reactivar inputs obligatorios (si el motor usa el atributo required)
+                        div.querySelectorAll('input, select').forEach(el => el.disabled = false);
+                    } else {
+                        div.style.display = 'none';
+                        // Desactivar inputs para que no impidan enviar el formulario
+                        div.querySelectorAll('input, select').forEach(el => el.disabled = true);
+                    }
+                }
+            });
+        }
+
+        // 2. Agregar el evento 'change' a los radios de P44
+        inputsP44.forEach(input => {
+            input.addEventListener('change', evaluarCondicion);
+        });
+
+        // 3. Ejecutar al inicio por si ya había una respuesta guardada
+        evaluarCondicion();
+    }
+</script>
+
 </body>
 </html>
