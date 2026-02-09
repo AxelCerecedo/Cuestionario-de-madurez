@@ -24,14 +24,27 @@ app.use(session({
 
 
 // ==========================
-// LOGS GLOBALES (NUEVO)
+// LOGS INTELIGENTES (MEJORADO)
 // ==========================
 app.use((req, res, next) => {
-    console.log(`\n🔔 [PETICIÓN RECIBIDA] Método: ${req.method} | URL: ${req.url}`);
-    console.log('📦 Datos recibidos (Body):', req.body);
-    next(); // Deja pasar la petición a las siguientes rutas
-});
+    console.log(`\n🔔 [${req.method}] ${req.url}`);
+    
+    // Si es POST o PUT, mostramos el Body (si tiene algo)
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+        if (Object.keys(req.body).length > 0) {
+            console.log('📦 Body:', JSON.stringify(req.body, null, 2)); // JSON bonito
+        } else {
+            console.log('Mw Body: (Vacío)');
+        }
+    } 
+    
+    // Si es GET, mostramos los parámetros de URL (si tiene)
+    if (req.method === 'GET' && Object.keys(req.query).length > 0) {
+        console.log('🔍 Query Params:', req.query);
+    }
 
+    next(); 
+});
 
 // ==========================
 // 3. Conexión a MySQL (MODO HÍBRIDO: NUBE + LOCAL)
