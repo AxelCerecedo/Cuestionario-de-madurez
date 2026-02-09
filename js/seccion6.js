@@ -78,8 +78,7 @@ const CONFIG_SECCION = {
                 { id: 7, texto: "Cómputo, herramientas digitales o bases de datos" },
                 { id: 8, texto: "Historia / arte" },
                 { id: 9, texto: "Manipulación física del material del acervo" }, // Corregí el error de dedo "Manipulacón"
-                { id: 10, texto: "Otro", especificar: true },
-                { id: 99, texto: "Ninguno" }  
+                { id: 10, texto: "Otro", especificar: true }
             ]
         },
         // --- PREGUNTA DEPENDIENTE 2 ---
