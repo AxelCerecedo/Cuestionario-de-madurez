@@ -157,103 +157,83 @@ const CONFIG_SECCION = {
     ]
 };
 
-   // =========================================================
-// AUTO-LLENADO DE PERFIL (SOLO SI NO HAY DATOS PREVIOS)
-// =========================================================
-async function autoLlenarPrimerContacto() {
-    console.log("🔵 [AUTO-LLENADO] Iniciando proceso...");
+    async function autoLlenarPrimerContacto() {
+        console.log("🔵 [AUTO-LLENADO] Iniciando proceso...");
 
-    // 🛑 FRENO 1: Si al arrancar ya hay datos cargados, nos vamos.
-    if (localStorage.getItem('datosCargados') === 'true') {
-        console.log("🛑 Datos previos ya existen. Cancelando auto-llenado.");
-        return;
+        const idUsuario = localStorage.getItem('idUsuario');
+        if (!idUsuario) return;
+
+        try {
+            // 1. OBTENER DATOS DEL USUARIO
+            const response = await fetch(`https://api-cuestionario.onrender.com/api/usuario-basico/${idUsuario}`);
+            const data = await response.json();
+            
+            if (data.error) { console.error("Error obteniendo usuario:", data.error); return; }
+            
+            console.log("🔵 Datos recuperados:", data);
+
+            // 2. BUCLE PARA BUSCAR TABLA Y BOTÓN (POLLING)
+            let intentos = 0;
+            const maxIntentos = 10; // Intentar durante 5 segundos aprox
+
+            const intervalo = setInterval(() => {
+                intentos++;
+                const tabla = document.getElementById('tablaContactos');
+                
+                if (tabla) {
+                    const inputs = tabla.querySelectorAll('input');
+                    
+                    // ESCENARIO A: La tabla está vacía (0 inputs) -> Hay que dar clic en "Agregar"
+                    if (inputs.length === 0) {
+                        //console.log(`⚠️ Intento ${intentos}: Tabla vacía. Buscando botón .btn-agregar...`);
+                        
+                        // AQUÍ USAMOS LA CLASE QUE ME DISTE
+                        const btnAgregar = document.querySelector('.btn-agregar');
+
+                        if (btnAgregar) {
+                           // console.log("👇 Clic automático en '+ Agregar Contacto'");
+                            btnAgregar.click();
+                            // No detenemos el intervalo todavía, esperamos al siguiente ciclo para ver los inputs
+                        } else {
+                            console.warn("❌ No encuentro el botón con clase .btn-agregar");
+                        }
+                    } 
+                    
+                    else {
+
+                        const inputNombre = inputs[0]; 
+                        const inputCorreo = inputs[2]; // <--- CAMBIA A [1] SI CORREO ES LA SEGUNDA COLUMNA
+
+                        // Solo llenamos si están vacíos para no borrar lo que escriba el usuario
+                        if (inputNombre && inputNombre.value === '') {
+                            inputNombre.value = data.nombre_completo;
+                            // Disparamos evento para que el sistema detecte que se escribió algo
+                            inputNombre.dispatchEvent(new Event('input', { bubbles: true }));
+                            inputNombre.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+
+                        if (inputCorreo && inputCorreo.value === '') {
+                            inputCorreo.value = data.email;
+                            inputCorreo.dispatchEvent(new Event('input', { bubbles: true }));
+                            inputCorreo.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+
+                        console.log("✨ ¡Primer contacto llenado con éxito!");
+                        clearInterval(intervalo); // TERMINAMOS
+                    }
+
+                } else {
+                  //  console.log(`⏳ Esperando a que se dibuje la tabla... (${intentos})`);
+                }
+
+                if (intentos >= maxIntentos) {
+                    clearInterval(intervalo);
+                   // console.log("⏹️ Se acabaron los intentos.");
+                }
+
+            }, 500); // Revisar cada medio segundo
+
+        } catch (error) { console.error(error); }
     }
 
-    const idUsuario = localStorage.getItem('idUsuario');
-    if (!idUsuario) return;
-
-    try {
-        // 1. OBTENER DATOS DEL USUARIO
-        const response = await fetch(`https://api-cuestionario.onrender.com/api/usuario-basico/${idUsuario}`);
-        const data = await response.json();
-        
-        if (data.error) { console.error("Error obteniendo usuario:", data.error); return; }
-        
-        console.log("🔵 Datos de perfil recuperados:", data);
-
-        // 2. BUCLE PARA BUSCAR TABLA Y BOTÓN (POLLING)
-        let intentos = 0;
-        const maxIntentos = 10; 
-
-        const intervalo = setInterval(() => {
-            intentos++;
-
-            // 🛑 FRENO 2: CRÍTICO
-            // Revisamos en cada intento. Si en medio segundo encuesta.js terminó de cargar,
-            // nosotros nos detenemos inmediatamente para no sobrescribir.
-            if (localStorage.getItem('datosCargados') === 'true') {
-                console.log("🛑 Se detectó carga de datos externos. Deteniendo auto-llenado.");
-                clearInterval(intervalo);
-                return;
-            }
-
-            const tabla = document.getElementById('tablaContactos');
-            
-            if (tabla) {
-                // Buscamos filas EXISTENTES (Tr) en el cuerpo de la tabla
-                const filas = tabla.querySelectorAll('tbody tr');
-                
-                // Si ya hay filas y tienen datos, asumimos que son los guardados y paramos
-                if (filas.length > 0) {
-                    const primerInput = filas[0].querySelector('input');
-                    if (primerInput && primerInput.value !== '') {
-                        // Ya hay algo escrito (probablemente recuperado de la BD)
-                        console.log("🛑 La tabla ya tiene datos. Cancelando auto-llenado.");
-                        clearInterval(intervalo);
-                        return;
-                    }
-                }
-
-                const inputs = tabla.querySelectorAll('input');
-                
-                // ESCENARIO A: Tabla vacía -> Clic en Agregar
-                if (inputs.length === 0) {
-                    const btnAgregar = document.querySelector('.btn-agregar'); // Tu clase correcta
-                    if (btnAgregar) {
-                        btnAgregar.click();
-                    } 
-                } 
-                // ESCENARIO B: Ya hay inputs vacíos -> Llenamos
-                else {
-                    const inputNombre = inputs[0]; 
-                    // OJO: Ajusta el índice si agregaste columnas. 
-                    // 0=Nombre, 1=Cargo, 2=Correo (según tu HTML actual)
-                    const inputCorreo = inputs[2]; 
-
-                    // Solo llenamos si están EFECTIVAMENTE vacíos
-                    if (inputNombre && inputNombre.value.trim() === '') {
-                        inputNombre.value = data.nombre_completo || '';
-                        inputNombre.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-
-                    if (inputCorreo && inputCorreo.value.trim() === '') {
-                        inputCorreo.value = data.email || '';
-                        inputCorreo.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-
-                    console.log("✨ ¡Primer contacto llenado con datos de perfil!");
-                    clearInterval(intervalo); // TERMINAMOS
-                }
-
-            } 
-
-            if (intentos >= maxIntentos) {
-                clearInterval(intervalo);
-            }
-
-        }, 500); 
-
-    } catch (error) { console.error(error); }
-}
-
-document.addEventListener('DOMContentLoaded', autoLlenarPrimerContacto);
+    document.addEventListener('DOMContentLoaded', autoLlenarPrimerContacto);
