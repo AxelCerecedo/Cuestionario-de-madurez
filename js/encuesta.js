@@ -365,7 +365,7 @@ function crearHTMLPregunta(p) {
         }
     }
 
-    // --- D. TABLA DE CONTACTOS (ESTILO MEJORADO) ---
+    // --- D. TABLA DE CONTACTOS ----
     else if (p.tipo === 'tabla_contactos') {
         const tableContainer = document.createElement('div');
         
@@ -373,7 +373,7 @@ function crearHTMLPregunta(p) {
         tableContainer.style.marginTop = '15px';
         tableContainer.style.border = '1px solid #e9ecef';
         tableContainer.style.borderRadius = '8px';
-        tableContainer.style.overflow = 'hidden'; // Para que las esquinas redondeadas funcionen
+        tableContainer.style.overflow = 'hidden'; 
         tableContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.03)';
 
         tableContainer.innerHTML = `
@@ -386,19 +386,20 @@ function crearHTMLPregunta(p) {
                             <th style="padding: 12px 10px; text-align: left; color: #495057; font-weight: 600; width: 22%;">Correo Electrónico</th>
                             <th style="padding: 12px 10px; text-align: left; color: #495057; font-weight: 600; width: 15%;">Tel. Institucional</th>
                             <th style="padding: 12px 10px; text-align: left; color: #495057; font-weight: 600; width: 15%;">Otro Teléfono</th>
-                            <th style="width: 6%;"></th> </tr>
+                            <th style="width: 6%;"></th> 
+                        </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
             
-            <div style="padding: 15px; background: #fafafa; border-top: 1px solid #eee; text-align: right;">
+            <div style="padding: 15px; background: #fafafa; border-top: 1px solid #eee; text-align: left;">
                 <button type="button" class="btn-agregar" onclick="agregarFilaContacto()" 
                     style="
                         padding: 8px 16px; 
                         background-color: #fff; 
-                        border: 1px solid #0d6efd; 
-                        color: #0d6efd; 
+                        border: 1px solid #7c1225; /* Borde Rojo Vino */
+                        color: #7c1225;           /* Texto Rojo Vino */
                         border-radius: 5px; 
                         cursor: pointer; 
                         font-weight: 500;
@@ -407,8 +408,8 @@ function crearHTMLPregunta(p) {
                         gap: 8px;
                         transition: all 0.2s ease;
                     "
-                    onmouseover="this.style.backgroundColor='#0d6efd'; this.style.color='white';"
-                    onmouseout="this.style.backgroundColor='#fff'; this.style.color='#0d6efd';"
+                    onmouseover="this.style.backgroundColor='#7c1225'; this.style.color='white';"
+                    onmouseout="this.style.backgroundColor='#fff'; this.style.color='#7c1225';"
                 >
                     <i class="fas fa-user-plus"></i> Agregar Contacto
                 </button>
