@@ -13,7 +13,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 20,
-            orden: 20,
+            orden: 19,
             texto: "Indique el volumen aproximado del acervo fotográfico que resguardan",
             tipo: "catalogo_unico",
             obligatorio: true, 
@@ -27,7 +27,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 21, 
-            orden: 21,
+            orden: 20,
             texto: "Describa los fondos o colecciones más representativos (máximo 3)",
             ayuda: "Indique el nombre o descripción breve de cada fondo.",
             tipo: "lista_inputs", 
@@ -40,7 +40,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 22,
-            orden: 22,
+            orden: 21,
             texto: "Tipos de materiales (marcar todos los que correspondan):",
             tipo: "catalogo_multiple",
             obligatorio: true, 
@@ -65,7 +65,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 23,
-            orden: 23,
+            orden: 22,
             texto: "Período temporal aproximado que abarca el acervo",
             ayuda: "Marque una fecha inicial y una fecha final estimadas",
             tipo: "rango_fechas", 
@@ -75,7 +75,7 @@ const CONFIG_SECCION = {
         // --- 🟢 AQUÍ ESTABA EL ERROR DE LA GRÁFICA ---
         {
             id: 24, 
-            orden: 24,
+            orden: 23,
             texto: "¿Cuenta con un registro o control de autoridades?",
             ayuda: "Se considera registro o control de autoridades cualquier sistema que permita identificar de forma consistente a las personas...",
             tipo: "booleano",
@@ -97,7 +97,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 25,
-            orden: 25,
+            orden: 24,
             texto: "¿Qué nivel de adecuación tiene el establecimiento (espacios y distribución)?",
             tipo: "catalogo_unico", 
             obligatorio: true, 
@@ -113,7 +113,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 26,
-            orden: 26,
+            orden: 25,
             texto: "¿Cuál es el nivel de equipamiento disponible para la organización, conservación y prestación de servicios relacionados con el acervo?",
             tipo: "catalogo_unico", 
             obligatorio: true, 
@@ -129,7 +129,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 27,
-            orden: 27,
+            orden: 26,
             texto: "¿Con qué espacios de almacenamiento acondicionados cuenta la institución?",
             ayuda: "Espacio especialmente preparado para conservar el acervo, con control de temperatura, humedad, iluminación, mobiliario adecuado y protección contra riesgos.",
             tipo: "catalogo_multiple",
@@ -147,7 +147,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 28,
-            orden: 28,
+            orden: 27,
             texto: "¿Qué instalaciones fotográficas tiene la institución?",
             tipo: "catalogo_multiple",
             obligatorio: false, 

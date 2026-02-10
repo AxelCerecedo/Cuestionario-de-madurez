@@ -8,7 +8,7 @@ const CONFIG_SECCION = {
     preguntas: [
         {
             id: 41,
-            orden: 41,
+            orden: 40,
             texto: "Número total de personas que trabajan en el archivo/acervo.",
             tipo: "numero",
             obligatorio: true,
@@ -16,7 +16,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 42,
-            orden: 42,
+            orden: 41,
             texto: "Antigüedad promedio del personal",
             tipo: "catalogo_unico",
             obligatorio: false,
@@ -31,7 +31,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 43,
-            orden: 43,
+            orden: 42,
             texto: "Nivel educativo del personal (Seleccione los que apliquen)",
             tipo: "catalogo_tabla",
             obligatorio: false,
@@ -46,7 +46,7 @@ const CONFIG_SECCION = {
         // --- PREGUNTA DETONADORA ---
         {
             id: 44, 
-            orden: 44,
+            orden: 43,
             texto: "¿Cuenta con plan de capacitación?",
             tipo: "booleano",
             obligatorio: true, // Debe ser obligatoria para saber si mostrar las otras
@@ -59,7 +59,7 @@ const CONFIG_SECCION = {
         // --- PREGUNTA DEPENDIENTE 1 ---
         {
             id: 45,
-            orden: 45,
+            orden: 44,
             texto: "Capacitación recibida (marcar todos los que correspondan):",
             tipo: "catalogo_multiple",
             obligatorio: true,
@@ -84,7 +84,7 @@ const CONFIG_SECCION = {
         // --- PREGUNTA DEPENDIENTE 2 ---
         {
             id: 46,
-            orden: 46,
+            orden: 45,
             texto: "¿Con qué frecuencia recibe capacitación relacionada con sus funciones?",
             ayuda: "Para cada tema seleccionado arriba, marque la frecuencia correspondiente.",
             tipo: "matriz_dinamica", 
@@ -106,7 +106,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 47, 
-            orden: 47,
+            orden: 46,
             texto: "¿Se evalúa el desempeño del personal?",
             tipo: "booleano",
             obligatorio: false,

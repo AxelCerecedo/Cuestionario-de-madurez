@@ -8,7 +8,7 @@ const CONFIG_SECCION = {
     preguntas: [
         {
             id: 48, 
-            orden: 48,
+            orden: 47,
             texto: "Disponibilidad de infraestructura y herramientas:",
             ayuda: "Marque las opciones con las que cuenta su institución.",
             tipo: "catalogo_tabla",

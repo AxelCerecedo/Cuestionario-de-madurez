@@ -8,7 +8,7 @@ const CONFIG_SECCION = {
     preguntas: [
         {
             id: 38,
-            orden: 38,
+            orden: 37,
             texto: "De la siguiente lista, seleccione las herramientas utilizadas para resolver las necesidades de gestión de información de su acervo:",
             tipo: "catalogo_multiple",
             obligatorio: true,
@@ -25,7 +25,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 39,
-            orden: 39,
+            orden: 38,
             texto: "De las herramientas que seleccionó, indique su nivel de experiencia o dominio en función de las actividades que realiza.",
             ayuda: "Seleccione una actividad de la lista, agréguela a la tabla y califique su nivel.",
             tipo: "matriz_dinamica",
@@ -51,7 +51,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 40,
-            orden: 40,
+            orden: 39,
             texto: "Porcentaje del acervo disponible en linea",
             ayuda: "Indique qué porcentaje del acervo cuenta con un registro consultable públicamente en un catálogo o plataforma en línea.",
             tipo: "catalogo_unico",
@@ -70,7 +70,6 @@ const CONFIG_SECCION = {
     ]
 };
 
-// ... (Arriba va tu CONFIG_SECCION igual que siempre) ...
 
 // =========================================================
 // LÓGICA DE VISIBILIDAD SECCIÓN 5 (CORREGIDA Y ROBUSTA)

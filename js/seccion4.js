@@ -15,7 +15,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 29,
-            orden: 29,
+            orden: 28,
             texto: "Porcentaje del acervo inventariado",
             ayuda: "Inventariado significa que cada ítem del acervo cuenta con un número de identificación único y está registrado en una lista o sistema que permite saber qué objetos existen y dónde se encuentran.",
             tipo: "catalogo_unico",
@@ -35,7 +35,7 @@ const CONFIG_SECCION = {
         // --- SUBSECCIÓN 4.2 ---
         {
             id: 30,
-            orden: 30,
+            orden: 29,
             texto: "Porcentaje del acervo catalogado",
             ayuda: "Catalogado significa que cada ítem cuenta con información técnica y descriptiva completa siguiendo reglas o estándares de catalogación.",
             tipo: "catalogo_unico",
@@ -52,7 +52,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 31,
-            orden: 31,
+            orden: 30,
             texto: "Reglas de catalogación utilizadas (marcar):",
             ayuda: "Son normas o estándares para describir y organizar el acervo (ej. ISAD-G, MARC21, NMX, Object ID). Seleccione todas las que utilice su institución.",
             tipo: "catalogo_multiple",
@@ -74,7 +74,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 32,
-            orden: 32,
+            orden: 31,
             texto: "Nivel de dominio del personal en las reglas empleadas",
             tipo: "catalogo_unico", 
             obligatorio: true, 
@@ -91,7 +91,7 @@ const CONFIG_SECCION = {
 
         {
             id: 33,
-            orden: 33,
+            orden: 32,
             texto: "Unidad de descripción usada:",
             tipo: "catalogo_unico", 
             obligatorio: false, 
@@ -113,7 +113,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 34,
-            orden: 34,
+            orden: 33,
             texto: "Porcentaje del acervo digitalizado",
             ayuda: "Digitalizado significa que el ítem tiene una copia digital generada bajo parámetros técnicos adecuados.",
             tipo: "catalogo_unico",
@@ -131,7 +131,7 @@ const CONFIG_SECCION = {
 
         {
             id: 35,
-            orden: 35,
+            orden: 34,
             texto: "Métodos de resguardo digital (marcar los que aplique):",
             tipo: "catalogo_multiple",
             obligatorio: true, 
@@ -149,7 +149,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 36,
-            orden: 36,
+            orden: 35,
             texto: "Digitalización que realiza la institución (marcar los que aplique):",
             tipo: "catalogo_multiple",
             obligatorio: false, 
@@ -165,7 +165,7 @@ const CONFIG_SECCION = {
 
         {
             id: 37,
-            orden: 37,
+            orden: 36,
             texto: "Calidad de la digitalización (estándares, formato, resolución) [marcar los que aplique]:",
             tipo: "catalogo_multiple",
             obligatorio: true, 

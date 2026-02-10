@@ -8,7 +8,7 @@ const CONFIG_SECCION = {
     preguntas: [
         {
             id: 49, 
-            orden: 49,
+            orden: 48,
             texto: "Evaluación de procesos, normatividad y conservación",
             ayuda: "Marque la casilla izquierda para confirmar. Si hay opciones, selecciónelas en la derecha.",
             tipo: "catalogo_tabla", 

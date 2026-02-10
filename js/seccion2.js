@@ -5,21 +5,21 @@ const CONFIG_SECCION = {
 
     preguntas: [
         {
-            id: 14, orden: 14,
+            id: 14, orden: 13,
             texto: "Misión",
             ayuda: "Descripción breve de la misión institucional",
             tipo: "texto_largo",
             obligatorio: false
         },
         {
-            id: 15, orden: 15,
+            id: 15, orden: 14,
             texto: "Visión",
             ayuda: "Descripción breve de la visión institucional",
             tipo: "texto_largo",
             obligatorio: false
         },
         {
-            id: 16, orden: 16,
+            id: 16, orden: 15,
             texto: "Objetivos Institucionales",
             ayuda: "Descripción de los objetivos institucionales",
             tipo: "texto_largo",
@@ -28,7 +28,7 @@ const CONFIG_SECCION = {
         },
         // --- AQUÍ ESTABA EL PROBLEMA ---
         {
-            id: 17, orden: 17,
+            id: 17, orden: 16,
             texto: "¿Cuenta con procesos y procedimientos documentados?",
             ayuda: "Procesos y procedimientos definidos...",
             tipo: "booleano", 
@@ -41,7 +41,7 @@ const CONFIG_SECCION = {
             ]
         },
         {
-            id: 18, orden: 18,
+            id: 18, orden: 17,
             texto: "¿Cuenta con un organigrama?",
             tipo: "booleano",
             obligatorio: false,
@@ -54,7 +54,7 @@ const CONFIG_SECCION = {
         },
         // --------------------------------
         {
-            id: 19, orden: 19,
+            id: 19, orden: 18,
             texto: "Mencione cuáles son sus fuentes de financiamiento (marque todas las que correspondan):",
             tipo: "catalogo_multiple", 
             obligatorio: true,
