@@ -1237,38 +1237,52 @@ function crearHTMLPregunta(p) {
 
 
 // =========================================================
-// FUNCIÓN: AGREGAR FILA (SOLO NÚMEROS EN TELÉFONO)
+// FUNCIÓN: AGREGAR FILA (CORREGIDA Y ROBUSTA)
 // =========================================================
 window.agregarFilaContacto = function(datos = null) {
+    // 🔍 DEBUG: Ver qué llega exactamente desde la base de datos
+    if (datos) {
+        console.log("📞 Datos recibidos para fila de contacto:", datos);
+    }
+
     const tbody = document.querySelector('#tablaContactos tbody');
     if (!tbody) return;
 
     const row = document.createElement('tr');
-    // Estilo de la fila
     row.style.borderBottom = '1px solid #e9ecef';
     row.style.backgroundColor = '#fff';
-    row.style.transition = 'background-color 0.2s';
 
-    // Preparamos valores
-    const valNombre = datos ? (datos.nombre || '') : '';
-    const valCargo = datos ? (datos.cargo || '') : '';
-    const valCorreo = datos ? (datos.correo || '') : '';
-    const valTelInst = datos ? (datos.telefono_inst || datos.telefono || '') : ''; 
-    const valTelOtro = datos ? (datos.telefono_otro || '') : '';
+    // --- MAPEO ROBUSTO DE DATOS ---
+    // Intentamos buscar el valor en varias propiedades comunes por si la BD cambia
+    const valNombre = datos ? (datos.nombre || datos.nombre_completo || '') : '';
+    const valCargo  = datos ? (datos.cargo || datos.puesto || '') : '';
+    const valCorreo = datos ? (datos.correo || datos.email || datos.correo_electronico || '') : '';
+    
+    // AQUÍ ESTABA EL PROBLEMA: Agregamos más opciones de nombres para los teléfonos
+    const valTelInst = datos ? (
+        datos.telefono_inst || 
+        datos.telefono_institucional || 
+        datos.telefono || 
+        datos.tel || 
+        datos.telefono1 || 
+        ''
+    ) : '';
 
-    // Estilo común para los inputs
+    const valTelOtro = datos ? (
+        datos.telefono_otro || 
+        datos.telefono_secundario || 
+        datos.celular || 
+        datos.movil || 
+        datos.telefono2 || 
+        ''
+    ) : '';
+
     const inputStyle = `
-        width: 100%; 
-        padding: 8px 10px; 
-        border: 1px solid #ced4da; 
-        border-radius: 4px; 
-        font-size: 0.95em;
-        outline: none;
-        box-sizing: border-box;
+        width: 100%; padding: 8px 10px; border: 1px solid #ced4da; 
+        border-radius: 4px; font-size: 0.95em; outline: none; box-sizing: border-box;
     `;
 
     // HTML de la fila
-    // Nota: Agregamos inputmode="numeric" y maxlength="15" (opcional) a los teléfonos
     row.innerHTML = `
         <td style="padding: 10px;">
             <input type="text" class="contacto-nombre input-respuesta-tabla" value="${valNombre}" placeholder="Nombre completo" style="${inputStyle}">
@@ -1287,46 +1301,36 @@ window.agregarFilaContacto = function(datos = null) {
         </td>
         <td style="padding: 10px; text-align: center; vertical-align: middle;">
             <button type="button" 
-                onclick="if(document.querySelectorAll('#tablaContactos tbody tr').length > 1) this.closest('tr').remove()" 
-                style="
-                    color: #dc3545; 
-                    border: none; 
-                    background: transparent; 
-                    font-size: 1.3em; 
-                    cursor: pointer; 
-                    opacity: 0.7;
-                    transition: opacity 0.2s;
-                    display: flex; align-items: center; justify-content: center;
-                    width: 30px; height: 30px; border-radius: 50%;
-                "
-                onmouseover="this.style.opacity='1'; this.style.backgroundColor='#fff0f0';"
-                onmouseout="this.style.opacity='0.7'; this.style.backgroundColor='transparent';"
+                class="btn-eliminar-fila"
+                style="color: #dc3545; border: none; background: transparent; font-size: 1.3em; cursor: pointer; opacity: 0.7; width: 30px; height: 30px; border-radius: 50%;"
                 title="Eliminar fila">
                 &times;
             </button>
         </td>
     `;
 
-    // --- LÓGICA DE VALIDACIÓN (SOLO NÚMEROS) ---
-    // Seleccionamos los inputs de teléfono de ESTA fila específica
+    // Asignar evento al botón eliminar (más seguro que onclick en línea)
+    const btnEliminar = row.querySelector('.btn-eliminar-fila');
+    btnEliminar.onclick = function() {
+        if(document.querySelectorAll('#tablaContactos tbody tr').length > 1) {
+            row.remove();
+        } else {
+            // Si es la última fila, solo limpiamos los inputs
+            row.querySelectorAll('input').forEach(i => i.value = '');
+        }
+    };
+
+    // --- RESTRICCIÓN NUMÉRICA ---
     const inputsTel = row.querySelectorAll('.contacto-tel-inst, .contacto-tel-otro');
-    
     inputsTel.forEach(input => {
-        // 1. Estilos de Focus (Azul bonito)
+        // Focus styles
         input.addEventListener('focus', () => { input.style.borderColor = '#86b7fe'; input.style.boxShadow = '0 0 0 0.2rem rgba(13,110,253,.25)'; });
         input.addEventListener('blur', () => { input.style.borderColor = '#ced4da'; input.style.boxShadow = 'none'; });
 
-        // 2. RESTRICCIÓN NUMÉRICA ESTRICTA
+        // Solo números al escribir
         input.addEventListener('input', function() {
-            // Reemplaza cualquier cosa que NO sea un número (0-9) por vacío
             this.value = this.value.replace(/[^0-9]/g, '');
         });
-    });
-
-    // También aplicamos estilos de focus a los otros inputs (texto/email)
-    row.querySelectorAll('input:not([type="tel"])').forEach(input => {
-        input.addEventListener('focus', () => { input.style.borderColor = '#86b7fe'; input.style.boxShadow = '0 0 0 0.2rem rgba(13,110,253,.25)'; });
-        input.addEventListener('blur', () => { input.style.borderColor = '#ced4da'; input.style.boxShadow = 'none'; });
     });
 
     tbody.appendChild(row);
