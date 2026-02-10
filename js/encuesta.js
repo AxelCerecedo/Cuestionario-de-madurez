@@ -375,7 +375,8 @@ function crearHTMLPregunta(p) {
                         <th style="padding:8px;">Nombre</th>
                         <th>Cargo</th>
                         <th>Correo</th>
-                        <th>Teléfono</th>
+                        <th>Teléfono institucional</th>
+                        <th>Otro telefono</th>
                         <th></th>
                     </tr>
                 </thead>

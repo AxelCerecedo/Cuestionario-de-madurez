@@ -41,16 +41,8 @@ const CONFIG_SECCION = {
             obligatorio: true
         },
         {
-            id: 5,
-            orden: 5,
-            texto: "Teléfono Institucional",
-            ayuda: "Incluir lada",
-            tipo: "numero",
-            obligatorio: false
-        },
-        {
             id: 6,
-            orden: 6,
+            orden: 5,
             texto: "Contactos",
             ayuda: "Agregue los contactos necesarios",
             tipo: "tabla_contactos", 
@@ -58,7 +50,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 7,
-            orden: 7,
+            orden: 6,
             texto: "Página Web (Website)",
             ayuda: "URL completa",
             tipo: "liga",
@@ -66,7 +58,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 8,
-            orden: 8,
+            orden: 7,
             texto: "Redes Sociales",
             ayuda: "Copie y pegue la URL de sus perfiles (Deje en blanco las que no tenga)",
             tipo: "liga_multiple", 
@@ -87,7 +79,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 9,
-            orden: 9,
+            orden: 8,
             texto: "Tipo de institución",
             tipo: "catalogo_unico",
             obligatorio: true,
@@ -101,7 +93,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 10,
-            orden: 10,
+            orden: 9,
             texto: "Adscripción",
             ayuda: "¿Depende de alguna organización? Indicar cuál",
             tipo: "texto_corto",
@@ -109,7 +101,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 11,
-            orden: 11,
+            orden: 10,
             texto: "El acervo esta en resguardo de:",
             tipo: "catalogo_unico",
             obligatorio: true, 
@@ -125,7 +117,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 12,
-            orden: 12,
+            orden: 11,
             texto: "Tipos de acervos resguardados",
             ayuda: "Indique qué tipos de acervos o colecciones resguarda su institución (puede seleccionar más de uno)",
             tipo: "catalogo_multiple",
@@ -149,7 +141,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 13,
-            orden: 13,
+            orden: 12,
             texto: "Propósito del acervo",
             tipo: "catalogo_multiple",
             obligatorio: true,
