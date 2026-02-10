@@ -1122,7 +1122,7 @@ function crearHTMLPregunta(p) {
 
 
 // =========================================================
-// FUNCIÓN: AGREGAR FILA (ESTILO MEJORADO)
+// FUNCIÓN: AGREGAR FILA (SOLO NÚMEROS EN TELÉFONO)
 // =========================================================
 window.agregarFilaContacto = function(datos = null) {
     const tbody = document.querySelector('#tablaContactos tbody');
@@ -1141,7 +1141,7 @@ window.agregarFilaContacto = function(datos = null) {
     const valTelInst = datos ? (datos.telefono_inst || datos.telefono || '') : ''; 
     const valTelOtro = datos ? (datos.telefono_otro || '') : '';
 
-    // Estilo común para los inputs de la tabla
+    // Estilo común para los inputs
     const inputStyle = `
         width: 100%; 
         padding: 8px 10px; 
@@ -1149,15 +1149,11 @@ window.agregarFilaContacto = function(datos = null) {
         border-radius: 4px; 
         font-size: 0.95em;
         outline: none;
-        box-sizing: border-box; /* Importante para que el padding no rompa el ancho */
+        box-sizing: border-box;
     `;
 
-    // Función helper para añadir efecto focus (ya que no podemos usar CSS externo fácil aquí)
-    const addFocusListeners = (input) => {
-        input.addEventListener('focus', () => { input.style.borderColor = '#86b7fe'; input.style.boxShadow = '0 0 0 0.2rem rgba(13,110,253,.25)'; });
-        input.addEventListener('blur', () => { input.style.borderColor = '#ced4da'; input.style.boxShadow = 'none'; });
-    };
-
+    // HTML de la fila
+    // Nota: Agregamos inputmode="numeric" y maxlength="15" (opcional) a los teléfonos
     row.innerHTML = `
         <td style="padding: 10px;">
             <input type="text" class="contacto-nombre input-respuesta-tabla" value="${valNombre}" placeholder="Nombre completo" style="${inputStyle}">
@@ -1169,10 +1165,10 @@ window.agregarFilaContacto = function(datos = null) {
             <input type="email" class="contacto-correo input-respuesta-tabla" value="${valCorreo}" placeholder="ejemplo@email.com" style="${inputStyle}">
         </td>
         <td style="padding: 10px;">
-            <input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" placeholder="Institucional" style="${inputStyle}">
+            <input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" placeholder="Solo números" inputmode="numeric" maxlength="15" style="${inputStyle}">
         </td>
         <td style="padding: 10px;">
-            <input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" placeholder="Celular/Otro" style="${inputStyle}">
+            <input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" placeholder="Solo números" inputmode="numeric" maxlength="15" style="${inputStyle}">
         </td>
         <td style="padding: 10px; text-align: center; vertical-align: middle;">
             <button type="button" 
@@ -1196,8 +1192,27 @@ window.agregarFilaContacto = function(datos = null) {
         </td>
     `;
 
-    // Aplicar efectos de focus a los nuevos inputs
-    row.querySelectorAll('input').forEach(addFocusListeners);
+    // --- LÓGICA DE VALIDACIÓN (SOLO NÚMEROS) ---
+    // Seleccionamos los inputs de teléfono de ESTA fila específica
+    const inputsTel = row.querySelectorAll('.contacto-tel-inst, .contacto-tel-otro');
+    
+    inputsTel.forEach(input => {
+        // 1. Estilos de Focus (Azul bonito)
+        input.addEventListener('focus', () => { input.style.borderColor = '#86b7fe'; input.style.boxShadow = '0 0 0 0.2rem rgba(13,110,253,.25)'; });
+        input.addEventListener('blur', () => { input.style.borderColor = '#ced4da'; input.style.boxShadow = 'none'; });
+
+        // 2. RESTRICCIÓN NUMÉRICA ESTRICTA
+        input.addEventListener('input', function() {
+            // Reemplaza cualquier cosa que NO sea un número (0-9) por vacío
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    });
+
+    // También aplicamos estilos de focus a los otros inputs (texto/email)
+    row.querySelectorAll('input:not([type="tel"])').forEach(input => {
+        input.addEventListener('focus', () => { input.style.borderColor = '#86b7fe'; input.style.boxShadow = '0 0 0 0.2rem rgba(13,110,253,.25)'; });
+        input.addEventListener('blur', () => { input.style.borderColor = '#ced4da'; input.style.boxShadow = 'none'; });
+    });
 
     tbody.appendChild(row);
 };
