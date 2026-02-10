@@ -365,28 +365,31 @@ function crearHTMLPregunta(p) {
         }
     }
 
-    // --- D. TABLA DE CONTACTOS ---
+    // --- D. TABLA DE CONTACTOS (ACTUALIZADA) ---
     else if (p.tipo === 'tabla_contactos') {
         const tableContainer = document.createElement('div');
         tableContainer.innerHTML = `
-            <table class="tabla-contactos" id="tablaContactos" style="width:100%; margin-top:10px; border-collapse: collapse;">
-                <thead>
-                    <tr style="background:#eee; text-align:left;">
-                        <th style="padding:8px;">Nombre</th>
-                        <th>Cargo</th>
-                        <th>Correo</th>
-                        <th>Teléfono institucional</th>
-                        <th>Otro telefono</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <button type="button" class="btn-agregar" onclick="agregarFilaContacto()" style="margin-top:10px; padding:5px 10px; cursor:pointer;">
-                + Agregar Contacto
+            <div style="overflow-x: auto;">
+                <table class="tabla-contactos" id="tablaContactos" style="width:100%; margin-top:10px; border-collapse: collapse; min-width: 600px;">
+                    <thead>
+                        <tr style="background:#f1f1f1; text-align:left; border-bottom: 2px solid #ddd;">
+                            <th style="padding:10px; width:20%;">Nombre</th>
+                            <th style="padding:10px; width:20%;">Cargo</th>
+                            <th style="padding:10px; width:20%;">Correo</th>
+                            <th style="padding:10px; width:15%;">Tel. Institucional</th>
+                            <th style="padding:10px; width:15%;">Otro Teléfono</th>
+                            <th style="width:5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button type="button" class="btn-agregar" onclick="agregarFilaContacto()" style="margin-top:10px; padding:8px 15px; cursor:pointer; background-color:#e9ecef; border:1px solid #ced4da; border-radius:4px;">
+                <i class="fas fa-plus"></i> Agregar Contacto
             </button>
         `;
         div.appendChild(tableContainer);
+        // Cargar fila vacía inicial si no hay datos previos
         if (!localStorage.getItem('datosCargados')) {
              setTimeout(() => agregarFilaContacto(), 100); 
         }
@@ -1090,17 +1093,31 @@ function crearHTMLPregunta(p) {
 }
 
 // Función para agregar filas a la tabla (Soporta precarga de datos)
+// Función para agregar filas a la tabla (ACTUALIZADA 2 TELÉFONOS)
 window.agregarFilaContacto = function(datos = null) {
     const tbody = document.querySelector('#tablaContactos tbody');
     if (!tbody) return;
 
     const row = document.createElement('tr');
+    row.style.borderBottom = '1px solid #eee';
+    
+    // Recuperamos datos si existen, si no, cadena vacía
+    const valNombre = datos ? (datos.nombre || '') : '';
+    const valCargo = datos ? (datos.cargo || '') : '';
+    const valCorreo = datos ? (datos.correo || '') : '';
+    // Aquí el cambio importante: recuperamos dos teléfonos
+    const valTelInst = datos ? (datos.telefono_inst || datos.telefono || '') : ''; 
+    const valTelOtro = datos ? (datos.telefono_otro || '') : '';
+
     row.innerHTML = `
-        <td><input type="text" class="contacto-nombre" value="${datos ? datos.nombre : ''}" placeholder="Nombre" style="width:95%"></td>
-        <td><input type="text" class="contacto-cargo" value="${datos ? datos.cargo : ''}" placeholder="Cargo" style="width:95%"></td>
-        <td><input type="text" class="contacto-correo" value="${datos ? datos.correo : ''}" placeholder="Email" style="width:95%"></td>
-        <td><input type="text" class="contacto-tel" value="${datos ? datos.telefono : ''}" placeholder="Tel" style="width:95%"></td>
-        <td><button type="button" onclick="this.closest('tr').remove()" style="color:red; cursor:pointer; border:none; background:none; font-weight:bold;">X</button></td>
+        <td style="padding:5px;"><input type="text" class="contacto-nombre input-respuesta-tabla" value="${valNombre}" placeholder="Nombre completo" style="width:100%; padding:5px;"></td>
+        <td style="padding:5px;"><input type="text" class="contacto-cargo input-respuesta-tabla" value="${valCargo}" placeholder="Cargo" style="width:100%; padding:5px;"></td>
+        <td style="padding:5px;"><input type="email" class="contacto-correo input-respuesta-tabla" value="${valCorreo}" placeholder="ejemplo@email.com" style="width:100%; padding:5px;"></td>
+        <td style="padding:5px;"><input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" placeholder="Institucional" style="width:100%; padding:5px;"></td>
+        <td style="padding:5px;"><input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" placeholder="Celular/Otro" style="width:100%; padding:5px;"></td>
+        <td style="padding:5px; text-align:center;">
+            <button type="button" onclick="if(document.querySelectorAll('#tablaContactos tbody tr').length > 1) this.closest('tr').remove()" style="color:#dc3545; cursor:pointer; border:none; background:none; font-weight:bold; font-size:1.2em;" title="Eliminar fila">&times;</button>
+        </td>
     `;
     tbody.appendChild(row);
 };
