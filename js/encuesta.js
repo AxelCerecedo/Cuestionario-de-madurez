@@ -1165,10 +1165,10 @@ window.agregarFilaContacto = function(datos = null) {
             <input type="email" class="contacto-correo input-respuesta-tabla" value="${valCorreo}" placeholder="ejemplo@email.com" style="${inputStyle}">
         </td>
         <td style="padding: 10px;">
-            <input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" placeholder="Solo números" inputmode="numeric" maxlength="15" style="${inputStyle}">
+            <input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" inputmode="numeric" maxlength="15" style="${inputStyle}">
         </td>
         <td style="padding: 10px;">
-            <input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" placeholder="Solo números" inputmode="numeric" maxlength="15" style="${inputStyle}">
+            <input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" inputmode="numeric" maxlength="15" style="${inputStyle}">
         </td>
         <td style="padding: 10px; text-align: center; vertical-align: middle;">
             <button type="button" 
