@@ -20,9 +20,10 @@ const CONFIG_SECCION = {
         {
             id: 2,
             orden: 2,
-            texto: "Año de creación del Archivo o fundación",
-            tipo: "fecha",
-            obligatorio: true
+            texto: "Fecha de creación del Archivo o fundación",
+            ayuda: "Ingrese al menos el año. Si conoce el mes y día exactos, puede completarlos.",
+            tipo: "fecha_flexible", 
+            obligatorio: true 
         },
         {
             id: 3,
