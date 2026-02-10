@@ -1455,9 +1455,9 @@ window.agregarFilaContacto = function(datos = null) {
     tbody.appendChild(row);
 };
 
-// =========================================================
-// FUNCIÓN: CARGAR RESPUESTAS (VERSIÓN FINAL COMPLETA)
-// =========================================================
+// =============================
+// FUNCIÓN: CARGAR RESPUESTAS 
+// =============================
 async function cargarRespuestasPrevias(idUsuario) {
     try {
         const response = await fetch(`${API_URL_SAVE}/respuestas-usuario/${idUsuario}`);
@@ -1540,30 +1540,7 @@ async function cargarRespuestasPrevias(idUsuario) {
                             input.dispatchEvent(new Event('change', { bubbles: true })); 
                         }
                     }
-                    
-                    // --- NUEVO: RANGO FECHAS FLEXIBLE (SECCIÓN 2) ---
-                    else if (input.dataset.tipo === 'rango_flexible') {
-                        input.value = r.respuesta_texto;
-                        
-                        if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
-                            const fechas = r.respuesta_texto.split(' al '); // [FechaInicio, FechaFin]
-                            const contenedorMain = input.parentElement;
-                            const wrappers = contenedorMain.querySelectorAll('div[style*="border"]');
-
-                            const llenarBloque = (wrapper, fechaTexto) => {
-                                if (!fechaTexto) return;
-                                const partes = fechaTexto.split('-');
-                                if (partes[0]) wrapper.querySelector('.input-ano').value = partes[0];
-                                if (partes[1]) wrapper.querySelector('.input-mes').value = partes[1];
-                                if (partes[2]) wrapper.querySelector('.input-dia').value = partes[2];
-                            };
-
-                            if (wrappers[0] && fechas[0]) llenarBloque(wrappers[0], fechas[0]);
-                            if (wrappers[1] && fechas[1]) llenarBloque(wrappers[1], fechas[1]);
-                        }
-                    }
-
-                    // --- NUEVO: FECHA FLEXIBLE SIMPLE (SECCIÓN 1) ---
+                    // Fecha Flexible (Nueva lógica para separar AAAA-MM-DD)
                     else if (input.type === 'hidden' && input.parentElement.querySelector('.input-auxiliar-fecha')) {
                         input.value = r.respuesta_texto;
                         if (r.respuesta_texto) {
@@ -1580,8 +1557,7 @@ async function cargarRespuestasPrevias(idUsuario) {
                             if (inDia && partes[2]) inDia.value = partes[2];
                         }
                     }
-                    
-                    // Fechas Estándar (Rango antiguo)
+                    // Fechas Estándar (Rango)
                     else if (input.type === 'date') {
                         if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
                             const partes = r.respuesta_texto.split(' al ');
