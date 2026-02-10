@@ -1232,6 +1232,129 @@ function crearHTMLPregunta(p) {
         div.appendChild(container);
     }
 
+    // --- K. RANGO DE FECHAS FLEXIBLES (AÑO OBLIGATORIO, MES/DIA OPCIONAL) ---
+    else if (p.tipo === 'rango_fechas_flexibles') {
+        const mainContainer = document.createElement('div');
+        mainContainer.style.display = 'flex';
+        mainContainer.style.flexDirection = 'column';
+        mainContainer.style.gap = '15px';
+
+        // INPUT OCULTO FINAL (Guarda "1950-01-01 al 2000-12-31")
+        const inputFinal = document.createElement('input');
+        inputFinal.type = 'hidden';
+        inputFinal.className = 'input-respuesta'; 
+        inputFinal.dataset.idPregunta = p.id;
+        inputFinal.dataset.tipo = 'rango_flexible'; // Identificador para la recuperación
+        if(p.obligatorio) inputFinal.required = true;
+        mainContainer.appendChild(inputFinal);
+
+        // --- FUNCIÓN HELPER PARA CREAR UN BLOQUE DE FECHA ---
+        const crearBloqueFecha = (etiqueta) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.border = '1px solid #eee';
+            wrapper.style.padding = '10px';
+            wrapper.style.borderRadius = '8px';
+            wrapper.style.backgroundColor = '#f9f9f9';
+
+            const titulo = document.createElement('div');
+            titulo.innerText = etiqueta;
+            titulo.style.fontWeight = 'bold';
+            titulo.style.marginBottom = '8px';
+            titulo.style.color = '#555';
+            titulo.style.fontSize = '0.9em';
+            wrapper.appendChild(titulo);
+
+            const flexRow = document.createElement('div');
+            flexRow.style.display = 'flex';
+            flexRow.style.gap = '10px';
+            flexRow.style.flexWrap = 'wrap';
+
+            // AÑO
+            const inAno = document.createElement('input');
+            inAno.type = 'number';
+            inAno.placeholder = "AAAA";
+            inAno.className = 'input-ano';
+            inAno.min = 1500;
+            inAno.max = new Date().getFullYear();
+            inAno.style.flex = '1';
+            inAno.style.minWidth = '80px';
+            inAno.style.padding = '8px';
+            inAno.style.border = '1px solid #ccc';
+            inAno.style.borderRadius = '4px';
+
+            // MES
+            const selMes = document.createElement('select');
+            selMes.className = 'input-mes';
+            selMes.style.flex = '1';
+            selMes.style.minWidth = '100px';
+            selMes.style.padding = '8px';
+            selMes.style.border = '1px solid #ccc';
+            selMes.style.borderRadius = '4px';
+            selMes.add(new Option('Mes (Opc)', ''));
+            ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].forEach((m, i) => {
+                selMes.add(new Option(m, (i + 1).toString().padStart(2, '0')));
+            });
+
+            // DÍA
+            const inDia = document.createElement('input');
+            inDia.type = 'number';
+            inDia.placeholder = "DD";
+            inDia.className = 'input-dia';
+            inDia.min = 1; inDia.max = 31;
+            inDia.style.flex = '0.5';
+            inDia.style.minWidth = '60px';
+            inDia.style.padding = '8px';
+            inDia.style.border = '1px solid #ccc';
+            inDia.style.borderRadius = '4px';
+
+            flexRow.appendChild(inAno);
+            flexRow.appendChild(selMes);
+            flexRow.appendChild(inDia);
+            wrapper.appendChild(flexRow);
+
+            return { wrapper, inAno, selMes, inDia };
+        };
+
+        // CREAMOS LOS DOS BLOQUES
+        const bloqueInicio = crearBloqueFecha("Fecha Inicial (Desde)");
+        const bloqueFin = crearBloqueFecha("Fecha Final (Hasta)");
+
+        mainContainer.appendChild(bloqueInicio.wrapper);
+        mainContainer.appendChild(bloqueFin.wrapper);
+
+        // LÓGICA DE UNIÓN
+        const actualizarRango = () => {
+            const construirFecha = (ano, mes, dia) => {
+                if (!ano) return '';
+                let f = ano;
+                if (mes) {
+                    f += `-${mes}`;
+                    if (dia) f += `-${dia.toString().padStart(2, '0')}`;
+                }
+                return f;
+            };
+
+            const fInicio = construirFecha(bloqueInicio.inAno.value, bloqueInicio.selMes.value, bloqueInicio.inDia.value);
+            const fFin = construirFecha(bloqueFin.inAno.value, bloqueFin.selMes.value, bloqueFin.inDia.value);
+
+            if (fInicio && fFin) {
+                inputFinal.value = `${fInicio} al ${fFin}`;
+                inputFinal.dispatchEvent(new Event('change', { bubbles: true }));
+            } else {
+                inputFinal.value = ''; // Incompleto
+            }
+        };
+
+        // LISTENERS
+        [bloqueInicio, bloqueFin].forEach(b => {
+            b.inAno.addEventListener('input', actualizarRango);
+            b.selMes.addEventListener('change', actualizarRango);
+            b.inDia.addEventListener('input', actualizarRango);
+        });
+
+        div.appendChild(mainContainer);
+    }
+
     return div;
 }
 
@@ -1333,7 +1456,7 @@ window.agregarFilaContacto = function(datos = null) {
 };
 
 // =========================================================
-// FUNCIÓN: CARGAR RESPUESTAS (CORREGIDA COMPLETA FINAL)
+// FUNCIÓN: CARGAR RESPUESTAS (VERSIÓN FINAL COMPLETA)
 // =========================================================
 async function cargarRespuestasPrevias(idUsuario) {
     try {
@@ -1417,7 +1540,30 @@ async function cargarRespuestasPrevias(idUsuario) {
                             input.dispatchEvent(new Event('change', { bubbles: true })); 
                         }
                     }
-                    // Fecha Flexible (Nueva lógica para separar AAAA-MM-DD)
+                    
+                    // --- NUEVO: RANGO FECHAS FLEXIBLE (SECCIÓN 2) ---
+                    else if (input.dataset.tipo === 'rango_flexible') {
+                        input.value = r.respuesta_texto;
+                        
+                        if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
+                            const fechas = r.respuesta_texto.split(' al '); // [FechaInicio, FechaFin]
+                            const contenedorMain = input.parentElement;
+                            const wrappers = contenedorMain.querySelectorAll('div[style*="border"]');
+
+                            const llenarBloque = (wrapper, fechaTexto) => {
+                                if (!fechaTexto) return;
+                                const partes = fechaTexto.split('-');
+                                if (partes[0]) wrapper.querySelector('.input-ano').value = partes[0];
+                                if (partes[1]) wrapper.querySelector('.input-mes').value = partes[1];
+                                if (partes[2]) wrapper.querySelector('.input-dia').value = partes[2];
+                            };
+
+                            if (wrappers[0] && fechas[0]) llenarBloque(wrappers[0], fechas[0]);
+                            if (wrappers[1] && fechas[1]) llenarBloque(wrappers[1], fechas[1]);
+                        }
+                    }
+
+                    // --- NUEVO: FECHA FLEXIBLE SIMPLE (SECCIÓN 1) ---
                     else if (input.type === 'hidden' && input.parentElement.querySelector('.input-auxiliar-fecha')) {
                         input.value = r.respuesta_texto;
                         if (r.respuesta_texto) {
@@ -1434,7 +1580,8 @@ async function cargarRespuestasPrevias(idUsuario) {
                             if (inDia && partes[2]) inDia.value = partes[2];
                         }
                     }
-                    // Fechas Estándar (Rango)
+                    
+                    // Fechas Estándar (Rango antiguo)
                     else if (input.type === 'date') {
                         if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
                             const partes = r.respuesta_texto.split(' al ');

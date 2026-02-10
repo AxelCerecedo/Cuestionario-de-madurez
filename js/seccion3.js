@@ -67,8 +67,8 @@ const CONFIG_SECCION = {
             id: 23,
             orden: 22,
             texto: "Período temporal aproximado que abarca el acervo",
-            ayuda: "Marque una fecha inicial y una fecha final estimadas",
-            tipo: "rango_fechas", 
+            ayuda: "Indique el año inicial y final. Mes y día son opcionales.",
+            tipo: "rango_fechas_flexibles", 
             obligatorio: true
         },
         
