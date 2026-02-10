@@ -1092,31 +1092,51 @@ function crearHTMLPregunta(p) {
     return div;
 }
 
-// Función para agregar filas a la tabla (Soporta precarga de datos)
-// Función para agregar filas a la tabla (ACTUALIZADA 2 TELÉFONOS)
+
+// =========================================================
+// FUNCIÓN: AGREGAR FILA (ACTUALIZADA 2 TELÉFONOS)
+// =========================================================
 window.agregarFilaContacto = function(datos = null) {
     const tbody = document.querySelector('#tablaContactos tbody');
     if (!tbody) return;
 
     const row = document.createElement('tr');
-    row.style.borderBottom = '1px solid #eee';
-    
-    // Recuperamos datos si existen, si no, cadena vacía
+    row.style.borderBottom = '1px solid #eee'; // Estilo para separar filas
+
+    // 1. Preparamos los valores (con seguridad por si 'datos' es null)
     const valNombre = datos ? (datos.nombre || '') : '';
     const valCargo = datos ? (datos.cargo || '') : '';
     const valCorreo = datos ? (datos.correo || '') : '';
-    // Aquí el cambio importante: recuperamos dos teléfonos
+    
+    // 2. Lógica para los teléfonos:
+    // Si existe 'telefono_inst', úsalo. Si no, usa el viejo 'telefono' (retro-compatibilidad).
     const valTelInst = datos ? (datos.telefono_inst || datos.telefono || '') : ''; 
     const valTelOtro = datos ? (datos.telefono_otro || '') : '';
 
+    // 3. Dibujamos las 5 columnas de inputs + botón eliminar
     row.innerHTML = `
-        <td style="padding:5px;"><input type="text" class="contacto-nombre input-respuesta-tabla" value="${valNombre}" placeholder="Nombre completo" style="width:100%; padding:5px;"></td>
-        <td style="padding:5px;"><input type="text" class="contacto-cargo input-respuesta-tabla" value="${valCargo}" placeholder="Cargo" style="width:100%; padding:5px;"></td>
-        <td style="padding:5px;"><input type="email" class="contacto-correo input-respuesta-tabla" value="${valCorreo}" placeholder="ejemplo@email.com" style="width:100%; padding:5px;"></td>
-        <td style="padding:5px;"><input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" placeholder="Institucional" style="width:100%; padding:5px;"></td>
-        <td style="padding:5px;"><input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" placeholder="Celular/Otro" style="width:100%; padding:5px;"></td>
+        <td style="padding:5px;">
+            <input type="text" class="contacto-nombre input-respuesta-tabla" value="${valNombre}" placeholder="Nombre completo" style="width:100%; padding:5px;">
+        </td>
+        <td style="padding:5px;">
+            <input type="text" class="contacto-cargo input-respuesta-tabla" value="${valCargo}" placeholder="Cargo" style="width:100%; padding:5px;">
+        </td>
+        <td style="padding:5px;">
+            <input type="email" class="contacto-correo input-respuesta-tabla" value="${valCorreo}" placeholder="ejemplo@email.com" style="width:100%; padding:5px;">
+        </td>
+        <td style="padding:5px;">
+            <input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" placeholder="Institucional" style="width:100%; padding:5px;">
+        </td>
+        <td style="padding:5px;">
+            <input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" placeholder="Celular/Otro" style="width:100%; padding:5px;">
+        </td>
         <td style="padding:5px; text-align:center;">
-            <button type="button" onclick="if(document.querySelectorAll('#tablaContactos tbody tr').length > 1) this.closest('tr').remove()" style="color:#dc3545; cursor:pointer; border:none; background:none; font-weight:bold; font-size:1.2em;" title="Eliminar fila">&times;</button>
+            <button type="button" 
+                onclick="if(document.querySelectorAll('#tablaContactos tbody tr').length > 1) this.closest('tr').remove()" 
+                style="color:#dc3545; cursor:pointer; border:none; background:none; font-weight:bold; font-size:1.2em;" 
+                title="Eliminar fila">
+                &times;
+            </button>
         </td>
     `;
     tbody.appendChild(row);
