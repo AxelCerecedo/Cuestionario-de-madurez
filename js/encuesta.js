@@ -365,31 +365,58 @@ function crearHTMLPregunta(p) {
         }
     }
 
-    // --- D. TABLA DE CONTACTOS (ACTUALIZADA) ---
+    // --- D. TABLA DE CONTACTOS (ESTILO MEJORADO) ---
     else if (p.tipo === 'tabla_contactos') {
         const tableContainer = document.createElement('div');
+        
+        // Estilos del contenedor principal
+        tableContainer.style.marginTop = '15px';
+        tableContainer.style.border = '1px solid #e9ecef';
+        tableContainer.style.borderRadius = '8px';
+        tableContainer.style.overflow = 'hidden'; // Para que las esquinas redondeadas funcionen
+        tableContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.03)';
+
         tableContainer.innerHTML = `
-            <div style="overflow-x: auto;">
-                <table class="tabla-contactos" id="tablaContactos" style="width:100%; margin-top:10px; border-collapse: collapse; min-width: 600px;">
+            <div style="overflow-x: auto; background: #fff;">
+                <table class="tabla-contactos" id="tablaContactos" style="width:100%; border-collapse: collapse; min-width: 700px; font-family: sans-serif;">
                     <thead>
-                        <tr style="background:#f1f1f1; text-align:left; border-bottom: 2px solid #ddd;">
-                            <th style="padding:10px; width:20%;">Nombre</th>
-                            <th style="padding:10px; width:20%;">Cargo</th>
-                            <th style="padding:10px; width:20%;">Correo</th>
-                            <th style="padding:10px; width:15%;">Tel. Institucional</th>
-                            <th style="padding:10px; width:15%;">Otro Teléfono</th>
-                            <th style="width:5%;"></th>
-                        </tr>
+                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 12px 10px; text-align: left; color: #495057; font-weight: 600; width: 22%;">Nombre Completo</th>
+                            <th style="padding: 12px 10px; text-align: left; color: #495057; font-weight: 600; width: 20%;">Cargo</th>
+                            <th style="padding: 12px 10px; text-align: left; color: #495057; font-weight: 600; width: 22%;">Correo Electrónico</th>
+                            <th style="padding: 12px 10px; text-align: left; color: #495057; font-weight: 600; width: 15%;">Tel. Institucional</th>
+                            <th style="padding: 12px 10px; text-align: left; color: #495057; font-weight: 600; width: 15%;">Otro Teléfono</th>
+                            <th style="width: 6%;"></th> </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
-            <button type="button" class="btn-agregar" onclick="agregarFilaContacto()" style="margin-top:10px; padding:8px 15px; cursor:pointer; background-color:#e9ecef; border:1px solid #ced4da; border-radius:4px;">
-                <i class="fas fa-plus"></i> Agregar Contacto
-            </button>
+            
+            <div style="padding: 15px; background: #fafafa; border-top: 1px solid #eee; text-align: right;">
+                <button type="button" class="btn-agregar" onclick="agregarFilaContacto()" 
+                    style="
+                        padding: 8px 16px; 
+                        background-color: #fff; 
+                        border: 1px solid #0d6efd; 
+                        color: #0d6efd; 
+                        border-radius: 5px; 
+                        cursor: pointer; 
+                        font-weight: 500;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                        transition: all 0.2s ease;
+                    "
+                    onmouseover="this.style.backgroundColor='#0d6efd'; this.style.color='white';"
+                    onmouseout="this.style.backgroundColor='#fff'; this.style.color='#0d6efd';"
+                >
+                    <i class="fas fa-user-plus"></i> Agregar Contacto
+                </button>
+            </div>
         `;
         div.appendChild(tableContainer);
-        // Cargar fila vacía inicial si no hay datos previos
+        
+        // Cargar fila inicial si no hay datos
         if (!localStorage.getItem('datosCargados')) {
              setTimeout(() => agregarFilaContacto(), 100); 
         }
@@ -1094,51 +1121,83 @@ function crearHTMLPregunta(p) {
 
 
 // =========================================================
-// FUNCIÓN: AGREGAR FILA (ACTUALIZADA 2 TELÉFONOS)
+// FUNCIÓN: AGREGAR FILA (ESTILO MEJORADO)
 // =========================================================
 window.agregarFilaContacto = function(datos = null) {
     const tbody = document.querySelector('#tablaContactos tbody');
     if (!tbody) return;
 
     const row = document.createElement('tr');
-    row.style.borderBottom = '1px solid #eee'; // Estilo para separar filas
+    // Estilo de la fila
+    row.style.borderBottom = '1px solid #e9ecef';
+    row.style.backgroundColor = '#fff';
+    row.style.transition = 'background-color 0.2s';
 
-    // 1. Preparamos los valores (con seguridad por si 'datos' es null)
+    // Preparamos valores
     const valNombre = datos ? (datos.nombre || '') : '';
     const valCargo = datos ? (datos.cargo || '') : '';
     const valCorreo = datos ? (datos.correo || '') : '';
-    
-    // 2. Lógica para los teléfonos:
-    // Si existe 'telefono_inst', úsalo. Si no, usa el viejo 'telefono' (retro-compatibilidad).
     const valTelInst = datos ? (datos.telefono_inst || datos.telefono || '') : ''; 
     const valTelOtro = datos ? (datos.telefono_otro || '') : '';
 
-    // 3. Dibujamos las 5 columnas de inputs + botón eliminar
+    // Estilo común para los inputs de la tabla
+    const inputStyle = `
+        width: 100%; 
+        padding: 8px 10px; 
+        border: 1px solid #ced4da; 
+        border-radius: 4px; 
+        font-size: 0.95em;
+        outline: none;
+        box-sizing: border-box; /* Importante para que el padding no rompa el ancho */
+    `;
+
+    // Función helper para añadir efecto focus (ya que no podemos usar CSS externo fácil aquí)
+    const addFocusListeners = (input) => {
+        input.addEventListener('focus', () => { input.style.borderColor = '#86b7fe'; input.style.boxShadow = '0 0 0 0.2rem rgba(13,110,253,.25)'; });
+        input.addEventListener('blur', () => { input.style.borderColor = '#ced4da'; input.style.boxShadow = 'none'; });
+    };
+
     row.innerHTML = `
-        <td style="padding:5px;">
-            <input type="text" class="contacto-nombre input-respuesta-tabla" value="${valNombre}" placeholder="Nombre completo" style="width:100%; padding:5px;">
+        <td style="padding: 10px;">
+            <input type="text" class="contacto-nombre input-respuesta-tabla" value="${valNombre}" placeholder="Nombre completo" style="${inputStyle}">
         </td>
-        <td style="padding:5px;">
-            <input type="text" class="contacto-cargo input-respuesta-tabla" value="${valCargo}" placeholder="Cargo" style="width:100%; padding:5px;">
+        <td style="padding: 10px;">
+            <input type="text" class="contacto-cargo input-respuesta-tabla" value="${valCargo}" placeholder="Cargo" style="${inputStyle}">
         </td>
-        <td style="padding:5px;">
-            <input type="email" class="contacto-correo input-respuesta-tabla" value="${valCorreo}" placeholder="ejemplo@email.com" style="width:100%; padding:5px;">
+        <td style="padding: 10px;">
+            <input type="email" class="contacto-correo input-respuesta-tabla" value="${valCorreo}" placeholder="ejemplo@email.com" style="${inputStyle}">
         </td>
-        <td style="padding:5px;">
-            <input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" placeholder="Institucional" style="width:100%; padding:5px;">
+        <td style="padding: 10px;">
+            <input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" placeholder="Institucional" style="${inputStyle}">
         </td>
-        <td style="padding:5px;">
-            <input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" placeholder="Celular/Otro" style="width:100%; padding:5px;">
+        <td style="padding: 10px;">
+            <input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" placeholder="Celular/Otro" style="${inputStyle}">
         </td>
-        <td style="padding:5px; text-align:center;">
+        <td style="padding: 10px; text-align: center; vertical-align: middle;">
             <button type="button" 
                 onclick="if(document.querySelectorAll('#tablaContactos tbody tr').length > 1) this.closest('tr').remove()" 
-                style="color:#dc3545; cursor:pointer; border:none; background:none; font-weight:bold; font-size:1.2em;" 
+                style="
+                    color: #dc3545; 
+                    border: none; 
+                    background: transparent; 
+                    font-size: 1.3em; 
+                    cursor: pointer; 
+                    opacity: 0.7;
+                    transition: opacity 0.2s;
+                    display: flex; align-items: center; justify-content: center;
+                    width: 30px; height: 30px; border-radius: 50%;
+                "
+                onmouseover="this.style.opacity='1'; this.style.backgroundColor='#fff0f0';"
+                onmouseout="this.style.opacity='0.7'; this.style.backgroundColor='transparent';"
                 title="Eliminar fila">
                 &times;
             </button>
         </td>
     `;
+
+    // Aplicar efectos de focus a los nuevos inputs
+    row.querySelectorAll('input').forEach(addFocusListeners);
+
     tbody.appendChild(row);
 };
 
@@ -1584,12 +1643,15 @@ async function enviarFormulario(e) {
     const filasContactos = document.querySelectorAll('#tablaContactos tbody tr');
     filasContactos.forEach(fila => {
         const nombre = fila.querySelector('.contacto-nombre').value;
-        if (nombre) {
+        // Solo guardamos si al menos puso el nombre
+        if (nombre && nombre.trim() !== '') {
             listaContactos.push({
                 nombre: nombre,
                 cargo: fila.querySelector('.contacto-cargo').value,
                 correo: fila.querySelector('.contacto-correo').value,
-                telefono: fila.querySelector('.contacto-tel').value
+                // Guardamos los dos teléfonos con claves distintas
+                telefono_inst: fila.querySelector('.contacto-tel-inst').value,
+                telefono_otro: fila.querySelector('.contacto-tel-otro').value
             });
         }
     });
