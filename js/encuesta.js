@@ -1291,18 +1291,33 @@ function crearHTMLPregunta(p) {
         const b2 = crearBloque("Hasta (Fecha Final)", p.obligatorio);
 
         const unir = () => {
+            console.group("🕵️‍♂️ DEBUG: Uniendo Fechas (Pregunta " + p.id + ")");
+
+            // 1. Ver qué valores brutos tienen los inputs
+            console.log("   Inicio -> Año:", b1.iAno.value, "Mes:", b1.sMes.value, "Día:", b1.iDia.value);
+            console.log("   Fin    -> Año:", b2.iAno.value, "Mes:", b2.sMes.value, "Día:", b2.iDia.value);
+
             // Construimos Fecha 1
             const f1 = b1.iAno.value ? (b1.iAno.value + (b1.sMes.value ? `-${b1.sMes.value}` + (b1.iDia.value ? `-${b1.iDia.value.toString().padStart(2,'0')}`:'') : '')) : '';
             
             // Construimos Fecha 2
             const f2 = b2.iAno.value ? (b2.iAno.value + (b2.sMes.value ? `-${b2.sMes.value}` + (b2.iDia.value ? `-${b2.iDia.value.toString().padStart(2,'0')}`:'') : '')) : '';
             
-            // 🔥 LÓGICA ESTRICTA: Solo guarda si existen AMBOS
+            console.log("   Fecha 1 armada:", f1);
+            console.log("   Fecha 2 armada:", f2);
+
+            // LÓGICA DE ASIGNACIÓN
             if (f1 && f2) {
                 inputFinal.value = `${f1} al ${f2}`;
+                console.log("   ✅ ¡AMBAS FECHAS LISTAS! Valor asignado al hidden:", inputFinal.value);
             } else {
-                inputFinal.value = ''; // Si falta uno, se queda vacío (pero el navegador no dejará enviar por el 'required' de arriba)
+                inputFinal.value = ''; 
+                console.warn("   ⚠️ Faltan datos. El hidden se queda VACÍO.");
+                if(!f1) console.log("      Falta Fecha Inicio completa (mínimo el año)");
+                if(!f2) console.log("      Falta Fecha Fin completa (mínimo el año)");
             }
+
+            console.groupEnd();
 
             // Avisamos cambio
             inputFinal.dispatchEvent(new Event('change', {bubbles:true}));
@@ -1326,11 +1341,7 @@ function crearHTMLPregunta(p) {
 // FUNCIÓN: AGREGAR FILA (CORREGIDA Y ROBUSTA)
 // =========================================================
 window.agregarFilaContacto = function(datos = null) {
-    // 🔍 DEBUG: Ver qué llega exactamente desde la base de datos
-    if (datos) {
-        console.log("📞 Datos recibidos para fila de contacto:", datos);
-    }
-
+   
     const tbody = document.querySelector('#tablaContactos tbody');
     if (!tbody) return;
 
@@ -1506,28 +1517,53 @@ async function cargarRespuestasPrevias(idUsuario) {
                         }
                     }
                     
-                    // 🔥 [NUEVO] 4. RANGO DE FECHAS FLEXIBLES (SECCIÓN 3 - PREGUNTA 22/23) 🔥
+                    // 🔥 4. RANGO DE FECHAS FLEXIBLES (CON LOGS COMPLETOS) 🔥
                     else if (input.dataset.tipo === 'rango_flexible') {
+                        console.group("📥 DEBUG RECUPERACIÓN (Pregunta 23)");
+                        console.log("1. Texto recibido de la BD:", r.respuesta_texto);
+                        
                         input.value = r.respuesta_texto; // Llenamos el hidden
                         
                         if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
+                            console.log("2. Formato correcto detectado (' al '). Separando...");
                             const fechas = r.respuesta_texto.split(' al '); // [FechaInicio, FechaFin]
+                            console.log("3. Fechas separadas:", fechas);
+
                             const bloques = input.parentElement.querySelectorAll('.rango-bloque-wrapper');
+                            console.log("4. Bloques inputs encontrados en el DOM:", bloques.length);
 
                             // Recorremos las dos partes (Inicio y Fin)
                             fechas.forEach((f, index) => {
                                 if (bloques[index]) {
                                     const partes = f.split('-'); // [AAAA, MM, DD]
+                                    console.log(`   👉 Llenando Bloque ${index}:`, partes);
                                     
+                                    // Referencias a los inputs
+                                    const iAno = bloques[index].querySelector('.input-aux-ano');
+                                    const iMes = bloques[index].querySelector('.input-aux-mes');
+                                    const iDia = bloques[index].querySelector('.input-aux-dia');
+
                                     // Año
-                                    if (partes[0]) bloques[index].querySelector('.input-aux-ano').value = partes[0];
-                                    // Mes (si existe)
-                                    if (partes[1]) bloques[index].querySelector('.input-aux-mes').value = partes[1];
-                                    // Día (si existe)
-                                    if (partes[2]) bloques[index].querySelector('.input-aux-dia').value = partes[2];
+                                    if (partes[0]) {
+                                        if(iAno) { iAno.value = partes[0]; console.log("      Año seteado:", partes[0]); }
+                                        else console.error("      ❌ No encuentro el input del Año en el DOM");
+                                    }
+                                    // Mes
+                                    if (partes[1]) {
+                                        if(iMes) { iMes.value = partes[1]; console.log("      Mes seteado:", partes[1]); }
+                                    }
+                                    // Día
+                                    if (partes[2]) {
+                                        if(iDia) { iDia.value = partes[2]; console.log("      Día seteado:", partes[2]); }
+                                    }
+                                } else {
+                                    console.error(`   ❌ No existe el bloque visual número ${index}`);
                                 }
                             });
+                        } else {
+                            console.warn("⚠️ La respuesta de la BD está vacía o no tiene el formato 'YYYY al YYYY'");
                         }
+                        console.groupEnd();
                     }
 
                     // 5. Fecha Flexible Simple (Solo una fecha)
