@@ -1232,6 +1232,55 @@ function crearHTMLPregunta(p) {
         div.appendChild(container);
     }
 
+    //-- K. RANGO DE FECHAS FLEXIBLE  --
+
+    else if (p.tipo === 'rango_fechas_flexibles') {
+        const mainContainer = document.createElement('div');
+        mainContainer.style.cssText = 'display: flex; flex-direction: column; gap: 15px;';
+
+        const inputFinal = document.createElement('input');
+        inputFinal.type = 'hidden';
+        inputFinal.className = 'input-respuesta'; 
+        inputFinal.dataset.idPregunta = p.id;
+        inputFinal.dataset.tipo = 'rango_flexible'; 
+        if(p.obligatorio) inputFinal.required = true;
+        mainContainer.appendChild(inputFinal);
+
+        const crearBloque = (titulo) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'rango-bloque-wrapper'; 
+            wrapper.style.cssText = 'border:1px solid #eee; padding:10px; border-radius:8px; background:#f9f9f9;';
+            wrapper.innerHTML = `<div style="font-weight:bold; margin-bottom:5px; color:#555; font-size:0.9em;">${titulo}</div>`;
+            
+            const row = document.createElement('div'); row.style.cssText='display:flex; gap:5px; flex-wrap:wrap;';
+            
+            const iAno = document.createElement('input'); iAno.className='input-aux-ano'; iAno.type='number'; iAno.placeholder='AAAA'; iAno.style.cssText='flex:1; min-width:80px; padding:5px; border:1px solid #ccc; border-radius:3px;';
+            
+            const sMes = document.createElement('select'); sMes.className='input-aux-mes'; sMes.style.cssText='flex:1; min-width:100px; padding:5px; border:1px solid #ccc; border-radius:3px;';
+            sMes.innerHTML = '<option value="">Mes</option>' + ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i)=>`<option value="${(i+1).toString().padStart(2,'0')}">${m}</option>`).join('');
+            
+            const iDia = document.createElement('input'); iDia.className='input-aux-dia'; iDia.type='number'; iDia.placeholder='DD'; iDia.style.cssText='flex:0.5; min-width:60px; padding:5px; border:1px solid #ccc; border-radius:3px;';
+            
+            row.append(iAno, sMes, iDia); wrapper.appendChild(row);
+            return { wrapper, iAno, sMes, iDia };
+        };
+
+        const b1 = crearBloque("Desde (Fecha Inicial)");
+        const b2 = crearBloque("Hasta (Fecha Final)");
+
+        const unir = () => {
+            const f1 = b1.iAno.value ? (b1.iAno.value + (b1.sMes.value ? `-${b1.sMes.value}` + (b1.iDia.value ? `-${b1.iDia.value.toString().padStart(2,'0')}`:'') : '')) : '';
+            const f2 = b2.iAno.value ? (b2.iAno.value + (b2.sMes.value ? `-${b2.sMes.value}` + (b2.iDia.value ? `-${b2.iDia.value.toString().padStart(2,'0')}`:'') : '')) : '';
+            inputFinal.value = (f1 && f2) ? `${f1} al ${f2}` : '';
+            inputFinal.dispatchEvent(new Event('change', {bubbles:true}));
+        };
+
+        [b1, b2].forEach(b => { b.iAno.addEventListener('input', unir); b.sMes.addEventListener('change', unir); b.iDia.addEventListener('input', unir); });
+
+        mainContainer.append(b1.wrapper, b2.wrapper);
+        div.appendChild(mainContainer);
+    }
+
     return div;
 }
 
