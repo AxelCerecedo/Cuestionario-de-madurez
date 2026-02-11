@@ -1271,7 +1271,7 @@ function crearHTMLPregunta(p) {
             const sMes = document.createElement('select'); 
             sMes.className='input-aux-mes'; 
             sMes.style.cssText='flex:1; min-width:100px; padding:5px; border:1px solid #ccc; border-radius:3px;';
-            sMes.innerHTML = '<option value="">Mes</option>' + ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i)=>`<option value="${(i+1).toString().padStart(2,'0')}">${m}</option>`).join('');
+            sMes.innerHTML = '<option value="">Mes</option>' + ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((m,i)=>`<option value="${(i+1).toString().padStart(2,'0')}">${m}</option>`).join('');
             
             // --- DÍA ---
             const iDia = document.createElement('input'); 
