@@ -1286,14 +1286,9 @@ function crearHTMLPregunta(p) {
 
 
 // =========================================================
-// FUNCIÓN: AGREGAR FILA (CORREGIDA Y ROBUSTA)
+// FUNCIÓN: AGREGAR FILA CONTACTO (COMPLETA Y BLINDADA)
 // =========================================================
 window.agregarFilaContacto = function(datos = null) {
-    // 🔍 DEBUG: Ver qué llega exactamente desde la base de datos
-    if (datos) {
-        console.log("📞 Datos recibidos para fila de contacto:", datos);
-    }
-
     const tbody = document.querySelector('#tablaContactos tbody');
     if (!tbody) return;
 
@@ -1301,64 +1296,61 @@ window.agregarFilaContacto = function(datos = null) {
     row.style.borderBottom = '1px solid #e9ecef';
     row.style.backgroundColor = '#fff';
 
-    // --- MAPEO ROBUSTO DE DATOS ---
-    // Intentamos buscar el valor en varias propiedades comunes por si la BD cambia
-    const valNombre = datos ? (datos.nombre || datos.nombre_completo || '') : '';
-    const valCargo  = datos ? (datos.cargo || datos.puesto || '') : '';
-    const valCorreo = datos ? (datos.correo || datos.email || datos.correo_electronico || '') : '';
-    
-    // AQUÍ ESTABA EL PROBLEMA: Agregamos más opciones de nombres para los teléfonos
-    const valTelInst = datos ? (
-        datos.telefono_inst || 
-        datos.telefono_institucional || 
-        datos.telefono || 
-        datos.tel || 
-        datos.telefono1 || 
-        ''
-    ) : '';
+    // 1. Estilos CSS en línea para asegurar consistencia
+    const estiloInput = "width:100%; padding:8px; border:1px solid #ced4da; border-radius:4px; outline:none; box-sizing:border-box;";
 
-    const valTelOtro = datos ? (
-        datos.telefono_otro || 
-        datos.telefono_secundario || 
-        datos.celular || 
-        datos.movil || 
-        datos.telefono2 || 
-        ''
-    ) : '';
-
-    const inputStyle = `
-        width: 100%; padding: 8px 10px; border: 1px solid #ced4da; 
-        border-radius: 4px; font-size: 0.95em; outline: none; box-sizing: border-box;
-    `;
-
-    // HTML de la fila
+    // 2. HTML Base (Los valores se asignan después para mayor seguridad)
     row.innerHTML = `
-        <td style="padding: 10px;">
-            <input type="text" class="contacto-nombre input-respuesta-tabla" value="${valNombre}" placeholder="Nombre completo" style="${inputStyle}">
+        <td style="padding:10px;">
+            <input type="text" class="contacto-nombre" placeholder="Nombre completo" style="${estiloInput}">
         </td>
-        <td style="padding: 10px;">
-            <input type="text" class="contacto-cargo input-respuesta-tabla" value="${valCargo}" placeholder="Cargo" style="${inputStyle}">
+        <td style="padding:10px;">
+            <input type="text" class="contacto-cargo" placeholder="Cargo" style="${estiloInput}">
         </td>
-        <td style="padding: 10px;">
-            <input type="email" class="contacto-correo input-respuesta-tabla" value="${valCorreo}" placeholder="ejemplo@email.com" style="${inputStyle}">
+        <td style="padding:10px;">
+            <input type="email" class="contacto-correo" placeholder="ejemplo@email.com" style="${estiloInput}">
         </td>
-        <td style="padding: 10px;">
-            <input type="tel" class="contacto-tel-inst input-respuesta-tabla" value="${valTelInst}" inputmode="numeric" maxlength="15" style="${inputStyle}">
+        <td style="padding:10px;">
+            <input type="tel" class="contacto-tel-inst" placeholder="Institucional" inputmode="numeric" maxlength="15" style="${estiloInput}">
         </td>
-        <td style="padding: 10px;">
-            <input type="tel" class="contacto-tel-otro input-respuesta-tabla" value="${valTelOtro}" inputmode="numeric" maxlength="15" style="${inputStyle}">
+        <td style="padding:10px;">
+            <input type="tel" class="contacto-tel-otro" placeholder="Otro" inputmode="numeric" maxlength="15" style="${estiloInput}">
         </td>
-        <td style="padding: 10px; text-align: center; vertical-align: middle;">
+        <td style="padding:10px; text-align:center;">
             <button type="button" 
                 class="btn-eliminar-fila"
-                style="color: #dc3545; border: none; background: transparent; font-size: 1.3em; cursor: pointer; opacity: 0.7; width: 30px; height: 30px; border-radius: 50%;"
+                style="color:#dc3545; border:none; background:transparent; font-size:1.3em; cursor:pointer; width:30px; height:30px;"
                 title="Eliminar fila">
                 &times;
             </button>
         </td>
     `;
 
-    // Asignar evento al botón eliminar (más seguro que onclick en línea)
+    tbody.appendChild(row);
+
+    // 3. ASIGNACIÓN DIRECTA DE VALORES (Mapeo Robusto)
+    if (datos) {
+        // Nombre
+        row.querySelector('.contacto-nombre').value = datos.nombre || datos.nombre_completo || datos.Nombre || '';
+        
+        // Cargo
+        row.querySelector('.contacto-cargo').value = datos.cargo || datos.puesto || datos.Cargo || '';
+        
+        // Correo
+        row.querySelector('.contacto-correo').value = datos.correo || datos.email || datos.correo_electronico || '';
+        
+        // Teléfono Institucional (Busca todas las variantes posibles)
+        row.querySelector('.contacto-tel-inst').value = 
+            datos.telefono_inst || datos.telefono_institucional || datos.telefono || datos.tel || datos.telefono1 || '';
+        
+        // Teléfono Otro
+        row.querySelector('.contacto-tel-otro').value = 
+            datos.telefono_otro || datos.telefono_secundario || datos.celular || datos.movil || datos.telefono2 || '';
+    }
+
+    // 4. EVENTOS (Eliminar y Validación Numérica)
+    
+    // Botón Eliminar
     const btnEliminar = row.querySelector('.btn-eliminar-fila');
     btnEliminar.onclick = function() {
         if(document.querySelectorAll('#tablaContactos tbody tr').length > 1) {
@@ -1369,24 +1361,23 @@ window.agregarFilaContacto = function(datos = null) {
         }
     };
 
-    // --- RESTRICCIÓN NUMÉRICA ---
-    const inputsTel = row.querySelectorAll('.contacto-tel-inst, .contacto-tel-otro');
-    inputsTel.forEach(input => {
-        // Focus styles
+    // Validación Solo Números y Estilos Focus
+    row.querySelectorAll('input').forEach(input => {
+        // Estilos Focus
         input.addEventListener('focus', () => { input.style.borderColor = '#86b7fe'; input.style.boxShadow = '0 0 0 0.2rem rgba(13,110,253,.25)'; });
         input.addEventListener('blur', () => { input.style.borderColor = '#ced4da'; input.style.boxShadow = 'none'; });
 
-        // Solo números al escribir
-        input.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-        });
+        // Si es teléfono, borrar letras
+        if(input.type === 'tel') {
+            input.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+        }
     });
-
-    tbody.appendChild(row);
 };
 
 // =========================================================
-// FUNCIÓN: CARGAR RESPUESTAS (CORREGIDA COMPLETA FINAL)
+// FUNCIÓN: CARGAR RESPUESTAS (COMPLETA - FECHAS Y CONTACTOS)
 // =========================================================
 async function cargarRespuestasPrevias(idUsuario) {
     try {
@@ -1395,7 +1386,7 @@ async function cargarRespuestasPrevias(idUsuario) {
 
         if (data.vacio) return; 
 
-        console.log("Cargando datos previos...", data);
+        console.log("📥 Datos cargados del servidor:", data);
         localStorage.setItem('datosCargados', 'true'); 
 
         // Guardamos la matriz en caché global
@@ -1404,13 +1395,12 @@ async function cargarRespuestasPrevias(idUsuario) {
         // ----------------------------------------------------
         // 1. RECUPERAR CHECKBOXES (MÚLTIPLES)
         // ----------------------------------------------------
-        // PRIMERO: Para asegurar que se dibujen las matrices dinámicas (Sec 5)
         if (data.multiples) {
             data.multiples.forEach(r => {
                 const chk = document.querySelector(`.input-multiple[data-id-pregunta="${r.id_pregunta}"][value="${r.id_opcion}"]`);
                 if (chk) {
                     chk.checked = true;
-                    // 🔥 CRÍTICO SECCIÓN 5: Disparamos cambio para dibujar matriz
+                    // Disparamos evento para lógica condicional o matrices
                     chk.dispatchEvent(new Event('change', { bubbles: true })); 
                 }
             });
@@ -1432,74 +1422,80 @@ async function cargarRespuestasPrevias(idUsuario) {
                     }
                 }
 
-                // B. CASO TEXTO "OTRO" EN MÚLTIPLE (Sección 6)
+                // B. CASO TEXTO "OTRO" EN OPCIÓN MÚLTIPLE
                 if (r.id_opcion_seleccionada) {
                     const inputSpecMultiple = document.querySelector(`.input-especificar-multiple[data-id-pregunta="${r.id_pregunta}"][data-id-opcion="${r.id_opcion_seleccionada}"]`);
-                    
                     if (inputSpecMultiple && r.respuesta_texto) {
                         inputSpecMultiple.value = r.respuesta_texto;
-                        inputSpecMultiple.style.display = 'block'; // 🔥 FORZAMOS VISIBILIDAD
+                        inputSpecMultiple.style.display = 'block'; 
                         
-                        // Asegurar que el checkbox padre esté marcado
-                        const parentDiv = inputSpecMultiple.closest('.opcion-item') || inputSpecMultiple.closest('div');
-                        if (parentDiv) {
-                            const chkPadre = parentDiv.querySelector(`input[type="checkbox"][value="${r.id_opcion_seleccionada}"]`);
-                            if (chkPadre && !chkPadre.checked) chkPadre.checked = true;
+                        // Asegurar check padre
+                        const parent = inputSpecMultiple.closest('.opcion-item') || inputSpecMultiple.closest('div');
+                        if (parent) {
+                            const chk = parent.querySelector(`input[type="checkbox"][value="${r.id_opcion_seleccionada}"]`);
+                            if (chk && !chk.checked) chk.checked = true;
                         }
                     }
                 }
 
-                // C. INPUTS ESTÁNDAR
+                // C. INPUTS ESTÁNDAR Y FECHAS ESPECIALES
                 const inputs = document.querySelectorAll(`.input-respuesta[data-id-pregunta="${r.id_pregunta}"]`);
                 
                 inputs.forEach(input => {
-                    // Redes Sociales / Textos con ID
-                    if (input.dataset.tipo === 'red_social' || input.dataset.tipo === 'texto_con_id') {
-                        if (input.dataset.idOpcion == r.id_opcion_seleccionada) input.value = r.respuesta_texto;
-                    } 
-                    // Selects
+                    
+                    // --- 1. FECHA FLEXIBLE (SECCIÓN 1 - AÑO/MES/DÍA) ---
+                    if (input.dataset.tipo === 'fecha_flexible') {
+                        input.value = r.respuesta_texto; // Llenamos el oculto
+                        if (r.respuesta_texto) {
+                            const partes = r.respuesta_texto.split('-'); // AAAA-MM-DD
+                            const p = input.parentElement;
+                            
+                            // Buscamos inputs por las clases definidas en crearHTMLPregunta
+                            if(p.querySelector('.input-aux-ano') && partes[0]) p.querySelector('.input-aux-ano').value = partes[0];
+                            if(p.querySelector('.input-aux-mes') && partes[1]) p.querySelector('.input-aux-mes').value = partes[1];
+                            if(p.querySelector('.input-aux-dia') && partes[2]) p.querySelector('.input-aux-dia').value = partes[2];
+                        }
+                    }
+
+                    // --- 2. RANGO FLEXIBLE (SECCIÓN 2 y 3 - DESDE... HASTA...) ---
+                    else if (input.dataset.tipo === 'rango_flexible') {
+                        input.value = r.respuesta_texto;
+                        if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
+                            const fechas = r.respuesta_texto.split(' al '); // [FechaInicio, FechaFin]
+                            const p = input.parentElement;
+                            const bloques = p.querySelectorAll('.rango-bloque-wrapper'); // Los cuadros grises
+
+                            // Función auxiliar para llenar un bloque
+                            const llenarBloque = (bloque, fechaTxt) => {
+                                if(!bloque || !fechaTxt) return;
+                                const f = fechaTxt.split('-');
+                                if(f[0]) bloque.querySelector('.input-aux-ano').value = f[0];
+                                if(f[1]) bloque.querySelector('.input-aux-mes').value = f[1];
+                                if(f[2]) bloque.querySelector('.input-aux-dia').value = f[2];
+                            };
+
+                            // Llenar bloque 1 (Inicio) y bloque 2 (Fin)
+                            if(bloques[0]) llenarBloque(bloques[0], fechas[0]);
+                            if(bloques[1]) llenarBloque(bloques[1], fechas[1]);
+                        }
+                    }
+
+                    // --- 3. INPUTS NORMALES (Select, Radio, Texto, Red Social) ---
                     else if (input.tagName === 'SELECT') {
                         input.value = r.id_opcion_seleccionada;
                         input.dispatchEvent(new Event('change', { bubbles: true })); 
                     }
-                    // Radios (Booleano / Única)
                     else if (input.type === 'radio') {
                         if (input.value === r.respuesta_texto || input.value == r.id_opcion_seleccionada) {
                             input.checked = true;
-                            // 🔥 CRÍTICO SECCIÓN 6: Disparamos cambio para lógica condicional
                             input.dispatchEvent(new Event('change', { bubbles: true })); 
                         }
                     }
-                    // Fecha Flexible (Nueva lógica para separar AAAA-MM-DD)
-                    else if (input.type === 'hidden' && input.parentElement.querySelector('.input-auxiliar-fecha')) {
-                        input.value = r.respuesta_texto;
-                        if (r.respuesta_texto) {
-                            const partes = r.respuesta_texto.split('-'); 
-                            const contenedor = input.parentElement;
-                            
-                            const inAno = contenedor.querySelector('input[placeholder="AAAA"]');
-                            if (inAno && partes[0]) inAno.value = partes[0];
-
-                            const selMes = contenedor.querySelector('select');
-                            if (selMes && partes[1]) selMes.value = partes[1];
-
-                            const inDia = contenedor.querySelector('input[placeholder="DD"]');
-                            if (inDia && partes[2]) inDia.value = partes[2];
-                        }
+                    else if (input.dataset.tipo === 'red_social' || input.dataset.tipo === 'texto_con_id') {
+                        if (input.dataset.idOpcion == r.id_opcion_seleccionada) input.value = r.respuesta_texto;
                     }
-                    // Fechas Estándar (Rango)
-                    else if (input.type === 'date') {
-                        if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
-                            const partes = r.respuesta_texto.split(' al ');
-                            input.value = partes[0]; 
-                            const inputAuxiliar = input.nextElementSibling;
-                            if (inputAuxiliar && inputAuxiliar.tagName === 'INPUT') inputAuxiliar.value = partes[1];
-                        } else {
-                            input.value = r.respuesta_texto;
-                        }
-                    }
-                    // Textos libres / Números
-                    else if (input.dataset.tipo === 'texto' || input.type === 'number') {
+                    else {
+                        // Textos libres, números, textareas
                         input.value = r.respuesta_texto;
                     }
                 });
@@ -1522,11 +1518,9 @@ async function cargarRespuestasPrevias(idUsuario) {
             setTimeout(() => {
                 data.matriz.forEach(m => {
                     const idPreg = m.id_pregunta_matriz || m.id_pregunta;
-
                     // Selects
                     let elSelect = document.querySelector(`.input-matriz-celda[data-id-pregunta="${idPreg}"][data-id-fila="${m.id_fila}"][data-id-columna="${m.id_columna}"]`);
                     if (elSelect) elSelect.value = m.valor; 
-
                     // Radios
                     let elRadio = document.querySelector(`.input-matriz-radio[data-id-pregunta="${idPreg}"][data-id-fila="${m.id_fila}"][data-id-columna="${m.id_columna}"][value="${m.valor}"]`);
                     if (elRadio) elRadio.checked = true;
@@ -1539,8 +1533,9 @@ async function cargarRespuestasPrevias(idUsuario) {
         // ----------------------------------------------------
         const tbody = document.querySelector('#tablaContactos tbody');
         if (tbody) { 
-            tbody.innerHTML = ''; 
+            tbody.innerHTML = ''; // Limpiar fila vacía inicial
             if (data.contactos && data.contactos.length > 0) {
+                // Usamos la función blindada que acabamos de definir arriba
                 data.contactos.forEach(c => agregarFilaContacto(c));
             } else {
                 agregarFilaContacto(); 
