@@ -1232,37 +1232,39 @@ function crearHTMLPregunta(p) {
         div.appendChild(container);
     }
 
-   //-- K. RANGO DE FECHAS FLEXIBLE (MEJORADO) --
+   //-- K. RANGO DE FECHAS FLEXIBLE (OBLIGATORIO AMBOS AÑOS) --
     else if (p.tipo === 'rango_fechas_flexibles') {
         const mainContainer = document.createElement('div');
         mainContainer.style.cssText = 'display: flex; flex-direction: column; gap: 15px;';
 
+        // Input oculto (solo recibe valor si ambos lados están llenos)
         const inputFinal = document.createElement('input');
         inputFinal.type = 'hidden';
         inputFinal.className = 'input-respuesta'; 
         inputFinal.dataset.idPregunta = p.id;
         inputFinal.dataset.tipo = 'rango_flexible'; 
-        if(p.obligatorio) inputFinal.required = true;
         mainContainer.appendChild(inputFinal);
 
-        const crearBloque = (titulo) => {
+        const crearBloque = (titulo, esObligatorio) => {
             const wrapper = document.createElement('div');
             wrapper.className = 'rango-bloque-wrapper'; 
             wrapper.style.cssText = 'border:1px solid #eee; padding:10px; border-radius:8px; background:#f9f9f9;';
-            wrapper.innerHTML = `<div style="font-weight:bold; margin-bottom:5px; color:#555; font-size:0.9em;">${titulo}</div>`;
+            wrapper.innerHTML = `<div style="font-weight:bold; margin-bottom:5px; color:#555; font-size:0.9em;">${titulo} <span style="color:red">*</span></div>`;
             
             const row = document.createElement('div'); row.style.cssText='display:flex; gap:5px; flex-wrap:wrap;';
             
-            // --- AÑO (Validación Anti-Negativos) ---
+            // --- AÑO (OBLIGATORIO) ---
             const iAno = document.createElement('input'); 
             iAno.className='input-aux-ano'; 
             iAno.type='number'; 
             iAno.placeholder='AAAA'; 
-            iAno.min = '1000'; // Mínimo razonable
+            iAno.min = '1000'; 
             
-            // Evitar escribir signo menos o 'e'
-            iAno.onkeydown = (e) => { if(["-", "+", "e"].includes(e.key)) e.preventDefault(); };
-            
+            // 🔥 CLAVE: Hacemos obligatorio el input VISIBLE del año
+            if (esObligatorio) iAno.required = true;
+
+            // Bloqueo de negativos y caracteres no numéricos
+            iAno.onkeydown = (e) => { if(["-", "+", "e", "."].includes(e.key)) e.preventDefault(); };
             iAno.style.cssText='flex:1; min-width:80px; padding:5px; border:1px solid #ccc; border-radius:3px;';
             
             // --- MES ---
@@ -1271,30 +1273,38 @@ function crearHTMLPregunta(p) {
             sMes.style.cssText='flex:1; min-width:100px; padding:5px; border:1px solid #ccc; border-radius:3px;';
             sMes.innerHTML = '<option value="">Mes</option>' + ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i)=>`<option value="${(i+1).toString().padStart(2,'0')}">${m}</option>`).join('');
             
-            // --- DÍA (Validación Anti-Negativos) ---
+            // --- DÍA ---
             const iDia = document.createElement('input'); 
             iDia.className='input-aux-dia'; 
             iDia.type='number'; 
             iDia.placeholder='DD'; 
-            iDia.min = '1';
-            iDia.max = '31';
-            
-            // Evitar escribir signo menos o 'e'
-            iDia.onkeydown = (e) => { if(["-", "+", "e"].includes(e.key)) e.preventDefault(); };
-
+            iDia.min = '1'; iDia.max = '31';
+            iDia.onkeydown = (e) => { if(["-", "+", "e", "."].includes(e.key)) e.preventDefault(); };
             iDia.style.cssText='flex:0.5; min-width:60px; padding:5px; border:1px solid #ccc; border-radius:3px;';
             
             row.append(iAno, sMes, iDia); wrapper.appendChild(row);
             return { wrapper, iAno, sMes, iDia };
         };
 
-        const b1 = crearBloque("Desde (Fecha Inicial)");
-        const b2 = crearBloque("Hasta (Fecha Final)");
+        // Creamos los dos bloques obligatorios
+        const b1 = crearBloque("Desde (Fecha Inicial)", p.obligatorio);
+        const b2 = crearBloque("Hasta (Fecha Final)", p.obligatorio);
 
         const unir = () => {
+            // Construimos Fecha 1
             const f1 = b1.iAno.value ? (b1.iAno.value + (b1.sMes.value ? `-${b1.sMes.value}` + (b1.iDia.value ? `-${b1.iDia.value.toString().padStart(2,'0')}`:'') : '')) : '';
+            
+            // Construimos Fecha 2
             const f2 = b2.iAno.value ? (b2.iAno.value + (b2.sMes.value ? `-${b2.sMes.value}` + (b2.iDia.value ? `-${b2.iDia.value.toString().padStart(2,'0')}`:'') : '')) : '';
-            inputFinal.value = (f1 && f2) ? `${f1} al ${f2}` : '';
+            
+            // 🔥 LÓGICA ESTRICTA: Solo guarda si existen AMBOS
+            if (f1 && f2) {
+                inputFinal.value = `${f1} al ${f2}`;
+            } else {
+                inputFinal.value = ''; // Si falta uno, se queda vacío (pero el navegador no dejará enviar por el 'required' de arriba)
+            }
+
+            // Avisamos cambio
             inputFinal.dispatchEvent(new Event('change', {bubbles:true}));
         };
 
