@@ -1880,7 +1880,8 @@ async function enviarFormulario(e) {
 
             respuestasSimples.push({ 
                 id_pregunta: idPregunta, 
-                valor_texto: (['texto', 'red_social', 'texto_con_id'].includes(input.dataset.tipo)) ? valorFinal : textoExtra, 
+                // Si el tipo está en la lista, usamos el valor. Si no, usamos textoExtra (para los 'Otros')
+                valor_texto: (tiposDirectos.includes(input.dataset.tipo)) ? valorFinal : textoExtra, 
                 id_opcion: idOpcionParaEnviar 
             });
         }
