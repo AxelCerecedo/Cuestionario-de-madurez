@@ -28,10 +28,11 @@ const CONFIG_SECCION = {
         {
             id: 21, 
             orden: 20,
-            texto: "Describa los fondos o colecciones más representativos (máximo 3)",
-            ayuda: "Indique el nombre o descripción breve de cada fondo.",
+            texto: "Si tu archivo esta estructurado por fondos/subfondos y/o colecciones, indica los 3 más representativos:",
             tipo: "lista_inputs", 
             obligatorio: false,
+            // 🔥 PROPIEDAD NUEVA:
+            texto_ninguno: "No está organizado por fondos o colecciones",
             opciones: [
                 { id: 1, texto: "Fondo / Colección 1" },
                 { id: 2, texto: "Fondo / Colección 2" },

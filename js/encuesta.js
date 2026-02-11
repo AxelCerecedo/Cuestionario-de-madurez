@@ -1077,33 +1077,32 @@ function crearHTMLPregunta(p) {
         div.appendChild(tableContainer);
     }
 
-    // --- I. LISTA DE INPUTS (TEXTO LIBRE MÚLTIPLE - PREGUNTA 21) ---
+    // --- I. LISTA DE INPUTS ---
     else if (p.tipo === 'lista_inputs') {
         const container = document.createElement('div');
         
+        // 1. GENERAR LOS INPUTS DE TEXTO
         p.opciones.forEach(opt => {
             const row = document.createElement('div');
+            row.className = 'fila-input-lista'; // Clase para referenciarlos luego
             row.style.display = 'flex';
             row.style.alignItems = 'center';
             row.style.marginBottom = '10px';
 
             const label = document.createElement('label');
             label.innerText = opt.texto + ":";
-            label.style.width = '170px'; // Un poco más ancho para que quepa "Fondo / Colección 1"
+            label.style.width = '170px'; 
             label.style.fontWeight = 'bold';
             label.style.color = '#555';
 
             const input = document.createElement('input');
             input.type = 'text';
-            input.className = 'input-respuesta'; 
+            input.className = 'input-respuesta input-lista-texto'; // Clase extra para lógica
             input.dataset.idPregunta = p.id;
             input.dataset.idOpcion = opt.id; 
-            
-            // IMPORTANTE: Le damos un tipo especial para que 'enviarFormulario' sepa
-            // que debe guardar el ID de la opción (1, 2 o 3) junto con el texto.
             input.dataset.tipo = 'texto_con_id'; 
             
-            input.placeholder = "Nombre o descripción del fondo...";
+            input.placeholder = "Nombre o descripción...";
             input.style.flex = '1'; 
             input.style.padding = '8px';
             input.style.border = '1px solid #ccc';
@@ -1113,6 +1112,67 @@ function crearHTMLPregunta(p) {
             row.appendChild(input);
             container.appendChild(row);
         });
+
+        // 2. GENERAR EL CHECKBOX "NO APLICA" (SI EXISTE EN EL JSON)
+        if (p.texto_ninguno) {
+            const rowCheck = document.createElement('div');
+            rowCheck.style.marginTop = '15px';
+            rowCheck.style.padding = '10px';
+            rowCheck.style.backgroundColor = '#f9f9f9';
+            rowCheck.style.border = '1px solid #eee';
+            rowCheck.style.borderRadius = '5px';
+            rowCheck.style.display = 'flex';
+            rowCheck.style.alignItems = 'center';
+
+            const labelCheck = document.createElement('label');
+            labelCheck.style.cursor = 'pointer';
+            labelCheck.style.display = 'flex';
+            labelCheck.style.alignItems = 'center';
+            labelCheck.style.width = '100%';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'input-ninguno-manual'; // 🔥 CLAVE: Para que Guardar/Cargar funcione solo
+            checkbox.dataset.idPregunta = p.id;
+            checkbox.dataset.idOpcion = 99; // ID estándar para "Ninguno"
+            checkbox.style.marginRight = '10px';
+            checkbox.style.transform = "scale(1.2)";
+
+            // --- LÓGICA DE BLOQUEO ---
+            const toggleInputs = () => {
+                const inputsTexto = container.querySelectorAll('.input-lista-texto');
+                inputsTexto.forEach(inp => {
+                    if (checkbox.checked) {
+                        inp.value = '';        // Borrar texto
+                        inp.disabled = true;   // Bloquear
+                        inp.style.backgroundColor = '#f0f0f0';
+                    } else {
+                        inp.disabled = false;  // Desbloquear
+                        inp.style.backgroundColor = '#fff';
+                    }
+                });
+            };
+
+            // Evento al marcar el checkbox
+            checkbox.addEventListener('change', toggleInputs);
+
+            // Evento inverso: Si escriben en un input, desmarcar el checkbox
+            const inputsTexto = container.querySelectorAll('.input-lista-texto');
+            inputsTexto.forEach(inp => {
+                inp.addEventListener('input', () => {
+                    if (inp.value.trim() !== '' && checkbox.checked) {
+                        checkbox.checked = false;
+                        toggleInputs(); // Reactivar los demás
+                    }
+                });
+            });
+
+            labelCheck.appendChild(checkbox);
+            labelCheck.appendChild(document.createTextNode(p.texto_ninguno));
+            rowCheck.appendChild(labelCheck);
+            container.appendChild(rowCheck);
+        }
+
         div.appendChild(container);
     }
 
