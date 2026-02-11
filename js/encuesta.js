@@ -1847,25 +1847,32 @@ async function enviarFormulario(e) {
     if (errorValidacion) return;
 
     // =================================================================
-    // 🟢 2. RECOLECCIÓN DE DATOS
+    // 🟢 2. RECOLECCIÓN DE DATOS (CORREGIDO)
     // =================================================================
 
     const respuestasSimples = [];
     const respuestasMultiples = [];
     const listaContactos = [];
+    
+    // 🔥 SOLUCIÓN: Definimos la lista AQUÍ ARRIBA para que siempre exista
+    const tiposDirectos = ['texto', 'red_social', 'texto_con_id', 'rango_flexible', 'fecha_flexible', 'texto_largo', 'numero', 'fecha', 'direccion', 'liga', 'correo'];
 
     // --- Inputs Simples ---
     document.querySelectorAll('.input-respuesta').forEach(input => {
         if (!input.dataset.idPregunta) return; 
+
         let procesar = (input.type === 'radio') ? input.checked : true;
         if (input.dataset.tipo === 'red_social' && input.value.trim() === '') procesar = false;
 
         if (procesar) {
             const idPregunta = input.dataset.idPregunta;
             let valorFinal = input.value;
+            
+            // Si es rango de fechas, tomamos el valor compuesto
             if (input.dataset.rangoValor) valorFinal = input.dataset.rangoValor;
 
             let textoExtra = null;
+            // Recuperar texto "Especifique" si es opción única
             if (input.dataset.tipo === 'opcion_unica' && input.value) {
                  const inputSpec = document.querySelector(`.input-especificar[data-id-pregunta="${idPregunta}"]`);
                  if (inputSpec && inputSpec.style.display !== 'none') textoExtra = inputSpec.value;
@@ -1878,9 +1885,9 @@ async function enviarFormulario(e) {
                 idOpcionParaEnviar = input.dataset.idOpcion; 
             }
 
+            // Aquí es donde te daba el error antes. Ahora ya funcionará porque 'tiposDirectos' está definida arriba.
             respuestasSimples.push({ 
                 id_pregunta: idPregunta, 
-                // Si el tipo está en la lista, usamos el valor. Si no, usamos textoExtra (para los 'Otros')
                 valor_texto: (tiposDirectos.includes(input.dataset.tipo)) ? valorFinal : textoExtra, 
                 id_opcion: idOpcionParaEnviar 
             });
