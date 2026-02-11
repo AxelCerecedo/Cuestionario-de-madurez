@@ -477,11 +477,27 @@ app.post('/guardar-encuesta', async (req, res) => {
             await db.query('INSERT INTO respuestas_matriz (id_institucion, id_pregunta_matriz, id_fila, id_columna, valor) VALUES ?', [valuesMatriz]);
         }
 
-        // --- D. CONTACTOS ---
+        // --- D. CONTACTOS (CORREGIDO) ---
         if (contactos && contactos.length > 0) {
-            await db.query('DELETE FROM contactos_institucion WHERE id_institucion = ?', [idInstitucion]);
-            const valuesContactos = contactos.map(c => [idInstitucion, c.nombre, c.cargo, c.correo, c.telefono]);
-            await db.query('INSERT INTO contactos_institucion (id_institucion, nombre, cargo, correo, telefono) VALUES ?', [valuesContactos]);
+            // 1. Borramos los anteriores (para evitar duplicados al actualizar)
+            // Asegúrate que el nombre de la tabla sea el correcto ('contactos' o 'contactos_institucion')
+            await db.query('DELETE FROM contactos WHERE id_institucion = ?', [idInstitucion]);
+            
+            // 2. Preparamos los datos INCLUYENDO EL SEGUNDO TELÉFONO
+            const valuesContactos = contactos.map(c => [
+                idInstitucion, 
+                c.nombre, 
+                c.cargo, 
+                c.correo, 
+                c.telefono_inst, // Ojo: Asegúrate que desde el front llegue como 'telefono_inst' o mapealo aquí
+                c.telefono_otro  // <--- ¡AQUÍ ESTÁ EL NUEVO CAMPO!
+            ]);
+
+            // 3. Insertamos en las columnas correspondientes
+            await db.query(
+                'INSERT INTO contactos (id_institucion, nombre, cargo, correo, telefono, telefono_otro) VALUES ?', 
+                [valuesContactos]
+            );
         }
 
         // =============================================================
