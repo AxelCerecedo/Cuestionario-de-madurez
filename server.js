@@ -477,25 +477,31 @@ app.post('/guardar-encuesta', async (req, res) => {
             await db.query('INSERT INTO respuestas_matriz (id_institucion, id_pregunta_matriz, id_fila, id_columna, valor) VALUES ?', [valuesMatriz]);
         }
 
-        // --- D. CONTACTOS (CORREGIDO) ---
+        // --- D. CONTACTOS ---
         if (contactos && contactos.length > 0) {
-            // 1. Borramos los anteriores (para evitar duplicados al actualizar)
-            // Asegúrate que el nombre de la tabla sea el correcto ('contactos' o 'contactos_institucion')
-            await db.query('DELETE FROM contactos WHERE id_institucion = ?', [idInstitucion]);
             
-            // 2. Preparamos los datos INCLUYENDO EL SEGUNDO TELÉFONO
+            // 🛑 CORRECCIÓN AQUÍ: Usamos el nombre real de tu tabla
+            const NOMBRE_TABLA = 'contactos_institucion'; 
+
+            console.log(`📞 Guardando ${contactos.length} contactos en la tabla: ${NOMBRE_TABLA}`);
+
+            // 1. Borramos los anteriores
+            await db.query(`DELETE FROM ${NOMBRE_TABLA} WHERE id_institucion = ?`, [idInstitucion]);
+            
+            // 2. Preparamos los datos
             const valuesContactos = contactos.map(c => [
                 idInstitucion, 
-                c.nombre, 
-                c.cargo, 
-                c.correo, 
-                c.telefono_inst, // Ojo: Asegúrate que desde el front llegue como 'telefono_inst' o mapealo aquí
-                c.telefono_otro  // <--- ¡AQUÍ ESTÁ EL NUEVO CAMPO!
+                c.nombre || '', 
+                c.cargo || '', 
+                c.correo || '', 
+                c.telefono_inst || c.telefono || '', // Teléfono 1
+                c.telefono_otro || ''                // Teléfono 2 (Nuevo)
             ]);
 
-            // 3. Insertamos en las columnas correspondientes
+            // 3. Insertamos
+            // Asegúrate de que las columnas coincidan con la tabla 'contactos_institucion'
             await db.query(
-                'INSERT INTO contactos (id_institucion, nombre, cargo, correo, telefono, telefono_otro) VALUES ?', 
+                `INSERT INTO ${NOMBRE_TABLA} (id_institucion, nombre, cargo, correo, telefono, telefono_otro) VALUES ?`, 
                 [valuesContactos]
             );
         }
