@@ -1232,8 +1232,7 @@ function crearHTMLPregunta(p) {
         div.appendChild(container);
     }
 
-    //-- K. RANGO DE FECHAS FLEXIBLE  --
-
+   //-- K. RANGO DE FECHAS FLEXIBLE (MEJORADO) --
     else if (p.tipo === 'rango_fechas_flexibles') {
         const mainContainer = document.createElement('div');
         mainContainer.style.cssText = 'display: flex; flex-direction: column; gap: 15px;';
@@ -1254,12 +1253,36 @@ function crearHTMLPregunta(p) {
             
             const row = document.createElement('div'); row.style.cssText='display:flex; gap:5px; flex-wrap:wrap;';
             
-            const iAno = document.createElement('input'); iAno.className='input-aux-ano'; iAno.type='number'; iAno.placeholder='AAAA'; iAno.style.cssText='flex:1; min-width:80px; padding:5px; border:1px solid #ccc; border-radius:3px;';
+            // --- AÑO (Validación Anti-Negativos) ---
+            const iAno = document.createElement('input'); 
+            iAno.className='input-aux-ano'; 
+            iAno.type='number'; 
+            iAno.placeholder='AAAA'; 
+            iAno.min = '1000'; // Mínimo razonable
             
-            const sMes = document.createElement('select'); sMes.className='input-aux-mes'; sMes.style.cssText='flex:1; min-width:100px; padding:5px; border:1px solid #ccc; border-radius:3px;';
+            // Evitar escribir signo menos o 'e'
+            iAno.onkeydown = (e) => { if(["-", "+", "e"].includes(e.key)) e.preventDefault(); };
+            
+            iAno.style.cssText='flex:1; min-width:80px; padding:5px; border:1px solid #ccc; border-radius:3px;';
+            
+            // --- MES ---
+            const sMes = document.createElement('select'); 
+            sMes.className='input-aux-mes'; 
+            sMes.style.cssText='flex:1; min-width:100px; padding:5px; border:1px solid #ccc; border-radius:3px;';
             sMes.innerHTML = '<option value="">Mes</option>' + ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i)=>`<option value="${(i+1).toString().padStart(2,'0')}">${m}</option>`).join('');
             
-            const iDia = document.createElement('input'); iDia.className='input-aux-dia'; iDia.type='number'; iDia.placeholder='DD'; iDia.style.cssText='flex:0.5; min-width:60px; padding:5px; border:1px solid #ccc; border-radius:3px;';
+            // --- DÍA (Validación Anti-Negativos) ---
+            const iDia = document.createElement('input'); 
+            iDia.className='input-aux-dia'; 
+            iDia.type='number'; 
+            iDia.placeholder='DD'; 
+            iDia.min = '1';
+            iDia.max = '31';
+            
+            // Evitar escribir signo menos o 'e'
+            iDia.onkeydown = (e) => { if(["-", "+", "e"].includes(e.key)) e.preventDefault(); };
+
+            iDia.style.cssText='flex:0.5; min-width:60px; padding:5px; border:1px solid #ccc; border-radius:3px;';
             
             row.append(iAno, sMes, iDia); wrapper.appendChild(row);
             return { wrapper, iAno, sMes, iDia };
@@ -1275,7 +1298,11 @@ function crearHTMLPregunta(p) {
             inputFinal.dispatchEvent(new Event('change', {bubbles:true}));
         };
 
-        [b1, b2].forEach(b => { b.iAno.addEventListener('input', unir); b.sMes.addEventListener('change', unir); b.iDia.addEventListener('input', unir); });
+        [b1, b2].forEach(b => { 
+            b.iAno.addEventListener('input', unir); 
+            b.sMes.addEventListener('change', unir); 
+            b.iDia.addEventListener('input', unir); 
+        });
 
         mainContainer.append(b1.wrapper, b2.wrapper);
         div.appendChild(mainContainer);
@@ -1404,13 +1431,12 @@ async function cargarRespuestasPrevias(idUsuario) {
         // ----------------------------------------------------
         // 1. RECUPERAR CHECKBOXES (MÚLTIPLES)
         // ----------------------------------------------------
-        // PRIMERO: Para asegurar que se dibujen las matrices dinámicas (Sec 5)
         if (data.multiples) {
             data.multiples.forEach(r => {
                 const chk = document.querySelector(`.input-multiple[data-id-pregunta="${r.id_pregunta}"][value="${r.id_opcion}"]`);
                 if (chk) {
                     chk.checked = true;
-                    // 🔥 CRÍTICO SECCIÓN 5: Disparamos cambio para dibujar matriz
+                    // 🔥 Disparamos cambio para dibujar matriz o lógica visual
                     chk.dispatchEvent(new Event('change', { bubbles: true })); 
                 }
             });
@@ -1432,13 +1458,13 @@ async function cargarRespuestasPrevias(idUsuario) {
                     }
                 }
 
-                // B. CASO TEXTO "OTRO" EN MÚLTIPLE (Sección 6)
+                // B. CASO TEXTO "OTRO" EN MÚLTIPLE
                 if (r.id_opcion_seleccionada) {
                     const inputSpecMultiple = document.querySelector(`.input-especificar-multiple[data-id-pregunta="${r.id_pregunta}"][data-id-opcion="${r.id_opcion_seleccionada}"]`);
                     
                     if (inputSpecMultiple && r.respuesta_texto) {
                         inputSpecMultiple.value = r.respuesta_texto;
-                        inputSpecMultiple.style.display = 'block'; // 🔥 FORZAMOS VISIBILIDAD
+                        inputSpecMultiple.style.display = 'block'; 
                         
                         // Asegurar que el checkbox padre esté marcado
                         const parentDiv = inputSpecMultiple.closest('.opcion-item') || inputSpecMultiple.closest('div');
@@ -1449,28 +1475,52 @@ async function cargarRespuestasPrevias(idUsuario) {
                     }
                 }
 
-                // C. INPUTS ESTÁNDAR
+                // C. INPUTS ESTÁNDAR (Aquí procesamos todo lo demás)
                 const inputs = document.querySelectorAll(`.input-respuesta[data-id-pregunta="${r.id_pregunta}"]`);
                 
                 inputs.forEach(input => {
-                    // Redes Sociales / Textos con ID
+                    // 1. Redes Sociales / Textos con ID
                     if (input.dataset.tipo === 'red_social' || input.dataset.tipo === 'texto_con_id') {
                         if (input.dataset.idOpcion == r.id_opcion_seleccionada) input.value = r.respuesta_texto;
                     } 
-                    // Selects
+                    // 2. Selects
                     else if (input.tagName === 'SELECT') {
                         input.value = r.id_opcion_seleccionada;
                         input.dispatchEvent(new Event('change', { bubbles: true })); 
                     }
-                    // Radios (Booleano / Única)
+                    // 3. Radios (Booleano / Única)
                     else if (input.type === 'radio') {
                         if (input.value === r.respuesta_texto || input.value == r.id_opcion_seleccionada) {
                             input.checked = true;
-                            // 🔥 CRÍTICO SECCIÓN 6: Disparamos cambio para lógica condicional
                             input.dispatchEvent(new Event('change', { bubbles: true })); 
                         }
                     }
-                    // Fecha Flexible (Nueva lógica para separar AAAA-MM-DD)
+                    
+                    // 🔥 [NUEVO] 4. RANGO DE FECHAS FLEXIBLES (SECCIÓN 3 - PREGUNTA 22/23) 🔥
+                    else if (input.dataset.tipo === 'rango_flexible') {
+                        input.value = r.respuesta_texto; // Llenamos el hidden
+                        
+                        if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
+                            const fechas = r.respuesta_texto.split(' al '); // [FechaInicio, FechaFin]
+                            const bloques = input.parentElement.querySelectorAll('.rango-bloque-wrapper');
+
+                            // Recorremos las dos partes (Inicio y Fin)
+                            fechas.forEach((f, index) => {
+                                if (bloques[index]) {
+                                    const partes = f.split('-'); // [AAAA, MM, DD]
+                                    
+                                    // Año
+                                    if (partes[0]) bloques[index].querySelector('.input-aux-ano').value = partes[0];
+                                    // Mes (si existe)
+                                    if (partes[1]) bloques[index].querySelector('.input-aux-mes').value = partes[1];
+                                    // Día (si existe)
+                                    if (partes[2]) bloques[index].querySelector('.input-aux-dia').value = partes[2];
+                                }
+                            });
+                        }
+                    }
+
+                    // 5. Fecha Flexible Simple (Solo una fecha)
                     else if (input.type === 'hidden' && input.parentElement.querySelector('.input-auxiliar-fecha')) {
                         input.value = r.respuesta_texto;
                         if (r.respuesta_texto) {
@@ -1487,7 +1537,7 @@ async function cargarRespuestasPrevias(idUsuario) {
                             if (inDia && partes[2]) inDia.value = partes[2];
                         }
                     }
-                    // Fechas Estándar (Rango)
+                    // 6. Fechas Estándar (Date picker nativo)
                     else if (input.type === 'date') {
                         if (r.respuesta_texto && r.respuesta_texto.includes(' al ')) {
                             const partes = r.respuesta_texto.split(' al ');
@@ -1498,7 +1548,7 @@ async function cargarRespuestasPrevias(idUsuario) {
                             input.value = r.respuesta_texto;
                         }
                     }
-                    // Textos libres / Números
+                    // 7. Textos libres / Números genéricos
                     else if (input.dataset.tipo === 'texto' || input.type === 'number') {
                         input.value = r.respuesta_texto;
                     }
