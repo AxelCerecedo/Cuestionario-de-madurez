@@ -125,7 +125,6 @@ const CONFIG_SECCION = {
             ]
         },
         // --- PREGUNTA DEPENDIENTE 2 ---
-        // --- PREGUNTA 46 (LA MATRIZ) ---
         {
             id: 46,
             orden: 45,
