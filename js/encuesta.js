@@ -536,7 +536,7 @@ function crearHTMLPregunta(p) {
         }
     }
 
-    // --- G. MATRIZ DINÁMICA (NORMAL, INVERTIDA E INCREMENTAL) ---
+    // --- G. MATRIZ DINÁMICA (SOPORTA SELECTS Y RADIOS) ---
     else if (p.tipo === 'matriz_dinamica') {
         
         // AVISO SCROLL
@@ -545,88 +545,7 @@ function crearHTMLPregunta(p) {
         avisoScroll.style.cssText = 'font-size:0.85em; color:#856404; background:#fff3cd; border:1px solid #ffeeba; padding:8px; margin-bottom:5px; border-radius:4px; text-align:center; display:none;';
         div.appendChild(avisoScroll);
 
-        // =========================================================
-        // 1. CONTROLES DE MODO INCREMENTAL (SELECT + BOTÓN + AYUDA)
-        // =========================================================
-        let controlesIncremental = null;
-        let divAyudaSeleccion = null; // Nuevo contenedor para la ayuda
-
-        if (p.modo_incremental) {
-            const wrapperControles = document.createElement('div');
-            wrapperControles.style.marginBottom = '15px';
-            wrapperControles.style.background = '#f9f9f9';
-            wrapperControles.style.padding = '15px';
-            wrapperControles.style.borderRadius = '8px';
-            wrapperControles.style.border = '1px solid #eee';
-
-            controlesIncremental = document.createElement('div');
-            controlesIncremental.style.display = 'flex';
-            controlesIncremental.style.gap = '10px';
-            controlesIncremental.style.alignItems = 'center';
-            
-            // Select de Actividades
-            const selectActividad = document.createElement('select');
-            selectActividad.id = `select_actividad_${p.id}`;
-            selectActividad.className = 'input-auxiliar'; 
-            selectActividad.style.padding = '8px';
-            selectActividad.style.borderRadius = '4px';
-            selectActividad.style.border = '1px solid #ccc';
-            selectActividad.style.flex = '1';
-
-            selectActividad.appendChild(new Option('Seleccione una actividad para agregar...', ''));
-            p.columnas.forEach(col => {
-                const op = new Option(col.texto, col.id);
-                // Guardamos la ayuda en un atributo de datos
-                if(col.ayuda) op.dataset.ayuda = col.ayuda; 
-                selectActividad.appendChild(op);
-            });
-
-            // Botón Agregar
-            const btnAgregar = document.createElement('button');
-            btnAgregar.type = 'button';
-            btnAgregar.innerHTML = '<i class="fas fa-plus"></i> Agregar';
-            btnAgregar.className = 'btn-agregar-fila';
-            btnAgregar.style.padding = '8px 15px';
-            btnAgregar.style.backgroundColor = '#28a745'; // Verde
-            btnAgregar.style.color = 'white';
-            btnAgregar.style.border = 'none';
-            btnAgregar.style.borderRadius = '4px';
-            btnAgregar.style.cursor = 'pointer';
-
-            // --- NUEVO: DIV PARA MOSTRAR LA AYUDA AL SELECCIONAR ---
-            divAyudaSeleccion = document.createElement('div');
-            divAyudaSeleccion.style.marginTop = '10px';
-            divAyudaSeleccion.style.fontSize = '0.9em';
-            divAyudaSeleccion.style.color = '#555';
-            divAyudaSeleccion.style.fontStyle = 'italic';
-            divAyudaSeleccion.style.minHeight = '20px'; // Para que no brinque tanto
-            divAyudaSeleccion.innerHTML = ''; // Inicia vacío
-
-            // EVENTO: Al cambiar el select, mostramos la ayuda
-            selectActividad.addEventListener('change', function() {
-                const opcionSeleccionada = this.options[this.selectedIndex];
-                const textoAyuda = opcionSeleccionada.dataset.ayuda;
-                
-                if (textoAyuda) {
-                    divAyudaSeleccion.innerHTML = `<i class="fas fa-info-circle"></i> <b>Descripción:</b> ${textoAyuda}`;
-                    divAyudaSeleccion.style.display = 'block';
-                } else {
-                    divAyudaSeleccion.innerHTML = '';
-                    divAyudaSeleccion.style.display = 'none';
-                }
-            });
-
-            controlesIncremental.appendChild(selectActividad);
-            controlesIncremental.appendChild(btnAgregar);
-            
-            wrapperControles.appendChild(controlesIncremental);
-            wrapperControles.appendChild(divAyudaSeleccion); // Añadimos la ayuda abajo
-            div.appendChild(wrapperControles);
-        }
-
-        // =========================================================
-        // 2. ESTRUCTURA DE LA TABLA
-        // =========================================================
+        // CONTENEDOR DE LA TABLA
         const tableContainer = document.createElement('div');
         tableContainer.style.overflowX = 'auto'; 
         tableContainer.style.border = '1px solid #ddd';
@@ -637,11 +556,10 @@ function crearHTMLPregunta(p) {
         tabla.id = `matriz_${p.id}`; 
         tabla.dataset.idPregunta = p.id;
         tabla.dataset.origen = p.id_pregunta_origen;
-        tabla.dataset.modo = p.modo || 'select';
         
         tabla.style.width = '100%';
         tabla.style.borderCollapse = 'collapse';
-        tabla.style.fontSize = '0.85em';
+        tabla.style.fontSize = '0.9em';
         if (!p.invertir_ejes) tabla.style.minWidth = '800px'; 
 
         const thead = document.createElement('thead');
@@ -654,208 +572,171 @@ function crearHTMLPregunta(p) {
         div.appendChild(tableContainer);
 
         // =========================================================
-        // 3. LÓGICA DE RENDERIZADO Y RECUPERACIÓN
+        // LÓGICA DE RENDERIZADO
         // =========================================================
         setTimeout(() => {
             const inputsOrigen = document.querySelectorAll(`.input-multiple[data-id-pregunta="${p.id_pregunta_origen}"]`);
-            const filasAgregadas = new Set(); // Set para control de duplicados
-
-            // --- FUNCIÓN HELPER: CREAR FILA ---
-            const crearFila = (idFila, textoFila, herramientasSeleccionadas, valoresPrevios = {}) => {
-                const tr = document.createElement('tr');
-                tr.dataset.idFila = idFila;
-
-                // Nombre Actividad
-                const tdNombre = document.createElement('td');
-                // Si hay ayuda en el JSON, la mostramos también aquí chiquita
-                const colData = p.columnas.find(c => c.id == idFila);
-                let htmlNombre = `<b>${textoFila}</b>`;
-                if(colData && colData.ayuda) htmlNombre += `<div style="font-size:0.75em; color:#888; font-weight:normal;">${colData.ayuda}</div>`;
-                
-                tdNombre.innerHTML = htmlNombre;
-                tdNombre.style.cssText = 'padding:8px; border:1px solid #ddd; background:#fff; position:relative; min-width:180px;';
-                
-                // Botón Eliminar Fila (Solo Incremental)
-                if (p.modo_incremental) {
-                    const btnEliminar = document.createElement('button');
-                    btnEliminar.innerHTML = '×';
-                    btnEliminar.title = 'Quitar fila';
-                    btnEliminar.style.cssText = 'position:absolute; right:5px; top:5px; background:#ffeeee; border:1px solid #ffcccc; color:red; font-weight:bold; cursor:pointer; width:20px; height:20px; line-height:18px; border-radius:50%;';
-                    btnEliminar.onclick = () => {
-                        tr.remove();
-                        filasAgregadas.delete(String(idFila));
-                        // Rehabilitar opción en el select
-                        const select = document.getElementById(`select_actividad_${p.id}`);
-                        if(select) {
-                            const op = Array.from(select.options).find(o => o.value == idFila);
-                            if(op) op.disabled = false;
-                        }
-                    };
-                    tdNombre.appendChild(btnEliminar);
-                }
-                tr.appendChild(tdNombre);
-
-                // Celdas (Herramientas)
-                herramientasSeleccionadas.forEach(herr => {
-                    const td = document.createElement('td');
-                    td.style.cssText = 'border:1px solid #ddd; text-align:center; padding:5px;';
-                    
-                    const select = document.createElement('select');
-                    select.className = 'input-matriz-celda';
-                    select.dataset.idPregunta = p.id;
-                    select.dataset.idFila = idFila;       
-                    select.dataset.idColumna = herr.id;         
-
-                    const optDef = new Option('-', '');
-                    select.appendChild(optDef);
-                    [1,2,3,4,5].forEach(num => select.appendChild(new Option(num, num)));
-                    select.style.width = '100%';
-                    
-                    // Recuperar valor
-                    const key = `${idFila}_${herr.id}`;
-                    if (valoresPrevios[key]) select.value = valoresPrevios[key];
-
-                    td.appendChild(select);
-                    tr.appendChild(td);
-                });
-
-                return tr;
-            };
-
-            // --- FUNCIÓN PRINCIPAL: ACTUALIZAR TABLA CON LOGS ---
+            
             const actualizarTabla = () => {
-                console.group("🔍 DEPURACIÓN MATRIZ 39"); 
-                
                 const valoresPrevios = {};
 
-                // 1. RECUPERAR DEL CACHE (BD)
+                // 1. RECUPERAR DATOS PREVIOS
                 if (window.RESPUESTAS_PREVIAS_CACHE && Array.isArray(window.RESPUESTAS_PREVIAS_CACHE)) {
-                    
                     window.RESPUESTAS_PREVIAS_CACHE.forEach(r => {
-                        // 🔥 CORRECCIÓN AQUÍ: 
-                        // El servidor a veces manda 'id_pregunta' y a veces 'id_pregunta_matriz'.
-                        // Usamos || para que funcione con cualquiera de los dos.
                         const idPreguntaRegistro = r.id_pregunta || r.id_pregunta_matriz;
-
                         if (idPreguntaRegistro == p.id) {
+                            // Guardamos la referencia para marcar el radio correcto luego
                             const key = `${r.id_fila}_${r.id_columna}`;
-                            const valor = String(r.valor);
-                            valoresPrevios[key] = valor;
-                            
-                            console.log(`✅ Recuperado: Fila ${r.id_fila}, Col ${r.id_columna} = ${valor}`);
+                            valoresPrevios[key] = String(r.valor);
                         }
                     });
                 }
-
-                // 2. PRESERVAR LO QUE EL USUARIO YA ESCRIBIÓ EN PANTALLA
-                tbody.querySelectorAll('.input-matriz-celda').forEach(select => {
-                    if (select.value) {
-                        const key = `${select.dataset.idFila}_${select.dataset.idColumna}`;
-                        valoresPrevios[key] = String(select.value);
-                    }
+                
+                // Preservar lo que el usuario acaba de clicar antes de redibujar
+                tbody.querySelectorAll('input:checked').forEach(rad => {
+                    const key = `${rad.dataset.idFila}_${rad.dataset.idColumna}`;
+                    valoresPrevios[key] = String(rad.value);
                 });
 
-                // 3. DETECTAR HERRAMIENTAS (COLUMNAS)
+                // 2. DETECTAR FILAS (TEMAS SELECCIONADOS EN LA PREGUNTA ANTERIOR)
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
                     .filter(chk => chk.checked && chk.value != '99' && chk.value != '3899') 
                     .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
 
                 if (herramientasSeleccionadas.length === 0) {
-                    thead.innerHTML = '';
-                    tbody.innerHTML = '';
-                    if (controlesIncremental) controlesIncremental.parentElement.style.display = 'none';
-                    console.groupEnd();
+                    thead.innerHTML = ''; tbody.innerHTML = '';
                     return;
                 }
-                
-                if (controlesIncremental) controlesIncremental.parentElement.style.display = 'block';
 
-                // 4. RECONSTRUIR HEADER
-                thead.innerHTML = '';
-                const trHead = document.createElement('tr');
-                const thEsq = document.createElement('th');
-                thEsq.innerText = "Actividad \\ Herramienta";
-                thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; width: 30%; min-width: 200px;';
-                trHead.appendChild(thEsq);
+                // =========================================================
+                // 🟢 MODO: MATRIZ RADIO (CASILLAS) - TU REQUERIMIENTO
+                // =========================================================
+                if (p.modo === 'matriz_radio') {
+                    
+                    // --- HEADER: COLUMNAS ESTÁTICAS (FRECUENCIAS) ---
+                    thead.innerHTML = '';
+                    const trHead = document.createElement('tr');
+                    
+                    const thEsq = document.createElement('th');
+                    thEsq.innerText = "Tema / Capacitación";
+                    thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; width: 30%; text-align: left;';
+                    trHead.appendChild(thEsq);
 
-                herramientasSeleccionadas.forEach(herr => {
-                    const th = document.createElement('th');
-                    th.innerText = herr.texto;
-                    th.style.cssText = 'background:#f8f9fa; padding:8px; border:1px solid #ddd; min-width:100px; font-weight:bold; text-align:center;';
-                    trHead.appendChild(th);
-                });
-                thead.appendChild(trHead);
+                    p.columnas.forEach(col => {
+                        const th = document.createElement('th');
+                        th.innerText = col.texto;
+                        th.style.cssText = 'background:#f8f9fa; padding:8px; border:1px solid #ddd; text-align:center; min-width:80px;';
+                        trHead.appendChild(th);
+                    });
+                    thead.appendChild(trHead);
 
-                // 5. RECONSTRUIR BODY
-                if (p.modo_incremental) {
+                    // --- BODY: FILAS DINÁMICAS (TEMAS) ---
                     tbody.innerHTML = '';
                     
-                    // REHIDRATACIÓN
-                    Object.keys(valoresPrevios).forEach(key => {
-                        const idFila = key.split('_')[0]; 
-                        if (!filasAgregadas.has(idFila)) {
-                            console.log(`➕ Rehidratando Actividad ID: ${idFila}`);
-                            filasAgregadas.add(idFila);
-                        }
-                    });
+                    herramientasSeleccionadas.forEach(filaTema => {
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid #eee';
+                        tr.style.backgroundColor = '#fff';
 
-                    filasAgregadas.forEach(idFila => {
-                        const colConfig = p.columnas.find(c => c.id == idFila);
-                        if (colConfig) {
-                            // Crear fila pasando los valores
-                            const tr = crearFila(idFila, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
-                            tbody.appendChild(tr);
+                        // 1. Nombre del Tema
+                        const tdNombre = document.createElement('td');
+                        tdNombre.innerText = filaTema.texto;
+                        tdNombre.style.cssText = 'padding:10px; border-right:1px solid #ddd; font-weight:500;';
+                        tr.appendChild(tdNombre);
+
+                        // 2. Celdas de Radio (Frecuencias)
+                        p.columnas.forEach(colFrecuencia => {
+                            const td = document.createElement('td');
+                            td.style.cssText = 'text-align:center; padding:8px; border-right:1px solid #f0f0f0; vertical-align: middle;';
                             
-                            // Deshabilitar opción del select
-                            const select = document.getElementById(`select_actividad_${p.id}`);
-                            if(select) {
-                                const op = Array.from(select.options).find(o => o.value == idFila);
-                                if(op) op.disabled = true;
+                            const radio = document.createElement('input');
+                            radio.type = 'radio'; // Son casillas circulares únicas por fila
+                            radio.className = 'input-matriz-radio'; 
+                            
+                            // Agrupamos por ID de FILA (Tema), así solo puedes elegir una frecuencia por tema
+                            radio.name = `matriz_${p.id}_fila_${filaTema.id}`; 
+                            radio.value = colFrecuencia.id; 
+                            
+                            // Datos para guardar
+                            radio.dataset.idPregunta = p.id;
+                            radio.dataset.idFila = filaTema.id;       // Fila = Tema
+                            radio.dataset.idColumna = colFrecuencia.id; // Columna = Frecuencia
+
+                            // Lógica de recuperación
+                            // Buscamos si existe un registro donde Fila=Tema y Col=Frecuencia
+                            const key = `${filaTema.id}_${colFrecuencia.id}`;
+                            if (valoresPrevios[key]) {
+                                radio.checked = true;
                             }
-                        }
+
+                            // Estilo para que sea grande y fácil de clicar
+                            radio.style.transform = "scale(1.3)";
+                            radio.style.cursor = "pointer";
+
+                            td.appendChild(radio);
+                            tr.appendChild(td);
+                        });
+                        tbody.appendChild(tr);
                     });
 
-                    // Logica botón agregar (re-bind)
-                    const btnAgregar = controlesIncremental.querySelector('.btn-agregar-fila');
-                    const nuevoBtn = btnAgregar.cloneNode(true);
-                    btnAgregar.parentNode.replaceChild(nuevoBtn, btnAgregar);
-                    
-                    nuevoBtn.onclick = () => {
-                        const select = document.getElementById(`select_actividad_${p.id}`);
-                        const idActividad = select.value;
-                        if (!idActividad) return;
+                } 
+                // =========================================================
+                // 🔵 MODO: SELECT (EL ANTERIOR - POR SI ACASO)
+                // =========================================================
+                else {
+                    // Header con Nombres de Temas
+                    thead.innerHTML = '';
+                    const trHead = document.createElement('tr');
+                    const thEsq = document.createElement('th');
+                    thEsq.innerText = "Actividad \\ Herramienta";
+                    thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; width: 30%;';
+                    trHead.appendChild(thEsq);
 
-                        if (!filasAgregadas.has(idActividad)) {
-                            const colConfig = p.columnas.find(c => c.id == idActividad);
-                            const tr = crearFila(idActividad, colConfig.texto, herramientasSeleccionadas, valoresPrevios);
-                            tbody.appendChild(tr);
-                            filasAgregadas.add(idActividad);
-                            
-                            const op = Array.from(select.options).find(o => o.value == idActividad);
-                            if(op) op.disabled = true;
-                            select.value = '';
-                            if(divAyudaSeleccion) divAyudaSeleccion.innerHTML = '';
-                        }
-                    };
+                    herramientasSeleccionadas.forEach(herr => {
+                        const th = document.createElement('th');
+                        th.innerText = herr.texto;
+                        th.style.cssText = 'background:#f8f9fa; padding:8px; border:1px solid #ddd;';
+                        trHead.appendChild(th);
+                    });
+                    thead.appendChild(trHead);
 
-                } else {
-                    // MODO NORMAL
+                    // Body con Selects
                     tbody.innerHTML = ''; 
                     p.columnas.forEach(actividad => {
-                        const tr = crearFila(actividad.id, actividad.texto, herramientasSeleccionadas, valoresPrevios);
+                        const tr = document.createElement('tr');
+                        const tdNombre = document.createElement('td');
+                        tdNombre.innerHTML = `<b>${actividad.texto}</b>`;
+                        tdNombre.style.padding = '8px';
+                        tr.appendChild(tdNombre);
+
+                        herramientasSeleccionadas.forEach(herr => {
+                            const td = document.createElement('td');
+                            const select = document.createElement('select');
+                            select.className = 'input-matriz-celda';
+                            select.dataset.idPregunta = p.id;
+                            select.dataset.idFila = actividad.id;       
+                            select.dataset.idColumna = herr.id;         
+                            
+                            const optDef = new Option('-', '');
+                            select.appendChild(optDef);
+                            [1,2,3,4,5].forEach(num => select.appendChild(new Option(num, num)));
+                            
+                            const key = `${actividad.id}_${herr.id}`;
+                            if (valoresPrevios[key]) select.value = valoresPrevios[key];
+
+                            td.appendChild(select);
+                            tr.appendChild(td);
+                        });
                         tbody.appendChild(tr);
                     });
                 }
-                console.groupEnd(); 
             };
 
             // Listeners
             inputsOrigen.forEach(chk => chk.addEventListener('change', actualizarTabla));
-            
-            // Ejecución inicial
             actualizarTabla(); 
 
-        }, 600); // Un poco más de tiempo para asegurar carga de datos previos
+        }, 600);
     }
 
     // --- H. CATÁLOGO TIPO TABLA (HÍBRIDO + AYUDA EN COLUMNA DERECHA) ---

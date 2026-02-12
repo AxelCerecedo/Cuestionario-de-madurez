@@ -125,26 +125,31 @@ const CONFIG_SECCION = {
             ]
         },
         // --- PREGUNTA DEPENDIENTE 2 ---
+        // --- PREGUNTA 46 (LA MATRIZ) ---
         {
             id: 46,
             orden: 45,
             texto: "¿Con qué frecuencia recibe capacitación relacionada con sus funciones?",
-            ayuda: "Para cada tema seleccionado arriba, marque la frecuencia correspondiente.",
+            ayuda: "Para cada tema seleccionado arriba, marque la opción que corresponda.",
             tipo: "matriz_dinamica", 
+            
+            // 🔥 CLAVE: Esto le dice a JS que queremos bolitas/checks
             modo: "matriz_radio", 
+            
             id_pregunta_origen: 45, 
             obligatorio: true,
             graficar: true,
+            
+            condicion: { pregunta: 44, valor: 1 }, 
+            accion_condicion: 'bloquear',
 
-            // AGREGAMOS ESTA CONDICIÓN TAMBIÉN
-            condicion_visual: { pregunta: 44, valor: 1 },
-
+            // Estas serán las COLUMNAS (Encabezados de la tabla)
             columnas: [
                 { id: 1, texto: "No recibe", valor: 1 },       
-                { id: 2, texto: "Ocasional (1 vez al año o menos)", valor: 2 },       
-                { id: 3, texto: "Periódica (2 a 4 veces al año)", valor: 3 },       
-                { id: 4, texto: "Frecuente (mensual)", valor: 4 },       
-                { id: 5, texto: "Muy frecuente (más de una vez al mes)", valor: 5 },   
+                { id: 2, texto: "Ocasional", valor: 2 },       
+                { id: 3, texto: "Periódica", valor: 3 },       
+                { id: 4, texto: "Frecuente", valor: 4 },       
+                { id: 5, texto: "Muy frecuente", valor: 5 },   
             ]
         },
         {
