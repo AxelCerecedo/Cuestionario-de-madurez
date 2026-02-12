@@ -603,8 +603,16 @@ function crearHTMLPregunta(p) {
                     .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
 
                 if (herramientasSeleccionadas.length === 0) {
-                    thead.innerHTML = ''; tbody.innerHTML = '';
-                    return;
+                    // EN LUGAR DE BORRAR TODO, MOSTRAMOS UN AVISO
+                    thead.innerHTML = '';
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="100%" style="text-align:center; padding: 20px; color:#888; background:#f9f9f9; border:1px dashed #ccc;">
+                                <i>(Seleccione opciones en la pregunta anterior para habilitar esta tabla)</i>
+                            </td>
+                        </tr>
+                    `;
+                    return; 
                 }
 
                 // =========================================================
