@@ -168,7 +168,7 @@ const CONFIG_SECCION = {
 function inicializarLogicaCondicional() {
     if (typeof CONFIG_SECCION === 'undefined' || !CONFIG_SECCION.preguntas) return;
 
-    // 1. Filtramos las preguntas hijas (las que tienen condición)
+    // 1. Filtramos las preguntas hijas
     const preguntasCondicionales = CONFIG_SECCION.preguntas.filter(p => p.condicion);
 
     if (preguntasCondicionales.length === 0) return;
@@ -181,48 +181,48 @@ function inicializarLogicaCondicional() {
             const padreId = hija.condicion.pregunta;
             const valorEsperado = String(hija.condicion.valor);
             
-            // Buscamos el contenedor de la pregunta Hija
             const divHija = document.getElementById(`pregunta-box-${hija.id}`);
             if (!divHija) return;
 
-            // Buscamos qué respondió el usuario en la pregunta Padre (44)
+            // Buscamos valor del padre
             let valorActual = null;
             
-            // Intento 1: Radio Buttons
+            // Radio Buttons
             const radioMarcado = document.querySelector(`input[name="pregunta_${padreId}"]:checked`);
             if (radioMarcado) {
                 valorActual = radioMarcado.value;
             } 
-            // Intento 2: Selects
+            // Selects
             else {
                 const select = document.querySelector(`select[data-id-pregunta="${padreId}"]`);
                 if (select) valorActual = select.value;
             }
 
             // 3. Comparar y Actuar
-            // Nota: Convertimos a String para asegurar que "1" == 1
             if (String(valorActual) === valorEsperado) {
-                // ✅ CASO: CUMPLE LA CONDICIÓN (MOSTRAR Y ACTIVAR)
+                // ✅ CASO: CUMPLE (MOSTRAR Y ACTIVAR)
+                
+                divHija.style.display = 'block'; // 🔥 FORZAMOS VISIBILIDAD
                 divHija.classList.remove('pregunta-deshabilitada');
                 
-                // Reactivamos todos los inputs dentro
+                // Reactivamos inputs
                 divHija.querySelectorAll('input, select, textarea, button').forEach(el => {
                     el.disabled = false;
                 });
 
             } else {
                 // ⛔ CASO: NO CUMPLE (MOSTRAR PERO BLOQUEAR)
+                
+                divHija.style.display = 'block'; // 🔥 FORZAMOS VISIBILIDAD (Para que no desaparezca)
                 divHija.classList.add('pregunta-deshabilitada');
                 
-                // Desactivamos inputs y LIMPIAMOS sus valores
+                // Desactivamos y LIMPIAMOS
                 divHija.querySelectorAll('input, select, textarea, button').forEach(el => {
-                    el.disabled = true; // Bloqueo lógico
+                    el.disabled = true; 
                     
-                    // Limpieza visual para evitar incoherencias
                     if (el.type === 'checkbox' || el.type === 'radio') {
                         el.checked = false;
-                        // Si es checkbox múltiple, disparamos evento para limpiar matrices dependientes
-                        el.dispatchEvent(new Event('change')); 
+                        el.dispatchEvent(new Event('change')); // Limpiar hijos de hijos si hubiera
                     } else if (el.type !== 'button') {
                         el.value = '';
                     }
@@ -231,21 +231,18 @@ function inicializarLogicaCondicional() {
         });
     };
 
-    // 3. Agregar "Listeners" a las preguntas Padre
+    // 3. Listeners
     const idsPadres = [...new Set(preguntasCondicionales.map(p => p.condicion.pregunta))];
 
     idsPadres.forEach(idPadre => {
-        // Escuchar cambios en Radios (Inputs normales)
         const inputs = document.querySelectorAll(`input[name="pregunta_${idPadre}"]`);
         inputs.forEach(r => r.addEventListener('change', evaluar));
 
-        // Escuchar cambios en Selects
         const select = document.querySelector(`select[data-id-pregunta="${idPadre}"]`);
         if (select) select.addEventListener('change', evaluar);
     });
 
-    // 4. Ejecutar una vez al inicio
-    // Usamos setTimeout para asegurar que el DOM y los datos cargados (fetch) estén listos
+    // 4. Ejecutar inicio
     setTimeout(evaluar, 500); 
 }
 
