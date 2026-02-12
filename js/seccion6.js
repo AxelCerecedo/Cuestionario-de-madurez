@@ -234,8 +234,6 @@ function iniciarLogicaVisualRH() {
     setTimeout(evaluar, 500); 
 }
 
-// 🔥 EJECUCIÓN MANUAL
-// Esperamos a que encuesta.js termine de cargar todo el HTML
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(iniciarLogicaVisualRH, 800); 
 });
