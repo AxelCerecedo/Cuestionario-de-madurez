@@ -30,15 +30,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     cargarCuestionarioLocal();
 
     // 5. RECUPERAR PROGRESO (Llena los inputs con datos)
-    console.log("⏳ Esperando datos del servidor...");
     await cargarRespuestasPrevias(idUsuario); 
-    console.log("✅ Datos cargados y cacheados.");
 
     // --- REFRESCAR MATRICES SI HAY DATOS PREVIOS ---
     const inputsOrigenActivados = document.querySelectorAll('.input-multiple:checked');
     if (inputsOrigenActivados.length > 0) {
         inputsOrigenActivados[0].dispatchEvent(new Event('change'));
-        console.log("🔄 Disparador de matriz ejecutado.");
     }
 
     // 6. INICIALIZAR LÓGICA CONDICIONAL (SI/NO -> OCULTAR/MOSTRAR)
@@ -62,7 +59,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 8. EVENTO SUBMIT (ESTO ACTIVA LAS VALIDACIONES ROJAS)
     const form = document.getElementById('formularioDinamico');
     if (form) {
-        console.log("✅ Evento Submit asignado correctamente.");
         form.addEventListener('submit', enviarFormulario);
     } else {
         console.error("❌ No se encontró el formulario #formularioDinamico");
@@ -2233,8 +2229,6 @@ function inicializarLogicaCondicional() {
     const preguntasCondicionales = CONFIG_SECCION.preguntas.filter(p => p.condicion);
 
     if (preguntasCondicionales.length === 0) return;
-
-    console.log("🧠 Inicializando lógica condicional...");
 
     // 2. Función que evalúa si mostrar u ocultar
     const evaluar = () => {
