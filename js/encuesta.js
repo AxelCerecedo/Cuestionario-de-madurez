@@ -536,7 +536,7 @@ function crearHTMLPregunta(p) {
         }
     }
 
-    // --- G. MATRIZ DINÁMICA (SOPORTA SELECTS Y RADIOS) ---
+    // --- G. MATRIZ DINÁMICA (CORREGIDA: RADIOS ÚNICOS POR FILA) ---
     else if (p.tipo === 'matriz_dinamica') {
         
         // AVISO SCROLL
@@ -585,20 +585,19 @@ function crearHTMLPregunta(p) {
                     window.RESPUESTAS_PREVIAS_CACHE.forEach(r => {
                         const idPreguntaRegistro = r.id_pregunta || r.id_pregunta_matriz;
                         if (idPreguntaRegistro == p.id) {
-                            // Guardamos la referencia para marcar el radio correcto luego
                             const key = `${r.id_fila}_${r.id_columna}`;
                             valoresPrevios[key] = String(r.valor);
                         }
                     });
                 }
                 
-                // Preservar lo que el usuario acaba de clicar antes de redibujar
+                // Preservar selección actual en pantalla
                 tbody.querySelectorAll('input:checked').forEach(rad => {
                     const key = `${rad.dataset.idFila}_${rad.dataset.idColumna}`;
                     valoresPrevios[key] = String(rad.value);
                 });
 
-                // 2. DETECTAR FILAS (TEMAS SELECCIONADOS EN LA PREGUNTA ANTERIOR)
+                // 2. DETECTAR FILAS (TEMAS)
                 const herramientasSeleccionadas = Array.from(inputsOrigen)
                     .filter(chk => chk.checked && chk.value != '99' && chk.value != '3899') 
                     .map(chk => ({ id: chk.value, texto: chk.parentElement.innerText.trim() }));
@@ -609,14 +608,13 @@ function crearHTMLPregunta(p) {
                 }
 
                 // =========================================================
-                // 🟢 MODO: MATRIZ RADIO (CASILLAS) - TU REQUERIMIENTO
+                // 🟢 MODO: MATRIZ RADIO (SOLUCIÓN CHECK ÚNICO)
                 // =========================================================
                 if (p.modo === 'matriz_radio') {
                     
-                    // --- HEADER: COLUMNAS ESTÁTICAS (FRECUENCIAS) ---
+                    // HEADER
                     thead.innerHTML = '';
                     const trHead = document.createElement('tr');
-                    
                     const thEsq = document.createElement('th');
                     thEsq.innerText = "Tema / Capacitación";
                     thEsq.style.cssText = 'background:#e9ecef; padding:10px; border:1px solid #ccc; width: 30%; text-align: left;';
@@ -630,7 +628,7 @@ function crearHTMLPregunta(p) {
                     });
                     thead.appendChild(trHead);
 
-                    // --- BODY: FILAS DINÁMICAS (TEMAS) ---
+                    // BODY
                     tbody.innerHTML = '';
                     
                     herramientasSeleccionadas.forEach(filaTema => {
@@ -638,38 +636,38 @@ function crearHTMLPregunta(p) {
                         tr.style.borderBottom = '1px solid #eee';
                         tr.style.backgroundColor = '#fff';
 
-                        // 1. Nombre del Tema
+                        // Columna Nombre
                         const tdNombre = document.createElement('td');
                         tdNombre.innerText = filaTema.texto;
                         tdNombre.style.cssText = 'padding:10px; border-right:1px solid #ddd; font-weight:500;';
                         tr.appendChild(tdNombre);
 
-                        // 2. Celdas de Radio (Frecuencias)
+                        // Celdas Radios
                         p.columnas.forEach(colFrecuencia => {
                             const td = document.createElement('td');
                             td.style.cssText = 'text-align:center; padding:8px; border-right:1px solid #f0f0f0; vertical-align: middle;';
                             
                             const radio = document.createElement('input');
-                            radio.type = 'radio'; // Son casillas circulares únicas por fila
-                            radio.className = 'input-matriz-radio'; 
+                            radio.type = 'radio'; 
+                            radio.className = 'input-matriz-radio'; // Clase para recolección
                             
-                            // Agrupamos por ID de FILA (Tema), así solo puedes elegir una frecuencia por tema
-                            radio.name = `matriz_${p.id}_fila_${filaTema.id}`; 
+                            // 🔥 CORRECCIÓN CLAVE: El name debe ser ÚNICO por FILA
+                            // Esto agrupa los radios horizontalmente. Si marco uno, se desmarca el otro de la misma fila.
+                            radio.name = `radio_grupo_p${p.id}_fila${filaTema.id}`; 
+                            
                             radio.value = colFrecuencia.id; 
                             
-                            // Datos para guardar
+                            // Metadata para guardar
                             radio.dataset.idPregunta = p.id;
-                            radio.dataset.idFila = filaTema.id;       // Fila = Tema
-                            radio.dataset.idColumna = colFrecuencia.id; // Columna = Frecuencia
+                            radio.dataset.idFila = filaTema.id;       
+                            radio.dataset.idColumna = colFrecuencia.id; 
 
-                            // Lógica de recuperación
-                            // Buscamos si existe un registro donde Fila=Tema y Col=Frecuencia
+                            // Recuperar valor
                             const key = `${filaTema.id}_${colFrecuencia.id}`;
                             if (valoresPrevios[key]) {
                                 radio.checked = true;
                             }
 
-                            // Estilo para que sea grande y fácil de clicar
                             radio.style.transform = "scale(1.3)";
                             radio.style.cursor = "pointer";
 
@@ -679,12 +677,8 @@ function crearHTMLPregunta(p) {
                         tbody.appendChild(tr);
                     });
 
-                } 
-                // =========================================================
-                // 🔵 MODO: SELECT (EL ANTERIOR - POR SI ACASO)
-                // =========================================================
-                else {
-                    // Header con Nombres de Temas
+                } else {
+                    // MODO SELECT (Respaldo por si usas el otro modo en otra pregunta)
                     thead.innerHTML = '';
                     const trHead = document.createElement('tr');
                     const thEsq = document.createElement('th');
@@ -700,7 +694,6 @@ function crearHTMLPregunta(p) {
                     });
                     thead.appendChild(trHead);
 
-                    // Body con Selects
                     tbody.innerHTML = ''; 
                     p.columnas.forEach(actividad => {
                         const tr = document.createElement('tr');
@@ -732,7 +725,6 @@ function crearHTMLPregunta(p) {
                 }
             };
 
-            // Listeners
             inputsOrigen.forEach(chk => chk.addEventListener('change', actualizarTabla));
             actualizarTabla(); 
 
