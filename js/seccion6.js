@@ -107,9 +107,8 @@ const CONFIG_SECCION = {
             tipo: "catalogo_multiple",
             obligatorio: true,
             graficar: true,
-            
-            // AGREGAMOS ESTA CONDICIÓN
-            condicion_visual: { pregunta: 44, valor: 1 }, 
+            condicion: { pregunta: 44, valor: 1 }, 
+            accion_condicion: 'bloquear',
 
             opciones: [
                 { id: 1, texto: "Archivística [clasificación, ordenación, descripción]" },
