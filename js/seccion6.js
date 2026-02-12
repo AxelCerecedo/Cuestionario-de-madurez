@@ -4,7 +4,7 @@
 // 🎨 INYECTOR DE ESTILOS CSS (DINÁMICO)
 // =========================================================
 function agregarEstilosDeshabilitados() {
-    // Definimos el CSS como un string de texto
+    // Definimos el CSS como un string de texto //
     const cssStyles = `
         /* Clase para preguntas deshabilitadas (Visibles pero bloqueadas) */
         .pregunta-deshabilitada {
