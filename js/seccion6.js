@@ -103,12 +103,10 @@ const CONFIG_SECCION = {
         {
             id: 45,
             orden: 44,
-            texto: "Capacitación recibida (marcar todos los que correspondan):",
+            texto: "Indique las areas o actividades en las que el personal recibe capacitación.",
             tipo: "catalogo_multiple",
             obligatorio: true,
             graficar: true,
-            
-            // 🔥 CAMBIO CLAVE: Usamos condicion_visual para que tu función local la detecte
             condicion_visual: { pregunta: 44, valor: 1 },
 
             opciones: [
@@ -128,7 +126,7 @@ const CONFIG_SECCION = {
         {
             id: 46,
             orden: 45,
-            texto: "¿Con qué frecuencia recibe capacitación relacionada con sus funciones?",
+            texto: "¿Con que frecuencia el personal del acervo recibe capacitación en las areas mencionadas?",
             ayuda: "Para cada tema seleccionado arriba, marque la opción que corresponda.",
             tipo: "matriz_dinamica", 
             modo: "matriz_radio", 
