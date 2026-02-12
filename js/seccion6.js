@@ -1,5 +1,48 @@
 // js/seccion6.js
 
+// =========================================================
+// 🎨 INYECTOR DE ESTILOS CSS (DINÁMICO)
+// =========================================================
+function agregarEstilosDeshabilitados() {
+    // Definimos el CSS como un string de texto
+    const cssStyles = `
+        /* Clase para preguntas deshabilitadas (Visibles pero bloqueadas) */
+        .pregunta-deshabilitada {
+            opacity: 0.5 !important;       /* Se ve semitransparente */
+            pointer-events: none;          /* No recibe clics del ratón */
+            filter: grayscale(100%);       /* Lo pone en blanco y negro */
+            background-color: #f9f9f9;     /* Fondo grisáceo suave */
+            transition: all 0.3s ease;     /* Transición suave */
+            position: relative;            /* Para mantener estructura */
+        }
+
+        /* Asegurar que los inputs dentro no sean editables visualmente */
+        .pregunta-deshabilitada input,
+        .pregunta-deshabilitada select,
+        .pregunta-deshabilitada label,
+        .pregunta-deshabilitada textarea {
+            cursor: not-allowed;
+            background-color: #e9ecef !important; /* Input gris */
+            color: #6c757d !important;            /* Texto gris */
+        }
+        
+        /* Ocultar botones de agregar filas si es matriz o tabla */
+        .pregunta-deshabilitada button {
+            display: none !important;
+        }
+    `;
+
+    // Creamos la etiqueta <style>
+    const styleSheet = document.createElement("style");
+    styleSheet.type = "text/css";
+    styleSheet.innerText = cssStyles;
+
+    // La agregamos al <head> del documento
+    document.head.appendChild(styleSheet);
+}
+
+agregarEstilosDeshabilitados();
+
 const CONFIG_SECCION = {
     seccion: "6. Recursos humanos",
     siguiente: "seccion7.html", 
@@ -47,7 +90,7 @@ const CONFIG_SECCION = {
         {
             id: 44, 
             orden: 43,
-            texto: "¿Cuenta con plan de capacitación?",
+            texto: "¿El personal del acervo recibe capacitación? ",
             tipo: "booleano",
             obligatorio: true, // Debe ser obligatoria para saber si mostrar las otras
             graficar: true,
@@ -120,19 +163,19 @@ const CONFIG_SECCION = {
 };
 
 // =========================================================
-// 🧠 MOTOR LÓGICO CONDICIONAL (NUEVO)
+// 🧠 MOTOR LÓGICO CONDICIONAL (VISUALIZAR PERO BLOQUEAR)
 // =========================================================
 function inicializarLogicaCondicional() {
     if (typeof CONFIG_SECCION === 'undefined' || !CONFIG_SECCION.preguntas) return;
 
-    // 1. Filtramos las preguntas que tienen condiciones (Hijas)
+    // 1. Filtramos las preguntas hijas (las que tienen condición)
     const preguntasCondicionales = CONFIG_SECCION.preguntas.filter(p => p.condicion);
 
     if (preguntasCondicionales.length === 0) return;
 
-    console.log("🧠 Inicializando lógica condicional...");
+    console.log("🧠 Inicializando lógica condicional (Modo: Bloqueo Visual)...");
 
-    // 2. Función que evalúa si mostrar u ocultar
+    // 2. Función que evalúa si activar o bloquear
     const evaluar = () => {
         preguntasCondicionales.forEach(hija => {
             const padreId = hija.condicion.pregunta;
@@ -142,10 +185,10 @@ function inicializarLogicaCondicional() {
             const divHija = document.getElementById(`pregunta-box-${hija.id}`);
             if (!divHija) return;
 
-            // Buscamos qué respondió el usuario en la pregunta Padre
+            // Buscamos qué respondió el usuario en la pregunta Padre (44)
             let valorActual = null;
             
-            // Intento 1: Radio Buttons (Booleanos, Catálogo Único)
+            // Intento 1: Radio Buttons
             const radioMarcado = document.querySelector(`input[name="pregunta_${padreId}"]:checked`);
             if (radioMarcado) {
                 valorActual = radioMarcado.value;
@@ -157,34 +200,58 @@ function inicializarLogicaCondicional() {
             }
 
             // 3. Comparar y Actuar
-            if (valorActual === valorEsperado) {
-                // MOSTRAR
-                divHija.style.display = 'block';
-                // Reactivar inputs para que se guarden y sean obligatorios
-                divHija.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+            // Nota: Convertimos a String para asegurar que "1" == 1
+            if (String(valorActual) === valorEsperado) {
+                // ✅ CASO: CUMPLE LA CONDICIÓN (MOSTRAR Y ACTIVAR)
+                divHija.classList.remove('pregunta-deshabilitada');
+                
+                // Reactivamos todos los inputs dentro
+                divHija.querySelectorAll('input, select, textarea, button').forEach(el => {
+                    el.disabled = false;
+                });
+
             } else {
-                // OCULTAR
-                divHija.style.display = 'none';
-                // Desactivar inputs (IMPORTANTE: Esto evita que validación 'obligatorio' bloquee el envío)
-                divHija.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+                // ⛔ CASO: NO CUMPLE (MOSTRAR PERO BLOQUEAR)
+                divHija.classList.add('pregunta-deshabilitada');
+                
+                // Desactivamos inputs y LIMPIAMOS sus valores
+                divHija.querySelectorAll('input, select, textarea, button').forEach(el => {
+                    el.disabled = true; // Bloqueo lógico
+                    
+                    // Limpieza visual para evitar incoherencias
+                    if (el.type === 'checkbox' || el.type === 'radio') {
+                        el.checked = false;
+                        // Si es checkbox múltiple, disparamos evento para limpiar matrices dependientes
+                        el.dispatchEvent(new Event('change')); 
+                    } else if (el.type !== 'button') {
+                        el.value = '';
+                    }
+                });
             }
         });
     };
 
     // 3. Agregar "Listeners" a las preguntas Padre
-    // Identificamos los IDs únicos de los padres para no repetir listeners
     const idsPadres = [...new Set(preguntasCondicionales.map(p => p.condicion.pregunta))];
 
     idsPadres.forEach(idPadre => {
-        // Escuchar cambios en Radios
-        const radios = document.querySelectorAll(`input[name="pregunta_${idPadre}"]`);
-        radios.forEach(r => r.addEventListener('change', evaluar));
+        // Escuchar cambios en Radios (Inputs normales)
+        const inputs = document.querySelectorAll(`input[name="pregunta_${idPadre}"]`);
+        inputs.forEach(r => r.addEventListener('change', evaluar));
 
         // Escuchar cambios en Selects
         const select = document.querySelector(`select[data-id-pregunta="${idPadre}"]`);
         if (select) select.addEventListener('change', evaluar);
     });
 
-    // 4. Ejecutar una vez al inicio (para aplicar reglas a datos cargados)
-    evaluar();
+    // 4. Ejecutar una vez al inicio
+    // Usamos setTimeout para asegurar que el DOM y los datos cargados (fetch) estén listos
+    setTimeout(evaluar, 500); 
 }
+
+// Asegúrate de llamar a esta función al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    // Esperamos un poco a que se genere el HTML de las preguntas
+    setTimeout(inicializarLogicaCondicional, 100);
+});
+
