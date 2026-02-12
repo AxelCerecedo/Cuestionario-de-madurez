@@ -1741,15 +1741,14 @@ async function enviarFormulario(e) {
     }
 
     // =================================================================
-    // 🛑 0.5 VALIDACIÓN DE CAMPOS OBLIGATORIOS (NUEVO BLOQUE)
+    // 🛑 0.5 VALIDACIÓN DE CAMPOS OBLIGATORIOS (BLOQUE FINAL CORREGIDO)
     // =================================================================
     
     // A. LIMPIAR ERRORES PREVIOS VISUALES
     document.querySelectorAll('.error-borde').forEach(el => {
         el.classList.remove('error-borde');
-        el.style.border = 'none'; // Limpia bordes rojos anteriores
-        // Si usabas border-radius o padding extra, aquí se resetean visualmente
-        // al estado normal definido en tu CSS.
+        el.style.border = 'none'; 
+        el.style.padding = ''; // Restaurar padding original si es necesario
     });
 
     let erroresObligatorios = [];
@@ -1757,78 +1756,84 @@ async function enviarFormulario(e) {
 
     if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.preguntas) {
         CONFIG_SECCION.preguntas.forEach(p => {
-            // Intentamos encontrar el contenedor de la pregunta
-            // Nota: Asegúrate de que tu función 'crearHTMLPregunta' asigne este ID.
-            // Si no, el fallback buscará por atributo.
+            
+            // 1. ENCONTRAR CONTENEDOR
             let container = document.getElementById(`pregunta-container-${p.id}`);
             
             if (!container) {
-                // Fallback: Buscar cualquier input de esa pregunta y subir a su contenedor
                 const inputCualquiera = document.querySelector(`[data-id-pregunta="${p.id}"]`);
                 if (inputCualquiera) {
                     container = inputCualquiera.closest('.pregunta-box') || inputCualquiera.closest('.card') || inputCualquiera.closest('div');
                 }
             }
 
-            // Si no encontramos contenedor o está oculto (display: none), ignoramos (ej. lógica de "Ninguna")
+            // 2. DESCARTAR SI NO EXISTE O ESTÁ OCULTO (display: none)
             if (!container || container.style.display === 'none' || getComputedStyle(container).display === 'none') {
                 return;
             }
 
+            // 🔥 🔥 🔥 NUEVO: ESCUDO ANTI-GRIS 🔥 🔥 🔥
+            // Si la pregunta tiene la clase de bloqueo visual, NO la validamos (aunque sea obligatoria)
+            if (container.classList.contains('pregunta-deshabilitada')) {
+                return; // Salta esta pregunta y pasa a la siguiente
+            }
+            // -----------------------------------------------------------
+
+            // 3. VALIDACIÓN DE OBLIGATORIEDAD
             if (p.obligatorio) {
                 let contestada = false;
 
-                // 1. Checkbox / Radio / Catálogos / Booleanos
+                // A. Checkbox / Radio / Catálogos / Booleanos
                 if (['catalogo_unico', 'catalogo_multiple', 'booleano', 'radio'].includes(p.tipo)) {
-                    
-                    // A. Buscamos inputs marcados (Radio/Checkbox)
                     const hayInputs = container.querySelectorAll('input:checked').length > 0;
-                    
-                    // B. Buscamos Selects con valor (Para catálogos largos como la Pregunta 11)
                     const select = container.querySelector('select');
                     const haySelect = select && select.value !== '';
 
                     if (hayInputs || haySelect) contestada = true;
                 }
-                // 2. Matrices (Dinámicas, Normales, Invertidas)
+                // B. Matrices
                 else if (p.tipo && p.tipo.includes('matriz')) {
                     const radios = container.querySelectorAll('input[type="radio"]:checked');
                     const selects = Array.from(container.querySelectorAll('select.input-matriz-celda')).filter(s => s.value !== '');
                     
                     if (radios.length > 0 || selects.length > 0) contestada = true;
-
-                    // Caso especial: Tabla vacía (ej. filtro anterior ocultó todo) -> Se considera válida o inválida según lógica
+                    // Si es tabla vacía dinámica, podría considerarse no contestada
                     if (!container.querySelector('table') && p.tipo === 'matriz_dinamica') contestada = false; 
                 }
-                // 3. Catálogo Tabla (Híbrido)
+                // C. Catálogo Tabla
                 else if (p.tipo === 'catalogo_tabla') {
                      if (container.querySelectorAll('input:checked').length > 0) contestada = true;
                 }
-                // 4. Liga Múltiple (Redes Sociales)
+                // D. Liga Múltiple
                 else if (p.tipo === 'liga_multiple') {
                      const inputsTexto = Array.from(container.querySelectorAll('input[type="text"]')).filter(i => i.value.trim() !== '');
                      const ningunCheck = container.querySelector('.input-ninguno-manual:checked');
                      if (inputsTexto.length > 0 || ningunCheck) contestada = true;
                 }
-                // 5. Texto / Fecha / Número / Textarea
+                // E. Texto / Fecha / Número / Textarea (INCLUYE PARCHE PARA FECHA FLEXIBLE)
                 else {
                     const inputs = container.querySelectorAll('input, textarea, select');
                     for (let inp of inputs) {
-                        // Ignoramos inputs hidden o de tipo 'search' del navegador
+                        // 1. Inputs normales con texto
                         if (inp.type !== 'hidden' && inp.value && inp.value.trim() !== '') {
+                            contestada = true;
+                            break;
+                        }
+                        // 2. 🔥 EXCEPCIÓN: Input Hidden de Rango/Fecha Flexible (que sí tiene valor)
+                        if (inp.type === 'hidden' && (inp.dataset.tipo === 'rango_flexible' || inp.dataset.tipo === 'fecha_flexible') && inp.value !== '') {
                             contestada = true;
                             break;
                         }
                     }
                 }
 
+                // SI NO SE CONTESTÓ, MARCAR ERROR
                 if (!contestada) {
                     erroresObligatorios.push(p.texto);
                     
-                    // Aplicar estilo de error
                     container.style.border = "2px solid #dc3545"; 
                     container.style.borderRadius = "8px";
-                    container.style.padding = "15px"; // Padding para que no se vea apretado
+                    container.style.padding = "15px"; 
                     container.classList.add('error-borde');
                     
                     if (!primeraFaltante) primeraFaltante = container;
@@ -1837,7 +1842,7 @@ async function enviarFormulario(e) {
         });
     }
 
-    // SI HAY ERRORES OBLIGATORIOS, DETENEMOS AQUÍ
+    // SI HAY ERRORES, DETENER Y AVISAR
     if (erroresObligatorios.length > 0) {
         Swal.fire({
             icon: 'warning',
@@ -1849,9 +1854,8 @@ async function enviarFormulario(e) {
         if (primeraFaltante) {
             primeraFaltante.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        return; // ⛔ DETIENE LA EJECUCIÓN DEL FORMULARIO
+        return; 
     }
-
     // =================================================================
     // 🛑 1. VALIDACIÓN DE INTEGRIDAD (PADRE -> HIJOS)
     // =================================================================
