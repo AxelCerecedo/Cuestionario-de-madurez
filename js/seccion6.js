@@ -109,7 +109,7 @@ const CONFIG_SECCION = {
             graficar: true,
             
             // AGREGAMOS ESTA CONDICIÓN
-            condicion: { pregunta: 44, valor: 1 }, 
+            condicion_visual: { pregunta: 44, valor: 1 }, 
 
             opciones: [
                 { id: 1, texto: "Archivística [clasificación, ordenación, descripción]" },
@@ -137,7 +137,7 @@ const CONFIG_SECCION = {
             graficar: true,
 
             // AGREGAMOS ESTA CONDICIÓN TAMBIÉN
-            condicion: { pregunta: 44, valor: 1 },
+            condicion_visual: { pregunta: 44, valor: 1 },
 
             columnas: [
                 { id: 1, texto: "No recibe", valor: 1 },       
@@ -163,35 +163,32 @@ const CONFIG_SECCION = {
 };
 
 // =========================================================
-// 🧠 MOTOR LÓGICO CONDICIONAL (VISUALIZAR PERO BLOQUEAR)
+// 🧠 LÓGICA ESPECÍFICA PARA SECCIÓN 6 (BLOQUEO GRIS)
 // =========================================================
-function inicializarLogicaCondicional() {
+function iniciarLogicaVisualRH() {
     if (typeof CONFIG_SECCION === 'undefined' || !CONFIG_SECCION.preguntas) return;
 
-    // 1. Filtramos las preguntas hijas
-    const preguntasCondicionales = CONFIG_SECCION.preguntas.filter(p => p.condicion);
+    // 1. Filtramos buscando la NUEVA propiedad 'condicion_visual'
+    const preguntasCondicionales = CONFIG_SECCION.preguntas.filter(p => p.condicion_visual);
 
     if (preguntasCondicionales.length === 0) return;
 
-    console.log("🧠 Inicializando lógica condicional (Modo: Bloqueo Visual)...");
+    console.log("🧠 Inicializando lógica visual RH (Gris/Bloqueado)...");
 
-    // 2. Función que evalúa si activar o bloquear
     const evaluar = () => {
         preguntasCondicionales.forEach(hija => {
-            const padreId = hija.condicion.pregunta;
-            const valorEsperado = String(hija.condicion.valor);
+            // Leemos la propiedad nueva
+            const padreId = hija.condicion_visual.pregunta;
+            const valorEsperado = String(hija.condicion_visual.valor);
             
             const divHija = document.getElementById(`pregunta-box-${hija.id}`);
             if (!divHija) return;
 
-            // Buscamos valor del padre
             let valorActual = null;
             
             // Radio Buttons
             const radioMarcado = document.querySelector(`input[name="pregunta_${padreId}"]:checked`);
-            if (radioMarcado) {
-                valorActual = radioMarcado.value;
-            } 
+            if (radioMarcado) valorActual = radioMarcado.value;
             // Selects
             else {
                 const select = document.querySelector(`select[data-id-pregunta="${padreId}"]`);
@@ -200,29 +197,21 @@ function inicializarLogicaCondicional() {
 
             // 3. Comparar y Actuar
             if (String(valorActual) === valorEsperado) {
-                // ✅ CASO: CUMPLE (MOSTRAR Y ACTIVAR)
-                
-                divHija.style.display = 'block'; // 🔥 FORZAMOS VISIBILIDAD
+                // ✅ MOSTRAR Y ACTIVAR
                 divHija.classList.remove('pregunta-deshabilitada');
-                
-                // Reactivamos inputs
-                divHija.querySelectorAll('input, select, textarea, button').forEach(el => {
-                    el.disabled = false;
-                });
-
+                divHija.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
             } else {
-                // ⛔ CASO: NO CUMPLE (MOSTRAR PERO BLOQUEAR)
-                
-                divHija.style.display = 'block'; // 🔥 FORZAMOS VISIBILIDAD (Para que no desaparezca)
+                // ⛔ BLOQUEAR (PERO MANTENER VISIBLE)
                 divHija.classList.add('pregunta-deshabilitada');
                 
-                // Desactivamos y LIMPIAMOS
+                // Forzamos que se vea (por si acaso heredó un display:none)
+                divHija.style.display = 'block'; 
+
                 divHija.querySelectorAll('input, select, textarea, button').forEach(el => {
                     el.disabled = true; 
-                    
                     if (el.type === 'checkbox' || el.type === 'radio') {
                         el.checked = false;
-                        el.dispatchEvent(new Event('change')); // Limpiar hijos de hijos si hubiera
+                        el.dispatchEvent(new Event('change')); 
                     } else if (el.type !== 'button') {
                         el.value = '';
                     }
@@ -232,23 +221,21 @@ function inicializarLogicaCondicional() {
     };
 
     // 3. Listeners
-    const idsPadres = [...new Set(preguntasCondicionales.map(p => p.condicion.pregunta))];
+    const idsPadres = [...new Set(preguntasCondicionales.map(p => p.condicion_visual.pregunta))];
 
     idsPadres.forEach(idPadre => {
         const inputs = document.querySelectorAll(`input[name="pregunta_${idPadre}"]`);
         inputs.forEach(r => r.addEventListener('change', evaluar));
-
         const select = document.querySelector(`select[data-id-pregunta="${idPadre}"]`);
         if (select) select.addEventListener('change', evaluar);
     });
 
-    // 4. Ejecutar inicio
+    // Ejecutar evaluación inicial
     setTimeout(evaluar, 500); 
 }
 
-// Asegúrate de llamar a esta función al cargar la página
+// 🔥 EJECUCIÓN MANUAL
+// Esperamos a que encuesta.js termine de cargar todo el HTML
 document.addEventListener('DOMContentLoaded', () => {
-    // Esperamos un poco a que se genere el HTML de las preguntas
-    setTimeout(inicializarLogicaCondicional, 100);
+    setTimeout(iniciarLogicaVisualRH, 800); 
 });
-
