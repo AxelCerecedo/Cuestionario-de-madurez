@@ -107,8 +107,9 @@ const CONFIG_SECCION = {
             tipo: "catalogo_multiple",
             obligatorio: true,
             graficar: true,
-            condicion: { pregunta: 44, valor: 1 }, 
-            accion_condicion: 'bloquear',
+            
+            // 🔥 CAMBIO CLAVE: Usamos condicion_visual para que tu función local la detecte
+            condicion_visual: { pregunta: 44, valor: 1 },
 
             opciones: [
                 { id: 1, texto: "Archivística [clasificación, ordenación, descripción]" },
@@ -130,18 +131,14 @@ const CONFIG_SECCION = {
             texto: "¿Con qué frecuencia recibe capacitación relacionada con sus funciones?",
             ayuda: "Para cada tema seleccionado arriba, marque la opción que corresponda.",
             tipo: "matriz_dinamica", 
-            
-            // 🔥 CLAVE: Esto le dice a JS que queremos bolitas/checks
             modo: "matriz_radio", 
-            
             id_pregunta_origen: 45, 
             obligatorio: true,
             graficar: true,
             
-            condicion: { pregunta: 44, valor: 1 }, 
-            accion_condicion: 'bloquear',
+            // 🔥 CAMBIO CLAVE: Aquí también
+            condicion_visual: { pregunta: 44, valor: 1 }, 
 
-            // Estas serán las COLUMNAS (Encabezados de la tabla)
             columnas: [
                 { id: 1, texto: "No recibe", valor: 1 },       
                 { id: 2, texto: "Ocasional", valor: 2 },       
