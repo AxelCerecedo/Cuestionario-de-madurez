@@ -261,10 +261,7 @@
 
         async function cargarResumen() {
             const idUsuario = localStorage.getItem('idUsuario');
-            if(!idUsuario) { 
-                window.location.href = 'login.html'; 
-                return; 
-            }
+            if(!idUsuario) { window.location.href = 'login.html'; return; }
 
             try {
                 const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
@@ -272,51 +269,48 @@
 
                 if(data.error) { alert(data.error); return; }
 
-                // --- 1. ACTUALIZAR TARJETA IZQUIERDA ---
-                // Aplicamos el color global pero sin mostrar números
-                document.getElementById('cardPuntaje').style.background = data.color;
-                // Mostramos solo el nivel (Ej: "Consolidado", "En Desarrollo")
+                // --- 1. ACTUALIZAR TARJETA IZQUIERDA (TRANSLÚCIDA) ---
+                // Convertimos el color de la API a RGBA con 0.85 de opacidad
+                const colorTranslucido = hexToRgba(data.color, 0.85);
+                document.getElementById('cardPuntaje').style.background = colorTranslucido;
+                
                 document.getElementById('lblNivel').innerText = data.nivel;
 
                 // --- 2. GENERAR TABLA DERECHA ---
                 const tbody = document.getElementById('tablaBody');
                 tbody.innerHTML = '';
                 
-                // Ordenar claves numéricamente (1, 2, 3...)
                 Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
                     const numSec = parseInt(sec);
-                    if(isNaN(numSec)) return; // Ignorar claves no numéricas
+                    if(isNaN(numSec)) return;
 
                     const puntajeObtenido = data.secciones[sec];
-                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1; // Evitar división por 0
+                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1;
                     
-                    // Calcular Color del Cuadrito
-                    let colorCuadrito = '#6c757d'; // Gris por defecto (para sección 1)
+                    let colorCuadrito = '#6c757d'; 
                     let recomendacionTexto = "";
 
                     if (numSec === 1) {
                         colorCuadrito = '#17a2b8'; 
-                        recomendacionTexto = "ℹ️ <b>Información General:</b> Esta sección contiene los datos de identificación. Verifique periódicamente que los contactos y la dirección se mantengan actualizados.";
+                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación. Asegúrese de mantenerlos actualizados.";
                     } else {
                         const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
                         
                         if (porcentaje >= 80) {
-                            colorCuadrito = '#28a745'; // Verde
-                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares recomendados. El objetivo ahora debe ser la mejora continua, la actualización tecnológica y la documentación de estas buenas prácticas.";
+                            colorCuadrito = '#28a745'; 
+                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares. Se sugiere mantener la actualización constante.";
                         } else if (porcentaje >= 50) {
-                            colorCuadrito = '#ffc107'; // Amarillo
-                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Existen capacidades operativas funcionales, pero se detectaron brechas en la normativa o infraestructura. Se recomienda formalizar los procedimientos internos y gestionar recursos para fortalecer esta área.";
+                            colorCuadrito = '#ffc107'; 
+                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Se cuenta con elementos funcionales, pero existen vacíos normativos o técnicos. Es necesario formalizar procedimientos.";
                         } else {
-                            colorCuadrito = '#dc3545'; // Rojo
-                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se identificaron carencias críticas que podrían poner en riesgo la gestión o preservación del acervo. Es urgente establecer un plan de acción inmediato para cumplir con los requisitos mínimos indispensables.";
+                            colorCuadrito = '#dc3545'; 
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se detectaron debilidades críticas. Es urgente implementar un plan de acción para establecer condiciones mínimas.";
                         }
                     }
 
-                    // --- GENERAR HTML ---
-                    // Fila Principal
                     const trPrincipal = document.createElement('tr');
                     trPrincipal.className = 'fila-seccion';
-                    trPrincipal.onclick = () => toggleDetalle(sec); // Click en toda la fila
+                    trPrincipal.onclick = () => toggleDetalle(sec);
 
                     trPrincipal.innerHTML = `
                         <td>
@@ -330,7 +324,6 @@
                         </td>
                     `;
 
-                    // Fila de Detalle (Oculta)
                     const trDetalle = document.createElement('tr');
                     trDetalle.id = `detalle-${sec}`;
                     trDetalle.className = 'fila-detalle';
