@@ -6,21 +6,19 @@
     <title>Resumen de Resultados</title>
     
     <link rel="stylesheet" href="css/resumen.css"> 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+    <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        /* =========================================
-           ESTILOS TARJETA (Glassmorphism)
-           ========================================= */
+        /* --- ESTILOS TARJETA IZQUIERDA --- */
         .card-puntaje {
             text-align: center; 
             padding: 40px 30px; 
             color: white; 
             border-radius: 15px; 
             
-            /* Efecto Vidrio */
+            /* Efecto Vidrio (Glassmorphism) */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
@@ -42,7 +40,7 @@
             border-radius: 50px; 
             text-transform: uppercase; 
             font-weight: 800; 
-            font-size: 1.8rem; 
+            font-size: 1.5rem; /* Un poco más pequeño para que sea título */
             display: inline-block; 
             margin-bottom: 20px; 
             letter-spacing: 1.5px; 
@@ -58,156 +56,46 @@
             max-width: 90%;
         }
 
-        /* =========================================
-           ESTILOS TABLA (Acordeón)
-           ========================================= */
-        .tabla-container {
-            overflow-x: hidden;
-        }
+        /* --- ESTILOS TABLA DERECHA --- */
+        .tabla-container { overflow-x: hidden; }
+        .tabla-desglosada { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        .tabla-desglosada th { text-align: left; padding: 10px; color: #666; font-size: 0.9rem; border-bottom: 2px solid #ddd; }
 
-        .tabla-desglosada {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 8px; 
-        }
-
-        .tabla-desglosada th {
-            text-align: left;
-            padding: 10px;
-            color: #666;
-            font-size: 0.9rem;
-            border-bottom: 2px solid #ddd;
-        }
-
-        /* Fila Principal */
-        .fila-seccion {
-            background: #fff;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
-        .fila-seccion:hover {
-            background: #f8f9fa;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        }
+        .fila-seccion { background: #fff; transition: all 0.2s ease; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .fila-seccion:hover { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
         
-        .fila-seccion td {
-            padding: 18px 15px;
-            border-top: 1px solid #eee;
-            border-bottom: 1px solid #eee;
-        }
-        .fila-seccion td:first-child {
-            border-left: 1px solid #eee;
-            border-top-left-radius: 8px;
-            border-bottom-left-radius: 8px;
-        }
-        .fila-seccion td:last-child {
-            border-right: 1px solid #eee;
-            border-top-right-radius: 8px;
-            border-bottom-right-radius: 8px;
-            text-align: right;
-        }
+        .fila-seccion td { padding: 18px 15px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+        .fila-seccion td:first-child { border-left: 1px solid #eee; border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+        .fila-seccion td:last-child { border-right: 1px solid #eee; border-top-right-radius: 8px; border-bottom-right-radius: 8px; text-align: right; }
 
-        /* Semáforo */
-        .indicador-color {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border-radius: 4px;
-            margin-right: 15px;
-            vertical-align: middle;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+        .indicador-color { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 15px; vertical-align: middle; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .texto-seccion { display: inline-block; font-weight: 600; color: #34495e; vertical-align: middle; font-size: 1rem; }
 
-        .texto-seccion {
-            display: inline-block;
-            font-weight: 600;
-            color: #34495e;
-            vertical-align: middle;
-            font-size: 1rem;
-        }
+        .btn-toggle { background: none; border: none; color: #95a5a6; font-size: 1.1rem; transition: transform 0.3s ease; }
+        .fila-seccion.activa .btn-toggle { transform: rotate(180deg); color: #2c3e50; }
 
-        /* Flecha */
-        .btn-toggle {
-            background: none;
-            border: none;
-            color: #95a5a6;
-            font-size: 1.1rem;
-            transition: transform 0.3s ease;
-        }
-        .fila-seccion.activa .btn-toggle {
-            transform: rotate(180deg);
-            color: #2c3e50;
-        }
+        .fila-detalle { display: none; }
+        .fila-detalle.visible { display: table-row; animation: slideDown 0.3s ease-out forwards; }
 
-        /* Fila Detalle */
-        .fila-detalle {
-            display: none;
-        }
-        .fila-detalle.visible {
-            display: table-row;
-            animation: slideDown 0.3s ease-out forwards;
-        }
+        .contenido-detalle { background-color: #fcfcfc; padding: 20px 25px 20px 45px; border-left: 4px solid #eee; font-size: 0.95rem; color: #555; line-height: 1.6; border-bottom: 1px solid #eee; margin-bottom: 10px; border-radius: 0 0 8px 8px; }
 
-        .contenido-detalle {
-            background-color: #fcfcfc;
-            padding: 20px 25px 20px 45px;
-            border-left: 4px solid #eee;
-            font-size: 0.95rem;
-            color: #555;
-            line-height: 1.6;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 10px;
-            border-radius: 0 0 8px 8px;
-        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Botones */
-        .btn-correo {
-            background-color: #2c3e50;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 15px;
-            width: 100%;
-            font-weight: 600;
-            transition: background 0.2s;
-            display: flex; justify-content: center; align-items: center; gap: 8px;
-        }
+        .btn-correo { background-color: #2c3e50; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; margin-top: 15px; width: 100%; font-weight: 600; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-correo:hover { background-color: #34495e; }
         .btn-correo:disabled { background-color: #95a5a6; cursor: wait; }
-
-        .btn-imprimir {
-            background-color: #fff;
-            color: #2c3e50;
-            border: 2px solid #2c3e50;
-            padding: 10px;
-            width: 100%;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+        .btn-imprimir { background-color: #fff; color: #2c3e50; border: 2px solid #2c3e50; padding: 10px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-imprimir:hover { background-color: #f0f0f0; }
-
     </style>
 </head>
 <body>
 
     <div class="resumen-container">
-        
         <div class="header-resumen">
             <img src="Imagenes/logo.png" alt="Logo" class="logo" />
             <div style="margin-left: 230px;"> 
                 <h1>📊 Resultados del Diagnóstico</h1>
-                <p class="intro">Informe ejecutivo de evaluación y recomendaciones.</p>
+                <p class="intro">Informe ejecutivo de evaluación.</p>
             </div>
         </div>
 
@@ -216,12 +104,13 @@
             <div class="dashboard-left">
                 
                 <div id="cardPuntaje" class="card-puntaje">
-                    <div id="lblNivel" class="nivel-badge">Cargando...</div>
+                    <div class="nivel-badge">Diagnóstico Finalizado</div>
                     
                     <hr style="width: 60%; border: 0; border-top: 1px solid rgba(255,255,255,0.4); margin: 25px 0;">
                     
-                    <p id="lblMensaje" class="mensaje-final">
-                        Procesando información...
+                    <p class="mensaje-final">
+                        Agradecemos su tiempo y colaboración.<br><br>
+                        La información ha sido procesada exitosamente. A continuación encontrará el desglose detallado y las recomendaciones específicas por área.
                     </p>
                 </div>
 
@@ -229,11 +118,9 @@
                     <button onclick="window.print()" class="btn-imprimir">
                         <i class="fas fa-print"></i> Imprimir Reporte
                     </button>
-                    
                     <button id="btnEnviarCorreo" onclick="enviarCorreo()" class="btn-correo">
                         <i class="fas fa-envelope"></i> Enviar a mi correo
                     </button>
-
                     <a href="login.html" class="link-salir" style="margin-top: 15px; display:block; text-align:center; color: #7f8c8d; text-decoration: none; font-size: 0.9em;">
                         <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </a>
@@ -250,22 +137,18 @@
                                 <th style="text-align: right; width: 50px;">Ver</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaBody">
-                            </tbody>
+                        <tbody id="tablaBody"></tbody>
                     </table>
                 </div>
             </div>
-
         </div> 
     </div>
 
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
-        // Puntos máximos teóricos por sección (Para calcular el % del semáforo local)
         const MAXIMOS_POR_SECCION = {
-            1: 0, 
-            2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
+            1: 0, 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
         };
 
         const NOMBRES_SECCIONES = {
@@ -280,58 +163,38 @@
             9: "Servicios"
         };
 
-        // =========================================================
-        // 1. FUNCIÓN HELPER: HEX A RGBA
-        // =========================================================
         function hexToRgba(hex, alpha) {
-            if (!hex || !hex.startsWith('#')) return 'rgba(108, 117, 125, 0.85)'; // Fallback gris
-            
+            if (!hex || !hex.startsWith('#')) return 'rgba(108, 117, 125, 0.85)';
             hex = hex.replace('#', '');
             if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-            
             const r = parseInt(hex.substring(0, 2), 16);
             const g = parseInt(hex.substring(2, 4), 16);
             const b = parseInt(hex.substring(4, 6), 16);
-            
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        // =========================================================
-        // 2. FUNCIÓN PRINCIPAL DE CARGA
-        // =========================================================
         async function cargarResumen() {
             const idUsuario = localStorage.getItem('idUsuario');
-            if(!idUsuario) { 
-                window.location.href = 'login.html'; 
-                return; 
-            }
+            if(!idUsuario) { window.location.href = 'login.html'; return; }
 
             try {
                 const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
                 const data = await response.json();
 
-                if(data.error) {
-                    Swal.fire("Error", data.error, "error");
-                    return;
-                }
+                if(data.error) { alert(data.error); return; }
 
-                // --- A. TARJETA IZQUIERDA (Datos del Servidor) ---
-                
-                // 1. Color Translúcido
-                const colorTranslucido = hexToRgba(data.color, 0.85); // 85% opacidad
+                // --- 1. TARJETA IZQUIERDA ---
+                // CAMBIO 3: Solo actualizamos el color, NO el texto.
+                const colorTranslucido = hexToRgba(data.color, 0.85); 
                 document.getElementById('cardPuntaje').style.background = colorTranslucido;
                 
-                // 2. Nivel Global (Ej: "Inicial", "Básico", "Avanzado")
-                document.getElementById('lblNivel').innerText = data.nivel || "Nivel Calculado";
-                
-                // 3. Mensaje Global (Ej: "¡Excelente!...")
-                document.getElementById('lblMensaje').innerText = data.mensaje || "Resultados generados.";
+                // NOTA: Eliminamos las líneas que modificaban .innerText del título y mensaje
+                // para respetar el texto estático del HTML.
 
-                // --- B. TABLA DERECHA (Cálculo Local de Semáforo) ---
+                // --- 2. TABLA DERECHA ---
                 const tbody = document.getElementById('tablaBody');
                 tbody.innerHTML = '';
                 
-                // Ordenar secciones 1..9
                 Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
                     const numSec = parseInt(sec);
                     if(isNaN(numSec)) return; 
@@ -342,26 +205,25 @@
                     let colorCuadrito = '#6c757d'; 
                     let recomendacionTexto = "";
 
-                    // LÓGICA DE TEXTOS Y SEMÁFORO (Por Sección)
+                    // LÓGICA DE SEMÁFORO (Se mantiene igual)
                     if (numSec === 1) {
-                        colorCuadrito = '#17a2b8'; // Azul informativo
-                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de identificación y contacto. Es vital mantenerlos actualizados para cualquier trámite oficial.";
+                        colorCuadrito = '#17a2b8'; 
+                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación. Asegúrese de mantenerlos actualizados.";
                     } else {
                         const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
-                        
                         if (porcentaje >= 80) {
-                            colorCuadrito = '#28a745'; // Verde
-                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> El área cumple satisfactoriamente con los estándares. Se sugiere documentar las buenas prácticas y mantener la actualización constante.";
+                            colorCuadrito = '#28a745'; 
+                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares. Se sugiere mantener la documentación de buenas prácticas.";
                         } else if (porcentaje >= 50) {
-                            colorCuadrito = '#ffc107'; // Amarillo
-                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Existen capacidades operativas, pero se detectaron vacíos normativos o técnicos. Se recomienda formalizar procedimientos para asegurar la sostenibilidad.";
+                            colorCuadrito = '#ffc107'; 
+                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Se cuenta con elementos funcionales, pero existen vacíos normativos o técnicos. Se recomienda formalizar procedimientos.";
                         } else {
-                            colorCuadrito = '#dc3545'; // Rojo
-                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se identificaron debilidades críticas. Es urgente implementar un plan de acción inmediato para establecer las condiciones mínimas de operación y resguardo.";
+                            colorCuadrito = '#dc3545'; 
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se detectaron debilidades críticas. Es urgente implementar un plan de acción para condiciones mínimas.";
                         }
                     }
 
-                    // GENERACIÓN DE HTML
+                    // Fila Principal
                     const trPrincipal = document.createElement('tr');
                     trPrincipal.className = 'fila-seccion';
                     trPrincipal.onclick = () => toggleDetalle(sec);
@@ -378,6 +240,7 @@
                         </td>
                     `;
 
+                    // Fila Detalle
                     const trDetalle = document.createElement('tr');
                     trDetalle.id = `detalle-${sec}`;
                     trDetalle.className = 'fila-detalle';
@@ -399,24 +262,23 @@
             }
         }
 
-        // =========================================================
-        // 3. INTERACCIONES
-        // =========================================================
-        
         function toggleDetalle(id) {
             const filaDetalle = document.getElementById(`detalle-${id}`);
             const btn = document.getElementById(`btn-${id}`);
             const filaPrincipal = btn.closest('tr');
 
-            // Lógica de acordeón
+            // Cierra otros (Opcional)
+            document.querySelectorAll('.fila-detalle').forEach(el => {
+                if (el.id !== `detalle-${id}`) el.classList.remove('visible');
+            });
+            document.querySelectorAll('.fila-seccion').forEach(el => {
+                if (el !== filaPrincipal) el.classList.remove('activa');
+            });
+
             if (filaDetalle.classList.contains('visible')) {
                 filaDetalle.classList.remove('visible');
                 filaPrincipal.classList.remove('activa');
             } else {
-                // Cerrar otros (Opcional, para que solo uno esté abierto a la vez)
-                document.querySelectorAll('.fila-detalle').forEach(el => el.classList.remove('visible'));
-                document.querySelectorAll('.fila-seccion').forEach(el => el.classList.remove('activa'));
-
                 filaDetalle.classList.add('visible');
                 filaPrincipal.classList.add('activa');
             }
@@ -425,9 +287,8 @@
         async function enviarCorreo() {
             const idUsuario = localStorage.getItem('idUsuario');
             const btn = document.getElementById('btnEnviarCorreo');
-            
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            btn.innerHTML = '⏳ Enviando...';
 
             try {
                 const response = await fetch(`${API_URL}/api/enviar-correo-resultados`, {
@@ -435,29 +296,21 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ idUsuario: idUsuario })
                 });
-
                 const resultado = await response.json();
 
                 if (response.ok) {
-                    Swal.fire({
-                        title: '¡Correo Enviado!',
-                        text: `El reporte ha sido enviado a su correo electrónico registrado.`,
-                        icon: 'success',
-                        confirmButtonColor: '#7c1225'
-                    });
-                    btn.innerHTML = '<i class="fas fa-check"></i> Enviado';
+                    Swal.fire({ title: '¡Correo Enviado!', text: `Resultados enviados correctamente.`, icon: 'success', confirmButtonColor: '#7c1225' });
+                    btn.innerHTML = '✅ Enviado';
                 } else {
-                    throw new Error(resultado.error || 'Error desconocido');
+                    throw new Error(resultado.error);
                 }
             } catch (error) {
-                console.error(error);
-                Swal.fire('Error', 'No se pudo enviar el correo en este momento.', 'error');
+                Swal.fire('Error', 'No se pudo enviar.', 'error');
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-envelope"></i> Enviar a mi correo';
+                btn.innerHTML = '📧 Enviar a mi correo';
             }
         }
         
-        // Inicializar al cargar la página
         document.addEventListener('DOMContentLoaded', cargarResumen);
     </script>
 </body>
