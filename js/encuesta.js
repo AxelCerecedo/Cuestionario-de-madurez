@@ -739,7 +739,7 @@ function crearHTMLPregunta(p) {
         }, 600);
     }
 
-    // --- H. CATÁLOGO TIPO TABLA (HÍBRIDO + AYUDA EN COLUMNA DERECHA) ---
+    // --- H. CATÁLOGO TIPO TABLA (DISEÑO HÍBRIDO: COMBINADO Y COLUMNAS) ---
     else if (p.tipo === 'catalogo_tabla') {
         const tableContainer = document.createElement('div');
         tableContainer.style.overflowX = 'auto';
@@ -750,9 +750,9 @@ function crearHTMLPregunta(p) {
         tabla.style.marginTop = '10px';
         tabla.style.fontSize = '0.95em';
 
-        // Cabecera
+        // Cabecera (Se mantiene igual, define 2 columnas base)
         const thead = document.createElement('thead');
-        const titulos = p.encabezados || ["Herramienta", "Descripción / Detalles"];
+        const titulos = p.encabezados || ["Concepto / Instrucción", "Detalles / Opciones"];
         thead.innerHTML = `
             <tr style="background-color: #f4f4f4; text-align: left;">
                 <th style="padding: 10px; border: 1px solid #ddd; width: 40%;">${titulos[0]}</th>
@@ -766,79 +766,127 @@ function crearHTMLPregunta(p) {
         p.opciones.forEach(opt => {
             const tr = document.createElement('tr');
             
-            // =========================================
-            // COLUMNA 1: PADRE (Siempre Checkbox)
-            // =========================================
-            const tdNombre = document.createElement('td');
-            tdNombre.style.padding = '10px';
-            tdNombre.style.border = '1px solid #ddd';
-            tdNombre.style.verticalAlign = 'top';
-            tdNombre.style.fontWeight = 'bold';
+            // =========================================================
+            // CASO A: FILA SIMPLE (SIN SUB-OPCIONES) -> COMBINAR CELDAS
+            // =========================================================
+            if (!opt.sub_opciones) {
+                const tdUnico = document.createElement('td');
+                tdUnico.colSpan = 2; // 🔥 COMBINAR LAS 2 COLUMNAS
+                tdUnico.style.padding = '12px';
+                tdUnico.style.border = '1px solid #ddd';
+                tdUnico.style.backgroundColor = '#fff';
 
-            const label = document.createElement('label');
-            label.style.cursor = 'pointer';
-            label.style.display = 'flex';
-            label.style.gap = '10px';
+                // 1. Contenedor Flex para Checkbox + Texto Principal
+                const divPrincipal = document.createElement('div');
+                divPrincipal.style.display = 'flex';
+                divPrincipal.style.alignItems = 'center';
+                divPrincipal.style.fontWeight = 'bold';
+                divPrincipal.style.gap = '10px';
 
-            const checkboxPadre = document.createElement('input'); 
-            checkboxPadre.type = 'checkbox';
-            checkboxPadre.value = opt.id;
-            checkboxPadre.className = 'input-multiple'; 
-            checkboxPadre.dataset.idPregunta = p.id;
+                const checkbox = document.createElement('input'); 
+                checkbox.type = 'checkbox';
+                checkbox.value = opt.id;
+                checkbox.className = 'input-multiple'; 
+                checkbox.dataset.idPregunta = p.id;
+                checkbox.style.transform = "scale(1.2)";
+                checkbox.style.cursor = "pointer";
 
-            label.appendChild(checkboxPadre);
-            label.appendChild(document.createTextNode(opt.texto));
-            tdNombre.appendChild(label);
-            
-            tr.appendChild(tdNombre);
+                const labelTexto = document.createElement('label');
+                labelTexto.style.cursor = 'pointer';
+                labelTexto.innerText = opt.texto;
+                
+                // Evento click en texto para marcar check
+                labelTexto.onclick = () => { checkbox.checked = !checkbox.checked; };
 
-            // =========================================
-            // COLUMNA 2: DESCRIPCIÓN Y HIJOS
-            // =========================================
-            const tdDesc = document.createElement('td');
-            tdDesc.style.padding = '10px';
-            tdDesc.style.border = '1px solid #ddd';
-            tdDesc.style.color = '#555';
+                divPrincipal.appendChild(checkbox);
+                divPrincipal.appendChild(labelTexto);
+                tdUnico.appendChild(divPrincipal);
 
-            // 1. TEXTO DE AYUDA (Aquí es donde lo querías)
-            if (opt.ayuda) {
-                const divAyuda = document.createElement('div');
-                divAyuda.innerText = opt.ayuda;
-                // Estilos para que se vea bien como descripción
-                divAyuda.style.marginBottom = '10px';
-                divAyuda.style.fontStyle = 'italic';
-                divAyuda.style.fontSize = '0.9em';
-                tdDesc.appendChild(divAyuda);
+                // 2. Texto de Ayuda (DEBAJO de la instrucción)
+                if (opt.ayuda) {
+                    const divAyuda = document.createElement('div');
+                    divAyuda.innerText = opt.ayuda;
+                    divAyuda.style.marginTop = '5px';
+                    divAyuda.style.marginLeft = '26px'; // Indentado para alinearse con el texto
+                    divAyuda.style.fontSize = '0.9em';
+                    divAyuda.style.color = '#666';
+                    divAyuda.style.fontStyle = 'italic';
+                    tdUnico.appendChild(divAyuda);
+                }
+
+                tr.appendChild(tdUnico);
             }
 
-            // 2. SUB-OPCIONES (Lógica Híbrida Radio/Check)
-            if (opt.sub_opciones) {
+            // =========================================================
+            // CASO B: FILA COMPLEJA (CON SUB-OPCIONES) -> 2 COLUMNAS
+            // =========================================================
+            else {
+                // --- COLUMNA 1: CHECKBOX + TEXTO + AYUDA ---
+                const tdIzq = document.createElement('td');
+                tdIzq.style.padding = '12px';
+                tdIzq.style.border = '1px solid #ddd';
+                tdIzq.style.verticalAlign = 'top';
+                
+                // A. Checkbox Padre y Título
+                const divHeader = document.createElement('div');
+                divHeader.style.display = 'flex';
+                divHeader.style.gap = '10px';
+                divHeader.style.fontWeight = 'bold';
+                divHeader.style.marginBottom = '8px';
+
+                const checkboxPadre = document.createElement('input'); 
+                checkboxPadre.type = 'checkbox';
+                checkboxPadre.value = opt.id;
+                checkboxPadre.className = 'input-multiple'; 
+                checkboxPadre.dataset.idPregunta = p.id;
+                checkboxPadre.style.marginTop = '3px'; // Ajuste visual
+
+                divHeader.appendChild(checkboxPadre);
+                divHeader.appendChild(document.createTextNode(opt.texto));
+                tdIzq.appendChild(divHeader);
+
+                // B. Ayuda (AHORA EN LA COLUMNA IZQUIERDA) 🔥
+                if (opt.ayuda) {
+                    const divAyuda = document.createElement('div');
+                    divAyuda.innerText = opt.ayuda;
+                    divAyuda.style.marginLeft = '26px';
+                    divAyuda.style.fontSize = '0.85em';
+                    divAyuda.style.color = '#666';
+                    tdIzq.appendChild(divAyuda);
+                }
+                
+                tr.appendChild(tdIzq);
+
+                // --- COLUMNA 2: SOLO LAS OPCIONES ---
+                const tdDer = document.createElement('td');
+                tdDer.style.padding = '12px';
+                tdDer.style.border = '1px solid #ddd';
+                tdDer.style.verticalAlign = 'middle';
+
                 const divSub = document.createElement('div');
                 divSub.style.padding = '10px';
                 divSub.style.backgroundColor = '#f9f9f9';
+                divSub.style.borderRadius = '6px';
                 divSub.style.border = '1px solid #eee';
                 
-                divSub.style.display = 'block'; 
-                divSub.style.transition = 'opacity 0.3s ease'; 
-
-                // --- DETECCIÓN DE MODO ---
+                // DETECCIÓN DE MODO (Radio vs Checkbox)
                 const esRadio = (opt.modo === 'unica');
                 const tipoInput = esRadio ? 'radio' : 'checkbox';
                 const nombreGrupo = esRadio ? `grupo_radio_${opt.id}` : null;
 
                 const gridSoft = document.createElement('div');
                 gridSoft.style.display = 'grid';
-                gridSoft.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
+                gridSoft.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))'; // Grid responsive
                 gridSoft.style.gap = '10px';
 
                 opt.sub_opciones.forEach(sub => {
-                    const esNinguno = sub.texto.trim().toLowerCase() === 'ninguno';
+                    const esNinguno = sub.texto.trim().toLowerCase() === 'ninguno' || sub.texto.includes("No se realizan") || sub.texto.includes("No se lleva");
 
                     const labelSub = document.createElement('label');
                     labelSub.style.fontSize = '0.9em';
                     labelSub.style.display = 'flex';
                     labelSub.style.alignItems = 'center';
-                    labelSub.style.gap = '5px';
+                    labelSub.style.gap = '6px';
                     labelSub.style.cursor = 'pointer';
 
                     const chkSub = document.createElement('input');
@@ -874,7 +922,7 @@ function crearHTMLPregunta(p) {
                         gridSoft.appendChild(labelSub);
                     }
 
-                    // --- EVENTOS ---
+                    // --- EVENTOS INTERNOS ---
                     chkSub.addEventListener('change', function() {
                         // A. Mostrar/Ocultar "Otro"
                         if (inputEsp) {
@@ -882,7 +930,7 @@ function crearHTMLPregunta(p) {
                             if(!this.checked) inputEsp.value = '';
                         }
                         
-                        // B. Limpieza de Radios (si marco uno, limpio los otros inputs de texto)
+                        // B. Limpieza de Radios
                         if (esRadio && this.checked) {
                              const otrosInputs = gridSoft.querySelectorAll('.input-especificar-multiple');
                              otrosInputs.forEach(inp => {
@@ -903,25 +951,28 @@ function crearHTMLPregunta(p) {
                             }
                         }
 
-                        // D. Activar Padre
+                        // D. Activar Padre automáticamente
                         if (checkboxPadre && this.checked) {
-                            checkboxPadre.checked = true;
-                            checkboxPadre.dispatchEvent(new Event('change'));
+                            if (!checkboxPadre.checked) {
+                                checkboxPadre.checked = true;
+                                checkboxPadre.dispatchEvent(new Event('change'));
+                            }
                         }
                     });
                 });
 
                 divSub.appendChild(gridSoft);
-                tdDesc.appendChild(divSub);
+                tdDer.appendChild(divSub);
+                tr.appendChild(tdDer);
 
-                // --- BLOQUEO / DESBLOQUEO ---
+                // --- LÓGICA DE BLOQUEO PADRE/HIJO ---
                 const actualizarEstado = () => {
                     if (checkboxPadre.checked) {
                         divSub.style.opacity = '1';
                         divSub.style.pointerEvents = 'auto';
                         divSub.querySelectorAll('input').forEach(i => i.disabled = false);
                     } else {
-                        divSub.style.opacity = '0.6';
+                        divSub.style.opacity = '0.5';
                         divSub.style.pointerEvents = 'none';
                         divSub.querySelectorAll('input').forEach(i => {
                             i.disabled = true;
@@ -933,19 +984,11 @@ function crearHTMLPregunta(p) {
                     }
                 };
                 
+                // Inicializar y escuchar
                 actualizarEstado();
                 checkboxPadre.addEventListener('change', actualizarEstado);
-
-            } else {
-                 // Si no hay opciones, dejamos vacío
-                 if(!opt.ayuda) { 
-                     const span = document.createElement('span');
-                     span.innerHTML = "&nbsp;"; 
-                     tdDesc.appendChild(span);
-                 }
             }
 
-            tr.appendChild(tdDesc);
             tbody.appendChild(tr);
         });
 
