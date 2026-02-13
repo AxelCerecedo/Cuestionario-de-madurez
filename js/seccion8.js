@@ -16,18 +16,21 @@ const CONFIG_SECCION = {
             opciones: [
                 { 
                     id: 491, 
-                    texto: "Proceso formal para la entrada o ingreso de objetos al acervo.", 
-                    ayuda: "Existe un documento o proceso oficial de entrada." 
+                    ayuda: "Existe un documento o proceso oficial de entrada.",
+                    texto: "Proceso formal para la entrada o ingreso de objetos al acervo."
+                     
                 },
                 { 
                     id: 492, 
-                    texto: "Proceso establecido para la salida de objetos del acervo (temporal o definitiva).", 
-                    ayuda: "Existe proceso para salidas temporales o definitivas." 
+                    ayuda: "Existe proceso para salidas temporales o definitivas." ,
+                    texto: "Proceso establecido para la salida de objetos del acervo (temporal o definitiva)."
+                    
                 },
                 { 
                     id: 493, 
-                    texto: "Plan de emergencia actualizado para la protección del acervo", 
-                    ayuda: "Cuenta con un plan actualizado ante desastres." 
+                    ayuda: "Cuenta con un plan actualizado ante desastres." ,
+                    texto: "Plan de emergencia actualizado para la protección del acervo"
+                    
                 }
             ]
         },
