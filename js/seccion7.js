@@ -9,7 +9,7 @@ const CONFIG_SECCION = {
         {
             id: 48, 
             orden: 47,
-            texto: "Disponibilidad de infraestructura y herramientas:",
+            texto: "De la siguiente lista, indique con que infraestructura y herramientas cuenta institución o archivo:",
             ayuda: "Marque las opciones con las que cuenta su institución.",
             tipo: "catalogo_tabla",
             obligatorio: true,
