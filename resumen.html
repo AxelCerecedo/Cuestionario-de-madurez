@@ -260,88 +260,109 @@
         };
 
         async function cargarResumen() {
-            const idUsuario = localStorage.getItem('idUsuario');
-            if(!idUsuario) { window.location.href = 'login.html'; return; }
+    const idUsuario = localStorage.getItem('idUsuario');
+    if (!idUsuario) {
+        window.location.href = 'login.html';
+        return;
+    }
 
-            try {
-                const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
-                const data = await response.json();
+    try {
+        const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
+        const data = await response.json();
 
-                if(data.error) { alert(data.error); return; }
-
-                // --- 1. ACTUALIZAR TARJETA IZQUIERDA (TRANSLÚCIDA) ---
-                // Convertimos el color de la API a RGBA con 0.85 de opacidad
-                const colorTranslucido = hexToRgba(data.color, 0.85);
-                document.getElementById('cardPuntaje').style.background = colorTranslucido;
-                
-                document.getElementById('lblNivel').innerText = data.nivel;
-
-                // --- 2. GENERAR TABLA DERECHA ---
-                const tbody = document.getElementById('tablaBody');
-                tbody.innerHTML = '';
-                
-                Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
-                    const numSec = parseInt(sec);
-                    if(isNaN(numSec)) return;
-
-                    const puntajeObtenido = data.secciones[sec];
-                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1;
-                    
-                    let colorCuadrito = '#6c757d'; 
-                    let recomendacionTexto = "";
-
-                    if (numSec === 1) {
-                        colorCuadrito = '#28a745'; 
-                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación. Asegúrese de mantenerlos actualizados.";
-                    } else {
-                        const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
-                        
-                        if (porcentaje >= 80) {
-                            colorCuadrito = '#28a745'; 
-                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares. Se sugiere mantener la actualización constante.";
-                        } else if (porcentaje >= 50) {
-                            colorCuadrito = '#ffc107'; 
-                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Se cuenta con elementos funcionales, pero existen vacíos normativos o técnicos. Es necesario formalizar procedimientos.";
-                        } else {
-                            colorCuadrito = '#dc3545'; 
-                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se detectaron debilidades críticas. Es urgente implementar un plan de acción para establecer condiciones mínimas.";
-                        }
-                    }
-
-                    const trPrincipal = document.createElement('tr');
-                    trPrincipal.className = 'fila-seccion';
-                    trPrincipal.onclick = () => toggleDetalle(sec);
-
-                    trPrincipal.innerHTML = `
-                        <td>
-                            <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
-                            <span class="texto-seccion">${sec}. ${NOMBRES_SECCIONES[sec] || 'General'}</span>
-                        </td>
-                        <td>
-                            <button class="btn-toggle" id="btn-${sec}">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                        </td>
-                    `;
-
-                    const trDetalle = document.createElement('tr');
-                    trDetalle.id = `detalle-${sec}`;
-                    trDetalle.className = 'fila-detalle';
-                    trDetalle.innerHTML = `
-                        <td colspan="2" style="padding: 0; border: none;">
-                            <div class="contenido-detalle">
-                                <strong>Análisis:</strong><br>
-                                ${recomendacionTexto}
-                            </div>
-                        </td>
-                    `;
-
-                    tbody.appendChild(trPrincipal);
-                    tbody.appendChild(trDetalle);
-                });
-
-            } catch (error) { console.error(error); }
+        if (data.error) {
+            alert(data.error);
+            return;
         }
+
+        // --- 1. ACTUALIZAR TARJETA IZQUIERDA (CON EFECTO TRANSLÚCIDO) ---
+        // Convertimos el color de la API a RGBA con 0.85 de opacidad para efecto vidrio
+        const colorTranslucido = hexToRgba(data.color, 0.85);
+        document.getElementById('cardPuntaje').style.background = colorTranslucido;
+
+        // Mostramos solo el nivel (Ej: "Consolidado", "En Desarrollo") sin números
+        document.getElementById('lblNivel').innerText = data.nivel;
+
+        // --- 2. GENERAR TABLA DERECHA (DESGLOSE) ---
+        const tbody = document.getElementById('tablaBody');
+        tbody.innerHTML = '';
+
+        // Ordenamos las claves numéricamente (1, 2, 3...)
+        Object.keys(data.secciones).sort((a, b) => a - b).forEach(sec => {
+            const numSec = parseInt(sec);
+            if (isNaN(numSec)) return; // Ignoramos claves que no sean números
+
+            const puntajeObtenido = data.secciones[sec];
+            // Usamos un fallback de 1 para evitar división por cero si algo falla
+            const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1;
+
+            let colorCuadrito = '#6c757d'; // Gris por defecto
+            let recomendacionTexto = "";
+
+            // --- LÓGICA DE RECOMENDACIONES Y SEMÁFORO ---
+            if (numSec === 1) {
+                // Sección 1: Identificación (No tiene puntaje real)
+                colorCuadrito = '#17a2b8'; // Azul informativo
+                recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación. Asegúrese de mantenerlos actualizados para recibir notificaciones importantes.";
+            } else {
+                // Calculamos porcentaje de cumplimiento
+                const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
+
+                if (porcentaje >= 80) {
+                    // VERDE: Nivel Óptimo
+                    colorCuadrito = '#28a745';
+                    recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares. Se sugiere mantener la actualización constante y documentar las buenas prácticas.";
+                } else if (porcentaje >= 50) {
+                    // AMARILLO: Nivel Medio
+                    colorCuadrito = '#ffc107';
+                    recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Se cuenta con elementos funcionales, pero existen vacíos normativos o técnicos. Es necesario formalizar procedimientos para asegurar la sostenibilidad del acervo.";
+                } else {
+                    // ROJO: Nivel Crítico
+                    colorCuadrito = '#dc3545';
+                    recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se detectaron debilidades críticas. Es urgente implementar un plan de acción para establecer las condiciones mínimas de operación y resguardo.";
+                }
+            }
+
+            // --- GENERAR HTML ---
+            
+            // A. Fila Principal (Visible, clickeable)
+            const trPrincipal = document.createElement('tr');
+            trPrincipal.className = 'fila-seccion';
+            trPrincipal.onclick = () => toggleDetalle(sec); // Función para abrir acordeón
+
+            trPrincipal.innerHTML = `
+                <td>
+                    <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
+                    <span class="texto-seccion">${sec}. ${NOMBRES_SECCIONES[sec] || 'General'}</span>
+                </td>
+                <td>
+                    <button class="btn-toggle" id="btn-${sec}">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </td>
+            `;
+
+            // B. Fila de Detalle (Oculta por defecto)
+            const trDetalle = document.createElement('tr');
+            trDetalle.id = `detalle-${sec}`;
+            trDetalle.className = 'fila-detalle';
+            trDetalle.innerHTML = `
+                <td colspan="2" style="padding: 0; border: none;">
+                    <div class="contenido-detalle">
+                        ${recomendacionTexto}
+                    </div>
+                </td>
+            `;
+
+            tbody.appendChild(trPrincipal);
+            tbody.appendChild(trDetalle);
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al cargar los resultados.");
+    }
+}
 
         // Función para abrir/cerrar el acordeón
         function toggleDetalle(id) {
