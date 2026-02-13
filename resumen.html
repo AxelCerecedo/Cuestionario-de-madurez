@@ -295,20 +295,20 @@
                     let recomendacionTexto = "";
 
                     if (numSec === 1) {
-                        colorCuadrito = '#28a745'; // Azul informativo para Identificación
-                        recomendacionTexto = "Esta sección contiene datos generales. Verifique que la información de contacto esté actualizada.";
+                        colorCuadrito = '#17a2b8'; 
+                        recomendacionTexto = "ℹ️ <b>Información General:</b> Esta sección contiene los datos de identificación. Verifique periódicamente que los contactos y la dirección se mantengan actualizados.";
                     } else {
                         const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
                         
                         if (porcentaje >= 80) {
                             colorCuadrito = '#28a745'; // Verde
-                            recomendacionTexto = "✅ <b>Nivel Óptimo:</b> Se cumplen la mayoría de los estándares.";
+                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares recomendados. El objetivo ahora debe ser la mejora continua, la actualización tecnológica y la documentación de estas buenas prácticas.";
                         } else if (porcentaje >= 50) {
                             colorCuadrito = '#ffc107'; // Amarillo
-                            recomendacionTexto = "⚠️ <b>Nivel Medio:</b> Existen elementos funcionales pero se detectaron carencias. Se recomienda reforzar la normativa y la infraestructura.";
+                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Existen capacidades operativas funcionales, pero se detectaron brechas en la normativa o infraestructura. Se recomienda formalizar los procedimientos internos y gestionar recursos para fortalecer esta área.";
                         } else {
                             colorCuadrito = '#dc3545'; // Rojo
-                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se detectaron áreas críticas. Es urgente establecer un plan de acción para cumplir con los requisitos mínimos.";
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se identificaron carencias críticas que podrían poner en riesgo la gestión o preservación del acervo. Es urgente establecer un plan de acción inmediato para cumplir con los requisitos mínimos indispensables.";
                         }
                     }
 
