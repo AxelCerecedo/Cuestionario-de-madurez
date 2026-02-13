@@ -361,8 +361,8 @@
                 filaPrincipal.classList.remove('activa');
             } else {
                 // Opcional: Cerrar otros abiertos (si quieres efecto acordeón estricto)
-                // document.querySelectorAll('.fila-detalle').forEach(el => el.classList.remove('visible'));
-                // document.querySelectorAll('.fila-seccion').forEach(el => el.classList.remove('activa'));
+                document.querySelectorAll('.fila-detalle').forEach(el => el.classList.remove('visible'));
+                 document.querySelectorAll('.fila-seccion').forEach(el => el.classList.remove('activa'));
 
                 filaDetalle.classList.add('visible');
                 filaPrincipal.classList.add('activa');
