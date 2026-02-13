@@ -1162,9 +1162,9 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
     }
 });
 
-// =========================================================
-// 📧 ENDPOINT: CORREO (CORREGIDO - BONO SECCIÓN 2)
-// =========================================================
+// =======================
+// 📧 ENDPOINT: CORREO 
+// =======================
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
 
@@ -1382,7 +1382,10 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         }
 
         console.log("✅ Correo enviado con BONO corregido.");
-        res.json({ message: 'Correo enviado correctamente' });
+        res.json({ 
+            message: 'Correo enviado correctamente', 
+            email: usuario.email 
+        });
 
     } catch (error) {
         console.error("❌ Error interno:", error);
