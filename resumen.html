@@ -6,25 +6,33 @@
     <title>Resumen de Resultados</title>
     
     <link rel="stylesheet" href="css/resumen.css"> 
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <style>
-        /* --- ESTILOS TARJETA IZQUIERDA (LIMPIA) --- */
+        /* =========================================
+           1. ESTILOS TARJETA IZQUIERDA (Translúcida)
+           ========================================= */
         .card-puntaje {
             text-align: center; 
             padding: 40px 30px; 
             color: white; 
             border-radius: 15px; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1); 
+            
+            /* Efecto Vidrio (Glassmorphism) */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            
             position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 250px;
+            min-height: 300px;
         }
 
         .nivel-badge {
@@ -38,20 +46,23 @@
             display: inline-block; 
             margin-bottom: 20px; 
             letter-spacing: 1.5px; 
-            backdrop-filter: blur(5px); 
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .mensaje-final {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             line-height: 1.6;
             font-weight: 400;
             opacity: 0.95;
+            max-width: 90%;
         }
 
-        /* --- ESTILOS TABLA DERECHA (DESGLOSE) --- */
+        /* =========================================
+           2. ESTILOS TABLA DERECHA (Acordeón)
+           ========================================= */
         .tabla-container {
-            overflow-x: hidden; /* Evitar scroll horizontal */
+            overflow-x: hidden;
         }
 
         .tabla-desglosada {
@@ -65,20 +76,24 @@
             padding: 10px;
             color: #666;
             font-size: 0.9rem;
-            border-bottom: 2px solid #eee;
+            border-bottom: 2px solid #ddd;
         }
 
-        /* Fila Principal */
+        /* Fila Principal (Visible) */
         .fila-seccion {
             background: #fff;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
             cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
         .fila-seccion:hover {
             background: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
         }
+        
         .fila-seccion td {
-            padding: 15px 10px;
+            padding: 15px 15px;
             border-top: 1px solid #eee;
             border-bottom: 1px solid #eee;
         }
@@ -94,66 +109,66 @@
             text-align: right;
         }
 
-        /* Indicador de Color (Semáforo) */
+        /* Semáforo (Cuadrito de color) */
         .indicador-color {
             display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-            margin-right: 12px;
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            margin-right: 15px;
             vertical-align: middle;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        /* Texto de la sección */
         .texto-seccion {
             display: inline-block;
             font-weight: 600;
-            color: #2c3e50;
+            color: #34495e;
             vertical-align: middle;
             font-size: 1rem;
         }
 
-        /* Botón Flecha */
+        /* Flecha */
         .btn-toggle {
             background: none;
             border: none;
             color: #95a5a6;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: transform 0.3s ease, color 0.3s;
-            padding: 5px;
+            font-size: 1.1rem;
+            transition: transform 0.3s ease;
         }
+        /* Rotación al estar activo */
         .fila-seccion.activa .btn-toggle {
             transform: rotate(180deg);
             color: #2c3e50;
         }
 
-        /* Fila de Detalles (Oculta) */
+        /* Fila de Detalle (Oculta) */
         .fila-detalle {
-            display: none; /* Oculto por defecto */
+            display: none;
         }
         .fila-detalle.visible {
             display: table-row;
-            animation: fadeIn 0.4s ease;
-        }
-        .contenido-detalle {
-            background-color: #fcfcfc;
-            padding: 15px 20px 15px 40px; /* Padding izquierdo alto para alinear */
-            border-left: 3px solid #eee; 
-            font-size: 0.95rem;
-            color: #555;
-            line-height: 1.5;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 10px;
+            animation: slideDown 0.3s ease-out forwards;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
+        .contenido-detalle {
+            background-color: #fcfcfc;
+            padding: 20px 25px 20px 45px; /* Indentación visual */
+            border-left: 4px solid #eee; /* Línea guía */
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.6;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+            border-radius: 0 0 8px 8px;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Botones de acción */
+        /* Botones de Acción */
         .btn-correo {
             background-color: #2c3e50;
             color: white;
@@ -168,6 +183,8 @@
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-correo:hover { background-color: #34495e; }
+        .btn-correo:disabled { background-color: #95a5a6; cursor: wait; }
+
         .btn-imprimir {
             background-color: #fff;
             color: #2c3e50;
@@ -177,7 +194,9 @@
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s;
         }
+        .btn-imprimir:hover { background-color: #f0f0f0; }
 
     </style>
 </head>
@@ -189,7 +208,7 @@
             <img src="Imagenes/logo.png" alt="Logo" class="logo" />
             <div style="margin-left: 230px;"> 
                 <h1>📊 Resultados del Diagnóstico</h1>
-                <p class="intro">Informe ejecutivo de evaluación.</p>
+                <p class="intro">Informe ejecutivo de evaluación y recomendaciones.</p>
             </div>
         </div>
 
@@ -198,35 +217,39 @@
             <div class="dashboard-left">
                 
                 <div id="cardPuntaje" class="card-puntaje">
-                    <div id="lblNivel" class="nivel-badge">Procesando...</div>
+                    <div id="lblNivel" class="nivel-badge">Cargando...</div>
                     
-                    <hr style="width: 50%; border: 0; border-top: 1px solid rgba(255,255,255,0.4); margin: 20px 0;">
+                    <hr style="width: 60%; border: 0; border-top: 1px solid rgba(255,255,255,0.4); margin: 25px 0;">
                     
                     <p class="mensaje-final">
-                        ¡Gracias por completar el diagnóstico!<br>
-                        Hemos analizado la información proporcionada para generar las siguientes recomendaciones.
+                        Agradecemos su participación en este diagnóstico.<br><br>
+                        Hemos analizado la información proporcionada para generar las recomendaciones detalladas que encontrará a continuación.
                     </p>
                 </div>
 
                 <div class="actions-panel">
-                    <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir Reporte</button>
+                    <button onclick="window.print()" class="btn-imprimir">
+                        <i class="fas fa-print"></i> Imprimir Reporte
+                    </button>
                     
                     <button id="btnEnviarCorreo" onclick="enviarCorreo()" class="btn-correo">
-                        📧 Enviar a mi correo
+                        <i class="fas fa-envelope"></i> Enviar a mi correo
                     </button>
 
-                    <a href="login.html" class="link-salir" style="margin-top: 15px; display:block; text-align:center; color: #7f8c8d; text-decoration: none;">Cerrar Sesión</a>
+                    <a href="login.html" class="link-salir" style="margin-top: 15px; display:block; text-align:center; color: #7f8c8d; text-decoration: none; font-size: 0.9em;">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a>
                 </div>
             </div>
 
             <div class="dashboard-right">
-                <h3 class="titulo-seccion">Áreas Evaluadas y Oportunidades</h3>
+                <h3 class="titulo-seccion">Desglose por Áreas y Recomendaciones</h3>
                 <div class="tabla-container">
                     <table class="tabla-desglosada">
                         <thead>
                             <tr>
-                                <th>Sección</th>
-                                <th style="text-align: right;">Detalles</th>
+                                <th>Área Evaluada</th>
+                                <th style="text-align: right; width: 50px;">Ver</th>
                             </tr>
                         </thead>
                         <tbody id="tablaBody">
@@ -241,9 +264,9 @@
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
-        // Configuración de Máximos (No se muestran, pero sirven para calcular el color)
+        // Puntos máximos para cálculo de porcentaje
         const MAXIMOS_POR_SECCION = {
-            1: 0, // Identificación no tiene puntaje
+            1: 0, 
             2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
         };
 
@@ -259,125 +282,140 @@
             9: "Servicios"
         };
 
-        async function cargarResumen() {
-    const idUsuario = localStorage.getItem('idUsuario');
-    if (!idUsuario) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
-        const data = await response.json();
-
-        if (data.error) {
-            alert(data.error);
-            return;
+        // =========================================================
+        // 1. FUNCIÓN HELPER: HEX A RGBA (Para transparencia)
+        // =========================================================
+        function hexToRgba(hex, alpha) {
+            if (!hex || !hex.startsWith('#')) return 'rgba(108, 117, 125, 0.85)'; // Fallback gris
+            
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        // --- 1. ACTUALIZAR TARJETA IZQUIERDA (CON EFECTO TRANSLÚCIDO) ---
-        // Convertimos el color de la API a RGBA con 0.85 de opacidad para efecto vidrio
-        const colorTranslucido = hexToRgba(data.color, 0.85);
-        document.getElementById('cardPuntaje').style.background = colorTranslucido;
-
-        // Mostramos solo el nivel (Ej: "Consolidado", "En Desarrollo") sin números
-        document.getElementById('lblNivel').innerText = data.nivel;
-
-        // --- 2. GENERAR TABLA DERECHA (DESGLOSE) ---
-        const tbody = document.getElementById('tablaBody');
-        tbody.innerHTML = '';
-
-        // Ordenamos las claves numéricamente (1, 2, 3...)
-        Object.keys(data.secciones).sort((a, b) => a - b).forEach(sec => {
-            const numSec = parseInt(sec);
-            if (isNaN(numSec)) return; // Ignoramos claves que no sean números
-
-            const puntajeObtenido = data.secciones[sec];
-            // Usamos un fallback de 1 para evitar división por cero si algo falla
-            const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1;
-
-            let colorCuadrito = '#6c757d'; // Gris por defecto
-            let recomendacionTexto = "";
-
-            // --- LÓGICA DE RECOMENDACIONES Y SEMÁFORO ---
-            if (numSec === 1) {
-                // Sección 1: Identificación (No tiene puntaje real)
-                colorCuadrito = '#17a2b8'; // Azul informativo
-                recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación. Asegúrese de mantenerlos actualizados para recibir notificaciones importantes.";
-            } else {
-                // Calculamos porcentaje de cumplimiento
-                const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
-
-                if (porcentaje >= 80) {
-                    // VERDE: Nivel Óptimo
-                    colorCuadrito = '#28a745';
-                    recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares. Se sugiere mantener la actualización constante y documentar las buenas prácticas.";
-                } else if (porcentaje >= 50) {
-                    // AMARILLO: Nivel Medio
-                    colorCuadrito = '#ffc107';
-                    recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Se cuenta con elementos funcionales, pero existen vacíos normativos o técnicos. Es necesario formalizar procedimientos para asegurar la sostenibilidad del acervo.";
-                } else {
-                    // ROJO: Nivel Crítico
-                    colorCuadrito = '#dc3545';
-                    recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se detectaron debilidades críticas. Es urgente implementar un plan de acción para establecer las condiciones mínimas de operación y resguardo.";
-                }
+        // =========================================================
+        // 2. FUNCIÓN PRINCIPAL DE CARGA
+        // =========================================================
+        async function cargarResumen() {
+            const idUsuario = localStorage.getItem('idUsuario');
+            if(!idUsuario) { 
+                window.location.href = 'login.html'; 
+                return; 
             }
 
-            // --- GENERAR HTML ---
-            
-            // A. Fila Principal (Visible, clickeable)
-            const trPrincipal = document.createElement('tr');
-            trPrincipal.className = 'fila-seccion';
-            trPrincipal.onclick = () => toggleDetalle(sec); // Función para abrir acordeón
+            try {
+                const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
+                const data = await response.json();
 
-            trPrincipal.innerHTML = `
-                <td>
-                    <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
-                    <span class="texto-seccion">${sec}. ${NOMBRES_SECCIONES[sec] || 'General'}</span>
-                </td>
-                <td>
-                    <button class="btn-toggle" id="btn-${sec}">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                </td>
-            `;
+                if(data.error) { alert(data.error); return; }
 
-            // B. Fila de Detalle (Oculta por defecto)
-            const trDetalle = document.createElement('tr');
-            trDetalle.id = `detalle-${sec}`;
-            trDetalle.className = 'fila-detalle';
-            trDetalle.innerHTML = `
-                <td colspan="2" style="padding: 0; border: none;">
-                    <div class="contenido-detalle">
-                        ${recomendacionTexto}
-                    </div>
-                </td>
-            `;
+                // --- A. TARJETA IZQUIERDA ---
+                // Usamos 0.85 de opacidad para que sea translúcido pero legible
+                const colorTranslucido = hexToRgba(data.color, 0.85);
+                document.getElementById('cardPuntaje').style.background = colorTranslucido;
+                document.getElementById('lblNivel').innerText = data.nivel;
 
-            tbody.appendChild(trPrincipal);
-            tbody.appendChild(trDetalle);
-        });
+                // --- B. TABLA DERECHA (DESGLOSE) ---
+                const tbody = document.getElementById('tablaBody');
+                tbody.innerHTML = '';
+                
+                Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
+                    const numSec = parseInt(sec);
+                    if(isNaN(numSec)) return; 
 
-    } catch (error) {
-        console.error(error);
-        alert("Error al cargar los resultados.");
-    }
-}
+                    const puntajeObtenido = data.secciones[sec];
+                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1; 
+                    
+                    let colorCuadrito = '#6c757d'; 
+                    let recomendacionTexto = "";
 
-        // Función para abrir/cerrar el acordeón
+                    // LÓGICA DE TEXTOS PROFESIONALES
+                    if (numSec === 1) {
+                        colorCuadrito = '#17a2b8'; // Azul
+                        recomendacionTexto = "ℹ️ <b>Información General:</b> Esta sección contiene los datos de identificación. Verifique periódicamente que los contactos y la dirección se mantengan actualizados.";
+                    } else {
+                        const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
+                        
+                        if (porcentaje >= 80) {
+                            colorCuadrito = '#28a745'; // Verde
+                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares recomendados. El objetivo ahora debe ser la mejora continua, la actualización tecnológica y la documentación de estas buenas prácticas.";
+                        } else if (porcentaje >= 50) {
+                            colorCuadrito = '#ffc107'; // Amarillo
+                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Existen capacidades operativas funcionales, pero se detectaron brechas en la normativa o infraestructura. Se recomienda formalizar los procedimientos internos y gestionar recursos para fortalecer esta área.";
+                        } else {
+                            colorCuadrito = '#dc3545'; // Rojo
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se identificaron carencias críticas que podrían poner en riesgo la gestión o preservación del acervo. Es urgente establecer un plan de acción inmediato para cumplir con los requisitos mínimos indispensables.";
+                        }
+                    }
+
+                    // --- GENERACIÓN DE HTML ---
+                    
+                    // 1. Fila Principal (Clickeable)
+                    const trPrincipal = document.createElement('tr');
+                    trPrincipal.className = 'fila-seccion';
+                    trPrincipal.onclick = () => toggleDetalle(sec);
+
+                    trPrincipal.innerHTML = `
+                        <td>
+                            <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
+                            <span class="texto-seccion">${sec}. ${NOMBRES_SECCIONES[sec] || 'General'}</span>
+                        </td>
+                        <td>
+                            <button class="btn-toggle" id="btn-${sec}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </td>
+                    `;
+
+                    // 2. Fila Detalle (Oculta)
+                    const trDetalle = document.createElement('tr');
+                    trDetalle.id = `detalle-${sec}`;
+                    trDetalle.className = 'fila-detalle';
+                    trDetalle.innerHTML = `
+                        <td colspan="2" style="padding: 0; border: none;">
+                            <div class="contenido-detalle">
+                                ${recomendacionTexto}
+                            </div>
+                        </td>
+                    `;
+
+                    tbody.appendChild(trPrincipal);
+                    tbody.appendChild(trDetalle);
+                });
+
+            } catch (error) { 
+                console.error(error);
+                alert("Error de conexión al cargar resumen.");
+            }
+        }
+
+        // =========================================================
+        // 3. FUNCIONES DE INTERACCIÓN
+        // =========================================================
+        
         function toggleDetalle(id) {
             const filaDetalle = document.getElementById(`detalle-${id}`);
             const btn = document.getElementById(`btn-${id}`);
             const filaPrincipal = btn.closest('tr');
 
+            // Cerrar otros (Efecto Acordeón Único - Opcional)
+            document.querySelectorAll('.fila-detalle').forEach(el => {
+                if (el.id !== `detalle-${id}`) el.classList.remove('visible');
+            });
+            document.querySelectorAll('.fila-seccion').forEach(el => {
+                if (el !== filaPrincipal) el.classList.remove('activa');
+            });
+
+            // Toggle actual
             if (filaDetalle.classList.contains('visible')) {
                 filaDetalle.classList.remove('visible');
                 filaPrincipal.classList.remove('activa');
             } else {
-                // Opcional: Cerrar otros abiertos (si quieres efecto acordeón estricto)
-                document.querySelectorAll('.fila-detalle').forEach(el => el.classList.remove('visible'));
-                 document.querySelectorAll('.fila-seccion').forEach(el => el.classList.remove('activa'));
-
                 filaDetalle.classList.add('visible');
                 filaPrincipal.classList.add('activa');
             }
@@ -386,8 +424,9 @@
         async function enviarCorreo() {
             const idUsuario = localStorage.getItem('idUsuario');
             const btn = document.getElementById('btnEnviarCorreo');
+            
             btn.disabled = true;
-            btn.innerHTML = '⏳ Enviando...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
             try {
                 const response = await fetch(`${API_URL}/api/enviar-correo-resultados`, {
@@ -395,26 +434,29 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ idUsuario: idUsuario })
                 });
+
                 const resultado = await response.json();
 
                 if (response.ok) {
                     Swal.fire({
                         title: '¡Correo Enviado!',
-                        text: `Resultados enviados correctamente.`,
+                        text: `El reporte ha sido enviado a su correo electrónico registrado.`,
                         icon: 'success',
                         confirmButtonColor: '#7c1225'
                     });
-                    btn.innerHTML = '✅ Enviado';
+                    btn.innerHTML = '<i class="fas fa-check"></i> Enviado';
                 } else {
-                    throw new Error(resultado.error);
+                    throw new Error(resultado.error || 'Error del servidor');
                 }
             } catch (error) {
-                Swal.fire('Error', 'No se pudo enviar.', 'error');
+                console.error(error);
+                Swal.fire('Error', 'No se pudo enviar el correo en este momento.', 'error');
                 btn.disabled = false;
-                btn.innerHTML = '📧 Enviar a mi correo';
+                btn.innerHTML = '<i class="fas fa-envelope"></i> Enviar a mi correo';
             }
         }
         
+        // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', cargarResumen);
     </script>
 </body>
