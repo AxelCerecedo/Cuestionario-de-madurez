@@ -6,106 +6,178 @@
     <title>Resumen de Resultados</title>
     
     <link rel="stylesheet" href="css/resumen.css"> 
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        /* Estilos para la tarjeta mejorada */
+        /* --- ESTILOS TARJETA IZQUIERDA (LIMPIA) --- */
         .card-puntaje {
             text-align: center; 
-            padding: 30px 20px; 
+            padding: 40px 30px; 
             color: white; 
             border-radius: 15px; 
             box-shadow: 0 10px 20px rgba(0,0,0,0.1); 
             position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 250px;
         }
 
         .nivel-badge {
             background: rgba(255, 255, 255, 0.25); 
             color: white; 
-            padding: 8px 25px; 
+            padding: 10px 30px; 
             border-radius: 50px; 
             text-transform: uppercase; 
             font-weight: 800; 
-            font-size: 1.6rem; 
+            font-size: 1.8rem; 
             display: inline-block; 
-            margin-bottom: 15px; 
+            margin-bottom: 20px; 
             letter-spacing: 1.5px; 
             backdrop-filter: blur(5px); 
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        .big-number {
-            font-size: 3.8rem; 
-            font-weight: 800; 
-            line-height: 1; 
-            margin: 5px 0 5px 0; 
-            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-
-        .score-subtext {
-            font-size: 1.1rem; 
-            opacity: 0.9; 
-            margin-top: 5px;
-            margin-bottom: 25px;
+        .mensaje-final {
+            font-size: 1.2rem;
+            line-height: 1.6;
             font-weight: 400;
+            opacity: 0.95;
         }
 
-        #lblMaximo {
-            font-size: 1.5rem !important; 
-            font-weight: 800 !important;
-            opacity: 1 !important; 
+        /* --- ESTILOS TABLA DERECHA (DESGLOSE) --- */
+        .tabla-container {
+            overflow-x: hidden; /* Evitar scroll horizontal */
+        }
+
+        .tabla-desglosada {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px; /* Espacio entre filas */
+        }
+
+        .tabla-desglosada th {
+            text-align: left;
+            padding: 10px;
+            color: #666;
+            font-size: 0.9rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        /* Fila Principal */
+        .fila-seccion {
+            background: #fff;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        .fila-seccion:hover {
+            background: #f8f9fa;
+        }
+        .fila-seccion td {
+            padding: 15px 10px;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+        .fila-seccion td:first-child {
+            border-left: 1px solid #eee;
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        .fila-seccion td:last-child {
+            border-right: 1px solid #eee;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            text-align: right;
+        }
+
+        /* Indicador de Color (Semáforo) */
+        .indicador-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 12px;
             vertical-align: middle;
-            margin: 0 6px;
-            position: relative;
-            top: -2px;
-            color: #ffffff;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
-        .progress-track {
-            background: rgba(255, 255, 255, 0.2); 
-            height: 12px; 
-            border-radius: 10px; 
-            width: 100%; 
-            max-width: 280px; 
-            margin: 0 auto 20px auto; 
-            overflow: hidden; 
-            border: 1px solid rgba(255,255,255,0.1);
+        /* Texto de la sección */
+        .texto-seccion {
+            display: inline-block;
+            font-weight: 600;
+            color: #2c3e50;
+            vertical-align: middle;
+            font-size: 1rem;
         }
-        
-        .progress-fill {
-            height: 100%; 
-            background: white; 
-            width: 0%; 
-            border-radius: 10px; 
-            transition: width 1.5s ease-out; 
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+
+        /* Botón Flecha */
+        .btn-toggle {
+            background: none;
+            border: none;
+            color: #95a5a6;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.3s ease, color 0.3s;
+            padding: 5px;
         }
-        
-        .mensaje-score { font-weight: 500; line-height: 1.1; font-size: 1rem; }
+        .fila-seccion.activa .btn-toggle {
+            transform: rotate(180deg);
+            color: #2c3e50;
+        }
 
-        .score-actual { font-size: 1.1rem; font-weight: 800; color: #2c3e50; }
-        .score-divider { color: #aaa; font-weight: 400; font-size: 0.9rem; margin: 0 2px; }
-        .score-max { color: #888; font-size: 0.9rem; font-weight: 500; }
+        /* Fila de Detalles (Oculta) */
+        .fila-detalle {
+            display: none; /* Oculto por defecto */
+        }
+        .fila-detalle.visible {
+            display: table-row;
+            animation: fadeIn 0.4s ease;
+        }
+        .contenido-detalle {
+            background-color: #fcfcfc;
+            padding: 15px 20px 15px 40px; /* Padding izquierdo alto para alinear */
+            border-left: 3px solid #eee; 
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.5;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+        }
 
-        /* BOTÓN CORREO NUEVO */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Botones de acción */
         .btn-correo {
             background-color: #2c3e50;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 15px;
             width: 100%;
             font-weight: 600;
             transition: background 0.2s;
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-correo:hover { background-color: #34495e; }
-        .btn-correo:disabled { background-color: #95a5a6; cursor: wait; }
+        .btn-imprimir {
+            background-color: #fff;
+            color: #2c3e50;
+            border: 2px solid #2c3e50;
+            padding: 10px;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
 
     </style>
 </head>
@@ -117,7 +189,7 @@
             <img src="Imagenes/logo.png" alt="Logo" class="logo" />
             <div style="margin-left: 230px;"> 
                 <h1>📊 Resultados del Diagnóstico</h1>
-                <p class="intro">Desglose detallado de la evaluación institucional.</p>
+                <p class="intro">Informe ejecutivo de evaluación.</p>
             </div>
         </div>
 
@@ -126,16 +198,14 @@
             <div class="dashboard-left">
                 
                 <div id="cardPuntaje" class="card-puntaje">
-                    <div id="lblNivel" class="nivel-badge">Cargando...</div>
-                    <div class="big-number" id="lblPuntaje">--</div>
-                    <div class="score-subtext">puntos de <strong id="lblMaximo">--</strong> posibles</div>
-
-                    <div class="progress-track">
-                        <div class="progress-fill" id="barraProgreso"></div>
-                    </div>
+                    <div id="lblNivel" class="nivel-badge">Procesando...</div>
                     
-                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 0;">
-                    <p class="mensaje-score" id="lblMensaje">Calculando resultados...</p>
+                    <hr style="width: 50%; border: 0; border-top: 1px solid rgba(255,255,255,0.4); margin: 20px 0;">
+                    
+                    <p class="mensaje-final">
+                        ¡Gracias por completar el diagnóstico!<br>
+                        Hemos analizado la información proporcionada para generar las siguientes recomendaciones.
+                    </p>
                 </div>
 
                 <div class="actions-panel">
@@ -145,21 +215,22 @@
                         📧 Enviar a mi correo
                     </button>
 
-                    <a href="login.html" class="link-salir" style="margin-top: 15px; display:block; text-align:center;">Salir</a>
+                    <a href="login.html" class="link-salir" style="margin-top: 15px; display:block; text-align:center; color: #7f8c8d; text-decoration: none;">Cerrar Sesión</a>
                 </div>
             </div>
 
             <div class="dashboard-right">
-                <h3 class="titulo-seccion">Desglose por Sección</h3>
+                <h3 class="titulo-seccion">Áreas Evaluadas y Oportunidades</h3>
                 <div class="tabla-container">
                     <table class="tabla-desglosada">
                         <thead>
                             <tr>
                                 <th>Sección</th>
-                                <th style="text-align: right;">Puntos</th>
+                                <th style="text-align: right;">Detalles</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaBody"></tbody>
+                        <tbody id="tablaBody">
+                            </tbody>
                     </table>
                 </div>
             </div>
@@ -170,10 +241,27 @@
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
+        // Configuración de Máximos (No se muestran, pero sirven para calcular el color)
+        const MAXIMOS_POR_SECCION = {
+            1: 0, // Identificación no tiene puntaje
+            2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
+        };
+
+        const NOMBRES_SECCIONES = {
+            1: "Identificación de la Institución", 
+            2: "Gestión Institucional", 
+            3: "Caracterización del Acervo",
+            4: "Inventario y Catalogación", 
+            5: "Gestión de información", 
+            6: "Recursos Humanos",
+            7: "Infraestructura Tecnológica", 
+            8: "Normatividad y Procesos", 
+            9: "Servicios"
+        };
+
         async function cargarResumen() {
             const idUsuario = localStorage.getItem('idUsuario');
             if(!idUsuario) { 
-                alert("No hay sesión activa."); 
                 window.location.href = 'login.html'; 
                 return; 
             }
@@ -184,71 +272,106 @@
 
                 if(data.error) { alert(data.error); return; }
 
-                // --- ACTUALIZACIÓN DE DATOS ---
+                // --- 1. ACTUALIZAR TARJETA IZQUIERDA ---
+                // Aplicamos el color global pero sin mostrar números
                 document.getElementById('cardPuntaje').style.background = data.color;
-                animarNumero('lblPuntaje', 0, data.total, 1500);
-                document.getElementById('lblMaximo').innerText = data.maximo;
-                document.getElementById('lblNivel').innerText = `${data.nivel} (${data.porcentaje}%)`;
-                document.getElementById('lblMensaje').innerText = data.mensaje;
+                // Mostramos solo el nivel (Ej: "Consolidado", "En Desarrollo")
+                document.getElementById('lblNivel').innerText = data.nivel;
 
-                setTimeout(() => {
-                    document.getElementById('barraProgreso').style.width = `${data.porcentaje}%`;
-                }, 300);
-
-                // --- TABLA ---
+                // --- 2. GENERAR TABLA DERECHA ---
                 const tbody = document.getElementById('tablaBody');
                 tbody.innerHTML = '';
                 
-                const nombresSecciones = {
-                    1: "Identificación", 2: "Gestión Institucional", 3: "Caracterización del Acervo",
-                    4: "Inventario y Catalogación", 5: "Gestión de información", 6: "Recursos Humanos",
-                    7: "Infraestructura Tecnológica", 8: "Normatividad", 9: "Servicios"
-                };
-
-                const MAXIMOS_POR_SECCION = {
-                    1: "0", 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
-                };
-
+                // Ordenar claves numéricamente (1, 2, 3...)
                 Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
-                    if(sec === 'Otra' && data.secciones[sec] === 0) return;
-                    
-                    const tr = document.createElement('tr');
-                    const nombreSec = nombresSecciones[sec] || 'General';
-                    const puntajeObtenido = data.secciones[sec];
-                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || '?';
+                    const numSec = parseInt(sec);
+                    if(isNaN(numSec)) return; // Ignorar claves no numéricas
 
-                    tr.innerHTML = `
-                        <td><div style="font-weight:600; color:#444;">${sec}. ${nombreSec}</div></td>
-                        <td class="col-puntos">
-                            <span class="score-actual">${puntajeObtenido}</span>
-                            <span class="score-divider">/</span>
-                            <span class="score-max">${puntajeMaximo}</span>
+                    const puntajeObtenido = data.secciones[sec];
+                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1; // Evitar división por 0
+                    
+                    // Calcular Color del Cuadrito
+                    let colorCuadrito = '#6c757d'; // Gris por defecto (para sección 1)
+                    let recomendacionTexto = "";
+
+                    if (numSec === 1) {
+                        colorCuadrito = '#17a2b8'; // Azul informativo para Identificación
+                        recomendacionTexto = "Esta sección contiene datos generales. Verifique que la información de contacto esté actualizada.";
+                    } else {
+                        const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
+                        
+                        if (porcentaje >= 80) {
+                            colorCuadrito = '#28a745'; // Verde
+                            recomendacionTexto = "✅ <b>Nivel Óptimo:</b> Se cumplen la mayoría de los estándares. Se sugiere mantener los procesos actuales y documentar las buenas prácticas.";
+                        } else if (porcentaje >= 50) {
+                            colorCuadrito = '#ffc107'; // Amarillo
+                            recomendacionTexto = "⚠️ <b>Nivel Medio:</b> Existen elementos funcionales pero se detectaron carencias. Se recomienda reforzar la normativa y la infraestructura.";
+                        } else {
+                            colorCuadrito = '#dc3545'; // Rojo
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se detectaron áreas críticas. Es urgente establecer un plan de acción para cumplir con los requisitos mínimos.";
+                        }
+                    }
+
+                    // --- GENERAR HTML ---
+                    // Fila Principal
+                    const trPrincipal = document.createElement('tr');
+                    trPrincipal.className = 'fila-seccion';
+                    trPrincipal.onclick = () => toggleDetalle(sec); // Click en toda la fila
+
+                    trPrincipal.innerHTML = `
+                        <td>
+                            <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
+                            <span class="texto-seccion">${sec}. ${NOMBRES_SECCIONES[sec] || 'General'}</span>
+                        </td>
+                        <td>
+                            <button class="btn-toggle" id="btn-${sec}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </td>
                     `;
-                    tbody.appendChild(tr);
+
+                    // Fila de Detalle (Oculta)
+                    const trDetalle = document.createElement('tr');
+                    trDetalle.id = `detalle-${sec}`;
+                    trDetalle.className = 'fila-detalle';
+                    trDetalle.innerHTML = `
+                        <td colspan="2" style="padding: 0; border: none;">
+                            <div class="contenido-detalle">
+                                <strong>Análisis:</strong><br>
+                                ${recomendacionTexto}
+                            </div>
+                        </td>
+                    `;
+
+                    tbody.appendChild(trPrincipal);
+                    tbody.appendChild(trDetalle);
                 });
 
             } catch (error) { console.error(error); }
         }
 
-        function animarNumero(id, start, end, duration) {
-            const obj = document.getElementById(id);
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                obj.innerHTML = Math.floor(progress * (end - start) + start);
-                if (progress < 1) window.requestAnimationFrame(step);
-            };
-            window.requestAnimationFrame(step);
+        // Función para abrir/cerrar el acordeón
+        function toggleDetalle(id) {
+            const filaDetalle = document.getElementById(`detalle-${id}`);
+            const btn = document.getElementById(`btn-${id}`);
+            const filaPrincipal = btn.closest('tr');
+
+            if (filaDetalle.classList.contains('visible')) {
+                filaDetalle.classList.remove('visible');
+                filaPrincipal.classList.remove('activa');
+            } else {
+                // Opcional: Cerrar otros abiertos (si quieres efecto acordeón estricto)
+                // document.querySelectorAll('.fila-detalle').forEach(el => el.classList.remove('visible'));
+                // document.querySelectorAll('.fila-seccion').forEach(el => el.classList.remove('activa'));
+
+                filaDetalle.classList.add('visible');
+                filaPrincipal.classList.add('activa');
+            }
         }
 
-        // --- NUEVA FUNCIÓN: ENVIAR CORREO ---
         async function enviarCorreo() {
             const idUsuario = localStorage.getItem('idUsuario');
             const btn = document.getElementById('btnEnviarCorreo');
-            
-            // Estado de carga
             btn.disabled = true;
             btn.innerHTML = '⏳ Enviando...';
 
@@ -258,39 +381,27 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ idUsuario: idUsuario })
                 });
-
                 const resultado = await response.json();
 
                 if (response.ok) {
-                    // Si tu backend devuelve el correo, úsalo aquí. 
-                    // Si no, pon un mensaje genérico.
-                    const destino = resultado.email ? `a: ${resultado.email}` : 'a tu dirección registrada';
-
                     Swal.fire({
                         title: '¡Correo Enviado!',
-                        text: `Hemos enviado los resultados ${destino}. Revisa tu bandeja de entrada (y spam).`,
+                        text: `Resultados enviados correctamente.`,
                         icon: 'success',
                         confirmButtonColor: '#7c1225'
                     });
-                    btn.innerHTML = '✅ Correo Enviado';
+                    btn.innerHTML = '✅ Enviado';
                 } else {
-                    throw new Error(resultado.error || 'Error al enviar');
+                    throw new Error(resultado.error);
                 }
             } catch (error) {
-                console.error(error);
-                Swal.fire('Error', 'No se pudo enviar el correo. Intenta más tarde.', 'error');
+                Swal.fire('Error', 'No se pudo enviar.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = '📧 Enviar a mi correo';
             }
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-            cargarResumen();
-            
-            // OPCIONAL: Si quieres que se mande SOLO automáticamente al entrar, 
-            // descomenta la siguiente línea (pero cuidado con el spam si recargan):
-            // enviarCorreo(); 
-        });
+        document.addEventListener('DOMContentLoaded', cargarResumen);
     </script>
 </body>
 </html>
