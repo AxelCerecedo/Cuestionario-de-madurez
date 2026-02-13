@@ -79,6 +79,7 @@ const CONFIG_SECCION = {
             tipo: "catalogo_tabla",
             obligatorio: false,
             graficar: true,
+            encabezados: ["Nivel Educativo"],
             opciones: [
                 { id: 1, texto: "Nivel básico", ayuda: "Incluye estudios de educación primaria y secundaria..." },
                 { id: 2, texto: "Nivel medio superior", ayuda: "Comprende el bachillerato o preparatoria..." },

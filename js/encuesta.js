@@ -739,7 +739,7 @@ function crearHTMLPregunta(p) {
         }, 600);
     }
 
-    // --- H. CATÁLOGO TIPO TABLA (ENCABEZADO ÚNICO + DISEÑO HÍBRIDO) ---
+    // --- H. CATÁLOGO TIPO TABLA (DINÁMICO: 1 o 2 ENCABEZADOS) ---
     else if (p.tipo === 'catalogo_tabla') {
         const tableContainer = document.createElement('div');
         tableContainer.style.overflowX = 'auto';
@@ -751,19 +751,32 @@ function crearHTMLPregunta(p) {
         tabla.style.fontSize = '0.95em';
 
         // =========================================================
-        // 1. CABECERA (SOLO 1 COLUMNA UNIFICADA)
+        // 1. CABECERA INTELIGENTE (1 vs 2 Columnas)
         // =========================================================
         const thead = document.createElement('thead');
-        // Tomamos el primer elemento del array de encabezados, o un default
-        const tituloHeader = (p.encabezados && p.encabezados[0]) ? p.encabezados[0] : "Opciones";
-        
-        thead.innerHTML = `
-            <tr style="background-color: #f4f4f4; text-align: left;">
-                <th colspan="2" style="padding: 12px; border: 1px solid #ddd; color: #333; font-weight: bold;">
-                    ${tituloHeader}
+        const trHead = document.createElement('tr');
+        trHead.style.backgroundColor = "#f4f4f4";
+        trHead.style.textAlign = "left";
+
+        // Definimos los títulos (Si no hay en JSON, usamos uno genérico)
+        const misTitulos = p.encabezados || ["Opciones"];
+
+        // LÓGICA DINÁMICA:
+        if (misTitulos.length === 2) {
+            // CASO 2 COLUMNAS (Ideal para Secciones 7, 8, 9)
+            trHead.innerHTML = `
+                <th style="padding: 10px; border: 1px solid #ddd; width: 40%; color:#333;">${misTitulos[0]}</th>
+                <th style="padding: 10px; border: 1px solid #ddd; width: 60%; color:#333;">${misTitulos[1]}</th>
+            `;
+        } else {
+            // CASO 1 COLUMNA UNIFICADA (Ideal para Sección 6)
+            trHead.innerHTML = `
+                <th colspan="2" style="padding: 12px; border: 1px solid #ddd; color: #333; font-weight: bold; text-align: left;">
+                    ${misTitulos[0]}
                 </th>
-            </tr>
-        `;
+            `;
+        }
+        thead.appendChild(trHead);
         tabla.appendChild(thead);
 
         // =========================================================
@@ -827,7 +840,8 @@ function crearHTMLPregunta(p) {
                 tdIzq.style.padding = '12px';
                 tdIzq.style.border = '1px solid #ddd';
                 tdIzq.style.verticalAlign = 'top';
-                tdIzq.style.width = '40%'; // Forzamos ancho para mantener orden visual
+                // Si usamos 2 columnas en el header, respetamos el ancho, si no, 40/60
+                tdIzq.style.width = '40%'; 
                 tdIzq.style.backgroundColor = '#fdfdfd';
                 
                 const divHeader = document.createElement('div');
