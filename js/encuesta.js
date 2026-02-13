@@ -750,7 +750,7 @@ function crearHTMLPregunta(p) {
         tabla.style.marginTop = '10px';
         tabla.style.fontSize = '0.95em';
 
-        // Cabecera (Se mantiene igual, define 2 columnas base)
+        // Cabecera (Define las 2 columnas base)
         const thead = document.createElement('thead');
         const titulos = p.encabezados || ["Concepto / Instrucción", "Detalles / Opciones"];
         thead.innerHTML = `
@@ -796,7 +796,10 @@ function crearHTMLPregunta(p) {
                 labelTexto.innerText = opt.texto;
                 
                 // Evento click en texto para marcar check
-                labelTexto.onclick = () => { checkbox.checked = !checkbox.checked; };
+                labelTexto.onclick = () => { 
+                    checkbox.checked = !checkbox.checked; 
+                    checkbox.dispatchEvent(new Event('change'));
+                };
 
                 divPrincipal.appendChild(checkbox);
                 divPrincipal.appendChild(labelTexto);
@@ -821,11 +824,12 @@ function crearHTMLPregunta(p) {
             // CASO B: FILA COMPLEJA (CON SUB-OPCIONES) -> 2 COLUMNAS
             // =========================================================
             else {
-                // --- COLUMNA 1: CHECKBOX + TEXTO + AYUDA ---
+                // --- COLUMNA 1: CHECKBOX PADRE + TEXTO + AYUDA ---
                 const tdIzq = document.createElement('td');
                 tdIzq.style.padding = '12px';
                 tdIzq.style.border = '1px solid #ddd';
                 tdIzq.style.verticalAlign = 'top';
+                tdIzq.style.backgroundColor = '#fdfdfd'; // Ligeramente diferente para distinguir
                 
                 // A. Checkbox Padre y Título
                 const divHeader = document.createElement('div');
@@ -839,25 +843,26 @@ function crearHTMLPregunta(p) {
                 checkboxPadre.value = opt.id;
                 checkboxPadre.className = 'input-multiple'; 
                 checkboxPadre.dataset.idPregunta = p.id;
-                checkboxPadre.style.marginTop = '3px'; // Ajuste visual
+                checkboxPadre.style.marginTop = '3px'; 
 
                 divHeader.appendChild(checkboxPadre);
                 divHeader.appendChild(document.createTextNode(opt.texto));
                 tdIzq.appendChild(divHeader);
 
-                // B. Ayuda (AHORA EN LA COLUMNA IZQUIERDA) 🔥
+                // B. Ayuda (EN LA COLUMNA IZQUIERDA)
                 if (opt.ayuda) {
                     const divAyuda = document.createElement('div');
                     divAyuda.innerText = opt.ayuda;
                     divAyuda.style.marginLeft = '26px';
                     divAyuda.style.fontSize = '0.85em';
                     divAyuda.style.color = '#666';
+                    divAyuda.style.fontStyle = 'italic';
                     tdIzq.appendChild(divAyuda);
                 }
                 
                 tr.appendChild(tdIzq);
 
-                // --- COLUMNA 2: SOLO LAS OPCIONES ---
+                // --- COLUMNA 2: SOLO LAS OPCIONES (SUB-OPCIONES) ---
                 const tdDer = document.createElement('td');
                 tdDer.style.padding = '12px';
                 tdDer.style.border = '1px solid #ddd';
@@ -930,7 +935,7 @@ function crearHTMLPregunta(p) {
                             if(!this.checked) inputEsp.value = '';
                         }
                         
-                        // B. Limpieza de Radios
+                        // B. Limpieza de Radios (si selecciono uno, oculto los "otros" de los demás)
                         if (esRadio && this.checked) {
                              const otrosInputs = gridSoft.querySelectorAll('.input-especificar-multiple');
                              otrosInputs.forEach(inp => {
@@ -951,7 +956,7 @@ function crearHTMLPregunta(p) {
                             }
                         }
 
-                        // D. Activar Padre automáticamente
+                        // D. Activar Padre automáticamente al seleccionar un hijo
                         if (checkboxPadre && this.checked) {
                             if (!checkboxPadre.checked) {
                                 checkboxPadre.checked = true;
@@ -984,7 +989,7 @@ function crearHTMLPregunta(p) {
                     }
                 };
                 
-                // Inicializar y escuchar
+                // Inicializar y escuchar cambios en el padre
                 actualizarEstado();
                 checkboxPadre.addEventListener('change', actualizarEstado);
             }
