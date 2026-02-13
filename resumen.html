@@ -262,9 +262,13 @@
                 const resultado = await response.json();
 
                 if (response.ok) {
+                    // Si tu backend devuelve el correo, úsalo aquí. 
+                    // Si no, pon un mensaje genérico.
+                    const destino = resultado.email ? `a: ${resultado.email}` : 'a tu dirección registrada';
+
                     Swal.fire({
                         title: '¡Correo Enviado!',
-                        text: 'Revisa tu bandeja de entrada (y spam por si acaso).',
+                        text: `Hemos enviado los resultados ${destino}. Revisa tu bandeja de entrada (y spam).`,
                         icon: 'success',
                         confirmButtonColor: '#7c1225'
                     });
