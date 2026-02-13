@@ -14,7 +14,7 @@ const CONFIG_SECCION = {
             tipo: "catalogo_tabla", 
             obligatorio: true,
             graficar: true,
-            encabezados: ["Proceso / Normatividad", "Detalles / Selección"],
+            encabezados: ["Procesos de Gestión y Conservación de Acervos y Colecciones"],
             opciones: [
                 // --- A. BOOLEANOS (Padres simples) ---
                 { 
