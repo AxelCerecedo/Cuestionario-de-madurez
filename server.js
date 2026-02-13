@@ -1037,8 +1037,6 @@ app.get('/admin/detalle-graficas/:idInstitucion', async (req, res) => {
         const [contactosDB] = await db.query('SELECT * FROM contactos_institucion WHERE id_institucion = ?', [idInstitucion]);
         
         if (contactosDB.length > 0) {
-            // Convertimos la tabla de contactos en un string JSON para que el frontend lo entienda
-            // Asignamos manualmente el id_pregunta 6 (que es la de contactos en seccion1.js)
             resUsuario.push({
                 id_pregunta: 6, 
                 id_opcion: null, 
@@ -1251,13 +1249,12 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         });
 
         // 3. --- AQUÍ ESTABA EL ERROR: APLICAR EL BONO VISUALMENTE ---
-        // Ejecutamos la misma consulta de bono que en /resumen
+      
         const sqlBono = `SELECT COUNT(*) as c FROM respuestas WHERE id_institucion=? AND id_pregunta IN (14,15) AND respuesta_texto IS NOT NULL AND respuesta_texto != ''`;
         const [rowsBono] = await db.query(sqlBono, [idInstitucion]);
         
         if(rowsBono[0].c === 2) {
             console.log("🎁 Bono de Sección 2 aplicado en el correo (+1 punto)");
-            // ¡ESTA LÍNEA ES LA QUE HACE QUE LA TABLA SALGA BIEN!
             reporteSecciones[2] += 1; 
         }
 
