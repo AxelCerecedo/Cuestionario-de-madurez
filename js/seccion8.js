@@ -9,8 +9,8 @@ const CONFIG_SECCION = {
             id: 49, 
             orden: 48,
             texto: "A continuación, se presenta una lista de procesos de planificación, gestión y conservación.",
-            ayuda: "Marque todos los procesos con los que cuenta su institución (Si aplica):",
-            tipo: "catalogo_multiple", // <--- CAMBIO AQUÍ: Ya no es tabla, es lista simple
+            //ayuda: "Marque todos los procesos con los que cuenta su institución (Si aplica):",
+            tipo: "catalogo_multiple", 
             obligatorio: true,
             graficar: true,
             opciones: [
