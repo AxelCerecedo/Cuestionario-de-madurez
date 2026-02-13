@@ -6,14 +6,13 @@
     <title>Resumen de Resultados</title>
     
     <link rel="stylesheet" href="css/resumen.css"> 
-    
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
         /* =========================================
-           1. ESTILOS TARJETA IZQUIERDA (Translúcida)
+           ESTILOS TARJETA (Glassmorphism)
            ========================================= */
         .card-puntaje {
             text-align: center; 
@@ -21,7 +20,7 @@
             color: white; 
             border-radius: 15px; 
             
-            /* Efecto Vidrio (Glassmorphism) */
+            /* Efecto Vidrio */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
@@ -33,12 +32,13 @@
             justify-content: center;
             align-items: center;
             min-height: 300px;
+            transition: background 0.5s ease;
         }
 
         .nivel-badge {
             background: rgba(255, 255, 255, 0.25); 
             color: white; 
-            padding: 10px 30px; 
+            padding: 10px 35px; 
             border-radius: 50px; 
             text-transform: uppercase; 
             font-weight: 800; 
@@ -51,15 +51,15 @@
         }
 
         .mensaje-final {
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             line-height: 1.6;
-            font-weight: 400;
-            opacity: 0.95;
+            font-weight: 500;
+            opacity: 0.98;
             max-width: 90%;
         }
 
         /* =========================================
-           2. ESTILOS TABLA DERECHA (Acordeón)
+           ESTILOS TABLA (Acordeón)
            ========================================= */
         .tabla-container {
             overflow-x: hidden;
@@ -68,7 +68,7 @@
         .tabla-desglosada {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 0 8px; /* Espacio entre filas */
+            border-spacing: 0 8px; 
         }
 
         .tabla-desglosada th {
@@ -79,7 +79,7 @@
             border-bottom: 2px solid #ddd;
         }
 
-        /* Fila Principal (Visible) */
+        /* Fila Principal */
         .fila-seccion {
             background: #fff;
             transition: all 0.2s ease;
@@ -88,12 +88,12 @@
         }
         .fila-seccion:hover {
             background: #f8f9fa;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.05);
         }
         
         .fila-seccion td {
-            padding: 15px 15px;
+            padding: 18px 15px;
             border-top: 1px solid #eee;
             border-bottom: 1px solid #eee;
         }
@@ -109,7 +109,7 @@
             text-align: right;
         }
 
-        /* Semáforo (Cuadrito de color) */
+        /* Semáforo */
         .indicador-color {
             display: inline-block;
             width: 14px;
@@ -136,13 +136,12 @@
             font-size: 1.1rem;
             transition: transform 0.3s ease;
         }
-        /* Rotación al estar activo */
         .fila-seccion.activa .btn-toggle {
             transform: rotate(180deg);
             color: #2c3e50;
         }
 
-        /* Fila de Detalle (Oculta) */
+        /* Fila Detalle */
         .fila-detalle {
             display: none;
         }
@@ -153,8 +152,8 @@
 
         .contenido-detalle {
             background-color: #fcfcfc;
-            padding: 20px 25px 20px 45px; /* Indentación visual */
-            border-left: 4px solid #eee; /* Línea guía */
+            padding: 20px 25px 20px 45px;
+            border-left: 4px solid #eee;
             font-size: 0.95rem;
             color: #555;
             line-height: 1.6;
@@ -168,7 +167,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Botones de Acción */
+        /* Botones */
         .btn-correo {
             background-color: #2c3e50;
             color: white;
@@ -221,9 +220,8 @@
                     
                     <hr style="width: 60%; border: 0; border-top: 1px solid rgba(255,255,255,0.4); margin: 25px 0;">
                     
-                    <p class="mensaje-final">
-                        Agradecemos su participación en este diagnóstico.<br><br>
-                        Hemos analizado la información proporcionada para generar las recomendaciones detalladas que encontrará a continuación.
+                    <p id="lblMensaje" class="mensaje-final">
+                        Procesando información...
                     </p>
                 </div>
 
@@ -243,7 +241,7 @@
             </div>
 
             <div class="dashboard-right">
-                <h3 class="titulo-seccion">Desglose por secciones y recomendaciones</h3>
+                <h3 class="titulo-seccion">Desglose por Áreas y Recomendaciones</h3>
                 <div class="tabla-container">
                     <table class="tabla-desglosada">
                         <thead>
@@ -264,7 +262,7 @@
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
-        // Puntos máximos para cálculo de porcentaje
+        // Puntos máximos teóricos por sección (Para calcular el % del semáforo local)
         const MAXIMOS_POR_SECCION = {
             1: 0, 
             2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
@@ -283,7 +281,7 @@
         };
 
         // =========================================================
-        // 1. FUNCIÓN HELPER: HEX A RGBA (Para transparencia)
+        // 1. FUNCIÓN HELPER: HEX A RGBA
         // =========================================================
         function hexToRgba(hex, alpha) {
             if (!hex || !hex.startsWith('#')) return 'rgba(108, 117, 125, 0.85)'; // Fallback gris
@@ -312,18 +310,28 @@
                 const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
                 const data = await response.json();
 
-                if(data.error) { alert(data.error); return; }
+                if(data.error) {
+                    Swal.fire("Error", data.error, "error");
+                    return;
+                }
 
-                // --- A. TARJETA IZQUIERDA ---
-                // Usamos 0.85 de opacidad para que sea translúcido pero legible
-                const colorTranslucido = hexToRgba(data.color, 0.85);
+                // --- A. TARJETA IZQUIERDA (Datos del Servidor) ---
+                
+                // 1. Color Translúcido
+                const colorTranslucido = hexToRgba(data.color, 0.85); // 85% opacidad
                 document.getElementById('cardPuntaje').style.background = colorTranslucido;
-                document.getElementById('lblNivel').innerText = data.nivel;
+                
+                // 2. Nivel Global (Ej: "Inicial", "Básico", "Avanzado")
+                document.getElementById('lblNivel').innerText = data.nivel || "Nivel Calculado";
+                
+                // 3. Mensaje Global (Ej: "¡Excelente!...")
+                document.getElementById('lblMensaje').innerText = data.mensaje || "Resultados generados.";
 
-                // --- B. TABLA DERECHA (DESGLOSE) ---
+                // --- B. TABLA DERECHA (Cálculo Local de Semáforo) ---
                 const tbody = document.getElementById('tablaBody');
                 tbody.innerHTML = '';
                 
+                // Ordenar secciones 1..9
                 Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
                     const numSec = parseInt(sec);
                     if(isNaN(numSec)) return; 
@@ -334,28 +342,26 @@
                     let colorCuadrito = '#6c757d'; 
                     let recomendacionTexto = "";
 
-                    // LÓGICA DE TEXTOS PROFESIONALES
+                    // LÓGICA DE TEXTOS Y SEMÁFORO (Por Sección)
                     if (numSec === 1) {
-                        colorCuadrito = '#28a745'; // Azul
-                        recomendacionTexto = "ℹ️ <b>Información General:</b> Esta sección contiene los datos de identificación. Verifique periódicamente que los contactos y la dirección se mantengan actualizados.";
+                        colorCuadrito = '#17a2b8'; // Azul informativo
+                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de identificación y contacto. Es vital mantenerlos actualizados para cualquier trámite oficial.";
                     } else {
                         const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
                         
                         if (porcentaje >= 80) {
                             colorCuadrito = '#28a745'; // Verde
-                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares recomendados. El objetivo ahora debe ser la mejora continua, la actualización tecnológica y la documentación de estas buenas prácticas.";
+                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> El área cumple satisfactoriamente con los estándares. Se sugiere documentar las buenas prácticas y mantener la actualización constante.";
                         } else if (porcentaje >= 50) {
                             colorCuadrito = '#ffc107'; // Amarillo
-                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Existen capacidades operativas funcionales, pero se detectaron brechas en la normativa o infraestructura. Se recomienda formalizar los procedimientos internos y gestionar recursos para fortalecer esta área.";
+                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Existen capacidades operativas, pero se detectaron vacíos normativos o técnicos. Se recomienda formalizar procedimientos para asegurar la sostenibilidad.";
                         } else {
                             colorCuadrito = '#dc3545'; // Rojo
-                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se identificaron carencias críticas del acervo.";
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se identificaron debilidades críticas. Es urgente implementar un plan de acción inmediato para establecer las condiciones mínimas de operación y resguardo.";
                         }
                     }
 
-                    // --- GENERACIÓN DE HTML ---
-                    
-                    // 1. Fila Principal (Clickeable)
+                    // GENERACIÓN DE HTML
                     const trPrincipal = document.createElement('tr');
                     trPrincipal.className = 'fila-seccion';
                     trPrincipal.onclick = () => toggleDetalle(sec);
@@ -372,7 +378,6 @@
                         </td>
                     `;
 
-                    // 2. Fila Detalle (Oculta)
                     const trDetalle = document.createElement('tr');
                     trDetalle.id = `detalle-${sec}`;
                     trDetalle.className = 'fila-detalle';
@@ -390,12 +395,12 @@
 
             } catch (error) { 
                 console.error(error);
-                alert("Error de conexión al cargar resumen.");
+                Swal.fire("Error", "No se pudo conectar con el servidor.", "error");
             }
         }
 
         // =========================================================
-        // 3. FUNCIONES DE INTERACCIÓN
+        // 3. INTERACCIONES
         // =========================================================
         
         function toggleDetalle(id) {
@@ -403,19 +408,15 @@
             const btn = document.getElementById(`btn-${id}`);
             const filaPrincipal = btn.closest('tr');
 
-            // Cerrar otros (Efecto Acordeón Único - Opcional)
-            document.querySelectorAll('.fila-detalle').forEach(el => {
-                if (el.id !== `detalle-${id}`) el.classList.remove('visible');
-            });
-            document.querySelectorAll('.fila-seccion').forEach(el => {
-                if (el !== filaPrincipal) el.classList.remove('activa');
-            });
-
-            // Toggle actual
+            // Lógica de acordeón
             if (filaDetalle.classList.contains('visible')) {
                 filaDetalle.classList.remove('visible');
                 filaPrincipal.classList.remove('activa');
             } else {
+                // Cerrar otros (Opcional, para que solo uno esté abierto a la vez)
+                document.querySelectorAll('.fila-detalle').forEach(el => el.classList.remove('visible'));
+                document.querySelectorAll('.fila-seccion').forEach(el => el.classList.remove('activa'));
+
                 filaDetalle.classList.add('visible');
                 filaPrincipal.classList.add('activa');
             }
@@ -446,7 +447,7 @@
                     });
                     btn.innerHTML = '<i class="fas fa-check"></i> Enviado';
                 } else {
-                    throw new Error(resultado.error || 'Error del servidor');
+                    throw new Error(resultado.error || 'Error desconocido');
                 }
             } catch (error) {
                 console.error(error);
@@ -456,7 +457,7 @@
             }
         }
         
-        // Inicializar al cargar
+        // Inicializar al cargar la página
         document.addEventListener('DOMContentLoaded', cargarResumen);
     </script>
 </body>
