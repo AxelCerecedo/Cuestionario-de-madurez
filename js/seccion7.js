@@ -14,7 +14,7 @@ const CONFIG_SECCION = {
             tipo: "catalogo_tabla",
             obligatorio: true,
             graficar: true,
-            encabezados: ["Infraestructura / Herramienta", "Especificaciones"],
+            encabezados: ["Infraestructura Tecnológica"],
             opciones: [
                 // PADRES (Valen 1 punto)
                 { id: 481, texto: "Equipo de cómputo", ayuda: "Computadoras de escritorio o laptops asignadas al acervo." },

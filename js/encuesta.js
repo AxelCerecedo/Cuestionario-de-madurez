@@ -751,12 +751,12 @@ function crearHTMLPregunta(p) {
         tabla.style.fontSize = '0.95em';
 
         // =========================================================
-        // 1. CABECERA INTELIGENTE (1 vs 2 Columnas)
+        // 1. CABECERA INTELIGENTE (1 vs 2 Columnas) - CENTRADA
         // =========================================================
         const thead = document.createElement('thead');
         const trHead = document.createElement('tr');
         trHead.style.backgroundColor = "#f4f4f4";
-        trHead.style.textAlign = "left";
+        trHead.style.textAlign = "center"; // <--- AQUÍ CAMBIAMOS A CENTER
 
         // Definimos los títulos (Si no hay en JSON, usamos uno genérico)
         const misTitulos = p.encabezados || ["Opciones"];
@@ -765,13 +765,13 @@ function crearHTMLPregunta(p) {
         if (misTitulos.length === 2) {
             // CASO 2 COLUMNAS (Ideal para Secciones 7, 8, 9)
             trHead.innerHTML = `
-                <th style="padding: 10px; border: 1px solid #ddd; width: 40%; color:#333;">${misTitulos[0]}</th>
-                <th style="padding: 10px; border: 1px solid #ddd; width: 60%; color:#333;">${misTitulos[1]}</th>
+                <th style="padding: 10px; border: 1px solid #ddd; width: 40%; color:#333; text-align: center;">${misTitulos[0]}</th>
+                <th style="padding: 10px; border: 1px solid #ddd; width: 60%; color:#333; text-align: center;">${misTitulos[1]}</th>
             `;
         } else {
             // CASO 1 COLUMNA UNIFICADA (Ideal para Sección 6)
             trHead.innerHTML = `
-                <th colspan="2" style="padding: 12px; border: 1px solid #ddd; color: #333; font-weight: bold; text-align: left;">
+                <th colspan="2" style="padding: 12px; border: 1px solid #ddd; color: #333; font-weight: bold; text-align: center;">
                     ${misTitulos[0]}
                 </th>
             `;
