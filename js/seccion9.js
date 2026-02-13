@@ -15,7 +15,7 @@ const CONFIG_SECCION = {
             estilo_tabla: "desplegable", 
             obligatorio: true,
             graficar: true,
-            encabezados: ["Categoría", "Opciones disponibles"],
+            encabezados: ["Servicios", "Opciones disponibles"],
             opciones: [
                 // --- 1. SERVICIOS BÁSICOS (Cambiamos ID 1 a 91) ---
                 { 
