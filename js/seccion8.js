@@ -9,8 +9,8 @@ const CONFIG_SECCION = {
         {
             id: 49, 
             orden: 48,
-            texto: "Evaluación de procesos, normatividad y conservación",
-            ayuda: "Marque la casilla izquierda para confirmar. Si hay opciones, selecciónelas en la derecha.",
+            texto: "A continuación, se presenta una lista de procesos de planificación, gestión y conservación de acervos y colecciones",
+            ayuda: "Seleccione los que apliquen para su institución o archivo.",
             tipo: "catalogo_tabla", 
             obligatorio: true,
             graficar: true,
