@@ -739,7 +739,7 @@ function crearHTMLPregunta(p) {
         }, 600);
     }
 
-    // --- H. CATÁLOGO TIPO TABLA (DISEÑO HÍBRIDO: COMBINADO Y COLUMNAS) ---
+    // --- H. CATÁLOGO TIPO TABLA (ENCABEZADO ÚNICO + DISEÑO HÍBRIDO) ---
     else if (p.tipo === 'catalogo_tabla') {
         const tableContainer = document.createElement('div');
         tableContainer.style.overflowX = 'auto';
@@ -750,33 +750,39 @@ function crearHTMLPregunta(p) {
         tabla.style.marginTop = '10px';
         tabla.style.fontSize = '0.95em';
 
-        // Cabecera (Define las 2 columnas base)
+        // =========================================================
+        // 1. CABECERA (SOLO 1 COLUMNA UNIFICADA)
+        // =========================================================
         const thead = document.createElement('thead');
-        const titulos = p.encabezados || ["Concepto / Instrucción", "Detalles / Opciones"];
+        // Tomamos el primer elemento del array de encabezados, o un default
+        const tituloHeader = (p.encabezados && p.encabezados[0]) ? p.encabezados[0] : "Opciones";
+        
         thead.innerHTML = `
             <tr style="background-color: #f4f4f4; text-align: left;">
-                <th style="padding: 10px; border: 1px solid #ddd; width: 40%;">${titulos[0]}</th>
-                <th style="padding: 10px; border: 1px solid #ddd; width: 60%;">${titulos[1]}</th>
+                <th colspan="2" style="padding: 12px; border: 1px solid #ddd; color: #333; font-weight: bold;">
+                    ${tituloHeader}
+                </th>
             </tr>
         `;
         tabla.appendChild(thead);
 
+        // =========================================================
+        // 2. CUERPO DE LA TABLA
+        // =========================================================
         const tbody = document.createElement('tbody');
         
         p.opciones.forEach(opt => {
             const tr = document.createElement('tr');
             
-            // =========================================================
-            // CASO A: FILA SIMPLE (SIN SUB-OPCIONES) -> COMBINAR CELDAS
-            // =========================================================
+            // --- CASO A: FILA SIMPLE (SIN SUB-OPCIONES) -> COMBINAR CELDAS ---
             if (!opt.sub_opciones) {
                 const tdUnico = document.createElement('td');
-                tdUnico.colSpan = 2; // 🔥 COMBINAR LAS 2 COLUMNAS
+                tdUnico.colSpan = 2; 
                 tdUnico.style.padding = '12px';
                 tdUnico.style.border = '1px solid #ddd';
                 tdUnico.style.backgroundColor = '#fff';
 
-                // 1. Contenedor Flex para Checkbox + Texto Principal
+                // Contenedor Flex
                 const divPrincipal = document.createElement('div');
                 divPrincipal.style.display = 'flex';
                 divPrincipal.style.alignItems = 'center';
@@ -794,44 +800,36 @@ function crearHTMLPregunta(p) {
                 const labelTexto = document.createElement('label');
                 labelTexto.style.cursor = 'pointer';
                 labelTexto.innerText = opt.texto;
-                
-                // Evento click en texto para marcar check
-                labelTexto.onclick = () => { 
-                    checkbox.checked = !checkbox.checked; 
-                    checkbox.dispatchEvent(new Event('change'));
-                };
+                labelTexto.onclick = () => { checkbox.checked = !checkbox.checked; checkbox.dispatchEvent(new Event('change')); };
 
                 divPrincipal.appendChild(checkbox);
                 divPrincipal.appendChild(labelTexto);
                 tdUnico.appendChild(divPrincipal);
 
-                // 2. Texto de Ayuda (DEBAJO de la instrucción)
+                // Ayuda
                 if (opt.ayuda) {
                     const divAyuda = document.createElement('div');
                     divAyuda.innerText = opt.ayuda;
                     divAyuda.style.marginTop = '5px';
-                    divAyuda.style.marginLeft = '26px'; // Indentado para alinearse con el texto
+                    divAyuda.style.marginLeft = '26px';
                     divAyuda.style.fontSize = '0.9em';
                     divAyuda.style.color = '#666';
                     divAyuda.style.fontStyle = 'italic';
                     tdUnico.appendChild(divAyuda);
                 }
-
                 tr.appendChild(tdUnico);
             }
 
-            // =========================================================
-            // CASO B: FILA COMPLEJA (CON SUB-OPCIONES) -> 2 COLUMNAS
-            // =========================================================
+            // --- CASO B: FILA COMPLEJA (CON SUB-OPCIONES) -> 2 COLUMNAS ---
             else {
-                // --- COLUMNA 1: CHECKBOX PADRE + TEXTO + AYUDA ---
+                // COLUMNA 1 (IZQUIERDA)
                 const tdIzq = document.createElement('td');
                 tdIzq.style.padding = '12px';
                 tdIzq.style.border = '1px solid #ddd';
                 tdIzq.style.verticalAlign = 'top';
-                tdIzq.style.backgroundColor = '#fdfdfd'; // Ligeramente diferente para distinguir
+                tdIzq.style.width = '40%'; // Forzamos ancho para mantener orden visual
+                tdIzq.style.backgroundColor = '#fdfdfd';
                 
-                // A. Checkbox Padre y Título
                 const divHeader = document.createElement('div');
                 divHeader.style.display = 'flex';
                 divHeader.style.gap = '10px';
@@ -849,7 +847,6 @@ function crearHTMLPregunta(p) {
                 divHeader.appendChild(document.createTextNode(opt.texto));
                 tdIzq.appendChild(divHeader);
 
-                // B. Ayuda (EN LA COLUMNA IZQUIERDA)
                 if (opt.ayuda) {
                     const divAyuda = document.createElement('div');
                     divAyuda.innerText = opt.ayuda;
@@ -859,14 +856,14 @@ function crearHTMLPregunta(p) {
                     divAyuda.style.fontStyle = 'italic';
                     tdIzq.appendChild(divAyuda);
                 }
-                
                 tr.appendChild(tdIzq);
 
-                // --- COLUMNA 2: SOLO LAS OPCIONES (SUB-OPCIONES) ---
+                // COLUMNA 2 (DERECHA)
                 const tdDer = document.createElement('td');
                 tdDer.style.padding = '12px';
                 tdDer.style.border = '1px solid #ddd';
                 tdDer.style.verticalAlign = 'middle';
+                tdDer.style.width = '60%';
 
                 const divSub = document.createElement('div');
                 divSub.style.padding = '10px';
@@ -874,18 +871,17 @@ function crearHTMLPregunta(p) {
                 divSub.style.borderRadius = '6px';
                 divSub.style.border = '1px solid #eee';
                 
-                // DETECCIÓN DE MODO (Radio vs Checkbox)
                 const esRadio = (opt.modo === 'unica');
                 const tipoInput = esRadio ? 'radio' : 'checkbox';
                 const nombreGrupo = esRadio ? `grupo_radio_${opt.id}` : null;
 
                 const gridSoft = document.createElement('div');
                 gridSoft.style.display = 'grid';
-                gridSoft.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))'; // Grid responsive
+                gridSoft.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
                 gridSoft.style.gap = '10px';
 
                 opt.sub_opciones.forEach(sub => {
-                    const esNinguno = sub.texto.trim().toLowerCase() === 'ninguno' || sub.texto.includes("No se realizan") || sub.texto.includes("No se lleva");
+                    const esNinguno = sub.texto.trim().toLowerCase().includes('ningun') || sub.texto.includes("No se realizan") || sub.texto.includes("No se lleva");
 
                     const labelSub = document.createElement('label');
                     labelSub.style.fontSize = '0.9em';
@@ -927,41 +923,27 @@ function crearHTMLPregunta(p) {
                         gridSoft.appendChild(labelSub);
                     }
 
-                    // --- EVENTOS INTERNOS ---
+                    // Eventos
                     chkSub.addEventListener('change', function() {
-                        // A. Mostrar/Ocultar "Otro"
                         if (inputEsp) {
                             inputEsp.style.display = this.checked ? 'block' : 'none';
                             if(!this.checked) inputEsp.value = '';
                         }
-                        
-                        // B. Limpieza de Radios (si selecciono uno, oculto los "otros" de los demás)
                         if (esRadio && this.checked) {
                              const otrosInputs = gridSoft.querySelectorAll('.input-especificar-multiple');
-                             otrosInputs.forEach(inp => {
-                                 if(inp !== inputEsp) {
-                                     inp.style.display = 'none';
-                                     inp.value = '';
-                                 }
-                             });
+                             otrosInputs.forEach(inp => { if(inp !== inputEsp) { inp.style.display='none'; inp.value=''; } });
                         }
-
-                        // C. Lógica "Ninguno" (Solo Checkbox)
                         if (!esRadio) {
-                            const todosLosChecks = gridSoft.querySelectorAll('input[type="checkbox"]');
+                            const todos = gridSoft.querySelectorAll('input[type="checkbox"]');
                             if (esNinguno && this.checked) {
-                                todosLosChecks.forEach(c => { if (c !== this) { c.checked = false; c.dispatchEvent(new Event('change')); } });
+                                todos.forEach(c => { if (c !== this) { c.checked = false; c.dispatchEvent(new Event('change')); } });
                             } else if (!esNinguno && this.checked) {
-                                todosLosChecks.forEach(c => { if (c.dataset.esNinguno === 'true') c.checked = false; });
+                                todos.forEach(c => { if (c.dataset.esNinguno === 'true') c.checked = false; });
                             }
                         }
-
-                        // D. Activar Padre automáticamente al seleccionar un hijo
-                        if (checkboxPadre && this.checked) {
-                            if (!checkboxPadre.checked) {
-                                checkboxPadre.checked = true;
-                                checkboxPadre.dispatchEvent(new Event('change'));
-                            }
+                        if (checkboxPadre && this.checked && !checkboxPadre.checked) {
+                            checkboxPadre.checked = true;
+                            checkboxPadre.dispatchEvent(new Event('change'));
                         }
                     });
                 });
@@ -970,30 +952,22 @@ function crearHTMLPregunta(p) {
                 tdDer.appendChild(divSub);
                 tr.appendChild(tdDer);
 
-                // --- LÓGICA DE BLOQUEO PADRE/HIJO ---
+                // Bloqueo
                 const actualizarEstado = () => {
                     if (checkboxPadre.checked) {
-                        divSub.style.opacity = '1';
-                        divSub.style.pointerEvents = 'auto';
+                        divSub.style.opacity = '1'; divSub.style.pointerEvents = 'auto';
                         divSub.querySelectorAll('input').forEach(i => i.disabled = false);
                     } else {
-                        divSub.style.opacity = '0.5';
-                        divSub.style.pointerEvents = 'none';
+                        divSub.style.opacity = '0.5'; divSub.style.pointerEvents = 'none';
                         divSub.querySelectorAll('input').forEach(i => {
                             i.disabled = true;
-                            if ((i.type === 'checkbox' || i.type === 'radio') && i.checked) {
-                                i.checked = false;
-                                i.dispatchEvent(new Event('change')); 
-                            }
+                            if (i.checked) { i.checked = false; i.dispatchEvent(new Event('change')); }
                         });
                     }
                 };
-                
-                // Inicializar y escuchar cambios en el padre
                 actualizarEstado();
                 checkboxPadre.addEventListener('change', actualizarEstado);
             }
-
             tbody.appendChild(tr);
         });
 
