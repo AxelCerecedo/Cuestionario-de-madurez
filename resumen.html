@@ -206,6 +206,8 @@
         async function enviarCorreo() {
             const idUsuario = localStorage.getItem('idUsuario');
             const btn = document.getElementById('btnEnviarCorreo');
+            
+            // Estado de carga
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
@@ -215,16 +217,30 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ idUsuario: idUsuario })
                 });
+
                 const resultado = await response.json();
 
                 if (response.ok) {
-                    Swal.fire({ title: '¡Correo Enviado!', text: `Resultados enviados correctamente.`, icon: 'success', confirmButtonColor: '#7c1225' });
+                    // Intentamos recuperar el correo de la respuesta del servidor
+                    // Si el backend no lo devuelve, decimos "tu correo registrado"
+                    const correoDestino = resultado.email || resultado.correo || "tu dirección de correo registrada";
+
+                    Swal.fire({
+                        title: '¡Correo Enviado!',
+                        html: `El reporte ha sido enviado exitosamente a:<br><strong>${correoDestino}</strong><br><br><small>Por favor, revisa tu bandeja de entrada y la carpeta de spam.</small>`,
+                        icon: 'success',
+                        confirmButtonColor: '#7c1225'
+                    });
+                    
                     btn.innerHTML = '<i class="fas fa-check"></i> Enviado';
                 } else {
-                    throw new Error(resultado.error);
+                    throw new Error(resultado.error || 'Error desconocido');
                 }
             } catch (error) {
-                Swal.fire('Error', 'No se pudo enviar.', 'error');
+                console.error(error);
+                Swal.fire('Error', 'No se pudo enviar el correo en este momento.', 'error');
+                
+                // Restaurar botón
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-envelope"></i> Enviar a mi correo';
             }
