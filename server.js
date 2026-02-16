@@ -1282,7 +1282,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                     iconoEstado = "⚠️ En Desarrollo";
                 } else {
                     colorSeccion = '#dc3545'; 
-                    recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se han identificado carencias críticas que comprometen la gestión. Es urgente implementar un plan de acción para establecer las condiciones mínimas de operación.";
+                    recomendacionTexto = "🛑 <b>Nivel minimo:</b> Se han identificado carencias que comprometen la gestión. Se recomienda implementar un plan de acción para mejorar las condiciones mínimas de operación.";
                     iconoEstado = "🛑 Atención Prioritaria";
                 }
             }
