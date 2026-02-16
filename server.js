@@ -1309,7 +1309,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         // 6. ENVIAR CON BREVO
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
         const emailData = {
-            sender: { name: "Diagnóstico de Archivos", email: "axelcerecedo117@gmail.com" },
+            sender: { name: "Diagnóstico de la institución", email: "axelcerecedo117@gmail.com" },
             to: [{ email: usuario.email, name: usuario.nombre_completo }],
             subject: `📊 Resultados de su Diagnóstico`,
             htmlContent: `
