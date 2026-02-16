@@ -1089,128 +1089,109 @@ function crearHTMLPregunta(p) {
         div.appendChild(container);
     }
 
-    // --- J. FECHA FLEXIBLE (AÑO OBLIGATORIO, MES/DIA OPCIONAL) ---
+    // --- J. FECHA FLEXIBLE (CON VALIDACIÓN DE DÍAS) ---
     else if (p.tipo === 'fecha_flexible') {
         const container = document.createElement('div');
-        container.style.display = 'flex';
-        container.style.gap = '10px';
-        container.style.flexWrap = 'wrap'; // Para móviles
+        container.style.cssText = 'display: flex; gap: 10px; flex-wrap: wrap;'; 
 
-        // 1. INPUT OCULTO (Donde se guardará el valor final combinado YYYY-MM-DD)
+        // 1. INPUT OCULTO
         const inputFinal = document.createElement('input');
-        inputFinal.type = 'hidden'; // Oculto
-        inputFinal.className = 'input-respuesta'; // Clase para que lo detecte enviarFormulario
+        inputFinal.type = 'hidden'; 
+        inputFinal.className = 'input-respuesta'; 
         inputFinal.dataset.idPregunta = p.id;
-        inputFinal.dataset.tipo = 'texto'; // Lo trataremos como texto para guardar el string
+        inputFinal.dataset.tipo = 'fecha_flexible'; // Ojo: ajusté esto a fecha_flexible para coincidir con tu lógica anterior
         if(p.obligatorio) inputFinal.required = true;
         
-        // 2. CAMPO AÑO (Obligatorio)
+        // 2. AÑO
         const divAno = document.createElement('div');
-        divAno.style.flex = '1';
-        divAno.style.minWidth = '100px';
+        divAno.style.flex = '1'; divAno.style.minWidth = '100px';
         divAno.innerHTML = '<label style="font-size:0.85em; display:block; margin-bottom:2px; color:#666;">Año <span style="color:red">*</span></label>';
-        
         const inputAno = document.createElement('input');
-        inputAno.type = 'number';
-        inputAno.placeholder = "AAAA";
-        inputAno.min = 1500;
-        inputAno.max = new Date().getFullYear();
-        inputAno.className = 'input-auxiliar-fecha'; // Clase auxiliar
-        inputAno.style.width = '100%';
-        inputAno.style.padding = '8px';
-        inputAno.style.border = '1px solid #ccc';
-        inputAno.style.borderRadius = '4px';
-
+        inputAno.type = 'number'; inputAno.placeholder = "AAAA"; inputAno.min = 1900; inputAno.max = new Date().getFullYear() + 5;
+        inputAno.className = 'input-auxiliar-fecha input-aux-ano'; 
+        inputAno.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;';
         divAno.appendChild(inputAno);
 
-        // 3. CAMPO MES (Opcional)
+        // 3. MES
         const divMes = document.createElement('div');
-        divMes.style.flex = '1';
-        divMes.style.minWidth = '120px';
-        divMes.innerHTML = '<label style="font-size:0.85em; display:block; margin-bottom:2px; color:#666;">Mes (Opcional)</label>';
-        
+        divMes.style.flex = '1'; divMes.style.minWidth = '120px';
+        divMes.innerHTML = '<label style="font-size:0.85em; display:block; margin-bottom:2px; color:#666;">Mes</label>';
         const selectMes = document.createElement('select');
-        selectMes.className = 'input-auxiliar-fecha';
-        selectMes.style.width = '100%';
-        selectMes.style.padding = '8px';
-        selectMes.style.border = '1px solid #ccc';
-        selectMes.style.borderRadius = '4px';
+        selectMes.className = 'input-auxiliar-fecha input-aux-mes';
+        selectMes.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;';
         
         selectMes.add(new Option('Sin mes', ''));
         ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].forEach((m, i) => {
-            // Guardamos el mes como 01, 02, etc.
-            const valor = (i + 1).toString().padStart(2, '0');
-            selectMes.add(new Option(m, valor));
+            selectMes.add(new Option(m, (i + 1).toString().padStart(2, '0')));
         });
-
         divMes.appendChild(selectMes);
 
-        // 4. CAMPO DÍA (Opcional)
+        // 4. DÍA
         const divDia = document.createElement('div');
-        divDia.style.flex = '0.5';
-        divDia.style.minWidth = '80px';
-        divDia.innerHTML = '<label style="font-size:0.85em; display:block; margin-bottom:2px; color:#666;">Día (Opc)</label>';
-        
+        divDia.style.flex = '0.5'; divDia.style.minWidth = '80px';
+        divDia.innerHTML = '<label style="font-size:0.85em; display:block; margin-bottom:2px; color:#666;">Día</label>';
         const inputDia = document.createElement('input');
-        inputDia.type = 'number';
-        inputDia.placeholder = "DD";
-        inputDia.min = 1;
-        inputDia.max = 31;
-        inputDia.className = 'input-auxiliar-fecha';
-        inputDia.style.width = '100%';
-        inputDia.style.padding = '8px';
-        inputDia.style.border = '1px solid #ccc';
-        inputDia.style.borderRadius = '4px';
-
+        inputDia.type = 'number'; inputDia.placeholder = "DD"; inputDia.min = 1; inputDia.max = 31;
+        inputDia.className = 'input-auxiliar-fecha input-aux-dia';
+        inputDia.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;';
         divDia.appendChild(inputDia);
 
-        // 5. LÓGICA DE UNIÓN
+        // 5. FUNCIÓN DE VALIDACIÓN Y UNIÓN
         const actualizarFecha = () => {
             const y = inputAno.value;
             const m = selectMes.value;
+            
+            // --- VALIDACIÓN DE DÍAS (NUEVO) ---
+            if (m) {
+                // Obtenemos el último día del mes (año, mes, 0)
+                // Usamos el año actual si no han escrito año, para validar bisiestos por defecto
+                const yearParaCalculo = y || new Date().getFullYear();
+                const maxDias = new Date(yearParaCalculo, parseInt(m), 0).getDate();
+                
+                inputDia.max = maxDias; // Ajustamos el atributo max
+                
+                // Si el usuario tenía puesto 31 y cambia a Febrero, se lo bajamos a 28/29
+                if (parseInt(inputDia.value) > maxDias) {
+                    inputDia.value = maxDias;
+                }
+            } else {
+                inputDia.max = 31; // Si no hay mes, permitimos hasta 31
+            }
+            // ----------------------------------
+
             let d = inputDia.value;
             
             if (!y) {
-                inputFinal.value = ''; // Si no hay año, no hay fecha válida
+                inputFinal.value = ''; 
                 return;
             }
 
-            // Formato inteligente
             let fechaTexto = y;
-            
             if (m) {
                 fechaTexto += `-${m}`;
-                // Solo agregamos día si hay mes
                 if (d) {
-                    d = d.toString().padStart(2, '0'); // Asegurar dos dígitos (05)
+                    d = d.toString().padStart(2, '0');
                     fechaTexto += `-${d}`;
                 }
             }
 
             inputFinal.value = fechaTexto;
-            // Disparar evento para que el sistema detecte cambio
             inputFinal.dispatchEvent(new Event('change', { bubbles: true }));
         };
 
-        // Listeners
         inputAno.addEventListener('input', actualizarFecha);
         selectMes.addEventListener('change', actualizarFecha);
         inputDia.addEventListener('input', actualizarFecha);
 
-        container.appendChild(inputFinal); // El oculto
-        container.appendChild(divAno);
-        container.appendChild(divMes);
-        container.appendChild(divDia);
-        
+        container.append(inputFinal, divAno, divMes, divDia);
         div.appendChild(container);
     }
 
-   //-- K. RANGO DE FECHAS FLEXIBLE (OBLIGATORIO AMBOS AÑOS) --
+   // -- K. RANGO DE FECHAS FLEXIBLE (CON VALIDACIÓN DE DÍAS) --
     else if (p.tipo === 'rango_fechas_flexibles') {
         const mainContainer = document.createElement('div');
         mainContainer.style.cssText = 'display: flex; flex-direction: column; gap: 15px;';
 
-        // Input oculto (solo recibe valor si ambos lados están llenos)
         const inputFinal = document.createElement('input');
         inputFinal.type = 'hidden';
         inputFinal.className = 'input-respuesta'; 
@@ -1222,22 +1203,14 @@ function crearHTMLPregunta(p) {
             const wrapper = document.createElement('div');
             wrapper.className = 'rango-bloque-wrapper'; 
             wrapper.style.cssText = 'border:1px solid #eee; padding:10px; border-radius:8px; background:#f9f9f9;';
-            wrapper.innerHTML = `<div style="font-weight:bold; margin-bottom:5px; color:#555; font-size:0.9em;">${titulo} <span style="color:red">*</span></div>`;
+            wrapper.innerHTML = `<div style="font-weight:bold; margin-bottom:5px; color:#555; font-size:0.9em;">${titulo} ${esObligatorio ? '<span style="color:red">*</span>' : ''}</div>`;
             
             const row = document.createElement('div'); row.style.cssText='display:flex; gap:5px; flex-wrap:wrap;';
             
-            // --- AÑO (OBLIGATORIO) ---
+            // --- AÑO ---
             const iAno = document.createElement('input'); 
-            iAno.className='input-aux-ano'; 
-            iAno.type='number'; 
-            iAno.placeholder='AAAA'; 
-            iAno.min = '1000'; 
-            
-            // 🔥 CLAVE: Hacemos obligatorio el input VISIBLE del año
+            iAno.className='input-aux-ano'; iAno.type='number'; iAno.placeholder='AAAA'; iAno.min = '1900'; 
             if (esObligatorio) iAno.required = true;
-
-            // Bloqueo de negativos y caracteres no numéricos
-            iAno.onkeydown = (e) => { if(["-", "+", "e", "."].includes(e.key)) e.preventDefault(); };
             iAno.style.cssText='flex:1; min-width:80px; padding:5px; border:1px solid #ccc; border-radius:3px;';
             
             // --- MES ---
@@ -1248,51 +1221,51 @@ function crearHTMLPregunta(p) {
             
             // --- DÍA ---
             const iDia = document.createElement('input'); 
-            iDia.className='input-aux-dia'; 
-            iDia.type='number'; 
-            iDia.placeholder='DD'; 
-            iDia.min = '1'; iDia.max = '31';
-            iDia.onkeydown = (e) => { if(["-", "+", "e", "."].includes(e.key)) e.preventDefault(); };
+            iDia.className='input-aux-dia'; iDia.type='number'; iDia.placeholder='DD'; iDia.min = '1'; iDia.max = '31';
             iDia.style.cssText='flex:0.5; min-width:60px; padding:5px; border:1px solid #ccc; border-radius:3px;';
+
+            // --- VALIDACIÓN INTERNA DEL BLOQUE ---
+            const validarDiasBloque = () => {
+                const m = sMes.value;
+                const y = iAno.value;
+
+                if (m) {
+                    const yearCalc = y || new Date().getFullYear();
+                    // Obtener días máximos del mes
+                    const maxDias = new Date(yearCalc, parseInt(m), 0).getDate();
+                    iDia.max = maxDias;
+
+                    // Corregir si se pasa
+                    if (parseInt(iDia.value) > maxDias) {
+                        iDia.value = maxDias;
+                    }
+                } else {
+                    iDia.max = 31;
+                }
+            };
+
+            // Escuchar cambios para validar
+            iAno.addEventListener('input', validarDiasBloque);
+            sMes.addEventListener('change', validarDiasBloque);
             
             row.append(iAno, sMes, iDia); wrapper.appendChild(row);
             return { wrapper, iAno, sMes, iDia };
         };
 
-        // Creamos los dos bloques obligatorios
         const b1 = crearBloque("Desde (Fecha Inicial)", p.obligatorio);
         const b2 = crearBloque("Hasta (Fecha Final)", p.obligatorio);
 
         const unir = () => {
-            console.group("🕵️‍♂️ DEBUG: Uniendo Fechas (Pregunta " + p.id + ")");
-
-            // 1. Ver qué valores brutos tienen los inputs
-            console.log("   Inicio -> Año:", b1.iAno.value, "Mes:", b1.sMes.value, "Día:", b1.iDia.value);
-            console.log("   Fin    -> Año:", b2.iAno.value, "Mes:", b2.sMes.value, "Día:", b2.iDia.value);
-
             // Construimos Fecha 1
             const f1 = b1.iAno.value ? (b1.iAno.value + (b1.sMes.value ? `-${b1.sMes.value}` + (b1.iDia.value ? `-${b1.iDia.value.toString().padStart(2,'0')}`:'') : '')) : '';
-            
             // Construimos Fecha 2
             const f2 = b2.iAno.value ? (b2.iAno.value + (b2.sMes.value ? `-${b2.sMes.value}` + (b2.iDia.value ? `-${b2.iDia.value.toString().padStart(2,'0')}`:'') : '')) : '';
             
-            console.log("   Fecha 1 armada:", f1);
-            console.log("   Fecha 2 armada:", f2);
-
-            // LÓGICA DE ASIGNACIÓN
             if (f1 && f2) {
                 inputFinal.value = `${f1} al ${f2}`;
-                console.log("   ✅ ¡AMBAS FECHAS LISTAS! Valor asignado al hidden:", inputFinal.value);
             } else {
                 inputFinal.value = ''; 
-                console.warn("   ⚠️ Faltan datos. El hidden se queda VACÍO.");
-                if(!f1) console.log("      Falta Fecha Inicio completa (mínimo el año)");
-                if(!f2) console.log("      Falta Fecha Fin completa (mínimo el año)");
             }
-
-            console.groupEnd();
-
-            // Avisamos cambio
             inputFinal.dispatchEvent(new Event('change', {bubbles:true}));
         };
 
