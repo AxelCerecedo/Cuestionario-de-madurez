@@ -1161,30 +1161,27 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =======================
-// 📧 ENDPOINT: CORREO 
+// 📧 ENDPOINT: CORREO (DISEÑO LIMPIO - SIN PUNTAJES)
 // =======================
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
 
-    // Nombres de las secciones
     const NOMBRES_SECCIONES = {
-        1: "Identificación",
+        1: "Identificación de la Institución",
         2: "Gestión Institucional",
         3: "Caracterización del Acervo",
         4: "Inventario y Catalogación",
         5: "Gestión de información",
         6: "Recursos Humanos",
         7: "Infraestructura Tecnológica",
-        8: "Normatividad",
+        8: "Normatividad y Procesos",
         9: "Servicios"
     };
 
-    // Máximos por sección (Para que aparezca ej: "5 / 5")
     const MAXIMOS_SECCION = {
         1: 0, 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
     };
 
-    // Función auxiliar para saber a qué sección pertenece cada pregunta
     function identificarSeccion(idPregunta) {
         const id = parseInt(idPregunta);
         if (id >= 1 && id <= 13) return 1;
@@ -1199,11 +1196,8 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         return 0;
     }
 
-    console.log("----------------------------------------------------");
-    console.log(`📩 Solicitud de correo para ID Usuario: ${idUsuario}`);
-
     try {
-        // 1. OBTENER DATOS GENERALES
+        // 1. OBTENER DATOS
         const queryUsuario = `
             SELECT u.nombre_completo, u.email, i.id_institucion, i.puntaje_total 
             FROM usuarios_registrados u
@@ -1216,13 +1210,9 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         
         const usuario = rows[0];
         const idInstitucion = usuario.id_institucion;
-        
-        // El total lo tomamos directo de la BD (tal como lo haces en /resumen)
-        let puntajeTotal = usuario.puntaje_total || 0; 
+        const puntajeTotal = usuario.puntaje_total || 0; 
 
-        console.log(`👤 Usuario: ${usuario.nombre_completo} | Total BD: ${puntajeTotal}`);
-
-        // 2. OBTENER DESGLOSE DETALLADO (SQL IDÉNTICO A /resumen)
+        // 2. OBTENER DESGLOSE
         const sqlDetalle = `
             SELECT id_pregunta, SUM(puntos_otorgados) as puntos 
             FROM (
@@ -1236,8 +1226,6 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         `;
 
         const [filasPuntos] = await db.query(sqlDetalle, [idInstitucion, idInstitucion, idInstitucion]);
-
-        // Inicializamos contador por secciones
         const reporteSecciones = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
         
         filasPuntos.forEach(fila => {
@@ -1248,50 +1236,59 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             }
         });
 
-        // 3. --- AQUÍ ESTABA EL ERROR: APLICAR EL BONO VISUALMENTE ---
-      
+        // 3. APLICAR BONO (SECCIÓN 2)
         const sqlBono = `SELECT COUNT(*) as c FROM respuestas WHERE id_institucion=? AND id_pregunta IN (14,15) AND respuesta_texto IS NOT NULL AND respuesta_texto != ''`;
         const [rowsBono] = await db.query(sqlBono, [idInstitucion]);
-        
-        if(rowsBono[0].c === 2) {
-            console.log("🎁 Bono de Sección 2 aplicado en el correo (+1 punto)");
-            reporteSecciones[2] += 1; 
-        }
+        if(rowsBono[0].c === 2) { reporteSecciones[2] += 1; }
 
-        // 4. LÓGICA DE NIVELES 
-        const MAX_PUNTAJE = 200; 
-        const porcentaje = MAX_PUNTAJE > 0 ? Math.round((puntajeTotal / MAX_PUNTAJE) * 100) : 0;
-
-        let nivel = "Inicial";
-        let mensaje = "El nivel de madurez es muy bajo. Se requiere iniciar procesos básicos.";
-        let colorFondo = "#dc3545"; // Rojo
+        // 4. DETERMINAR COLOR GLOBAL (TARJETA PRINCIPAL)
+        // Usamos la misma lógica que en el frontend
+        let colorFondoGlobal = "#dc3545"; // Rojo
+        let textoNivelGlobal = "Diagnóstico Finalizado";
 
         if (puntajeTotal >= 140) { 
-            nivel = "Avanzado"; 
-            mensaje = "¡Excelente! Nivel óptimo de cumplimiento, conservación y gestión digital."; 
-            colorFondo = "#28a745"; // Verde
-        } 
-        else if (puntajeTotal >= 90) { 
-            nivel = "Intermedio"; 
-            mensaje = "Buen nivel de gestión y control. Enfoque sus esfuerzos en la mejora continua."; 
-            colorFondo = "#17a2b8"; // Azul Cian
-        } 
-        else if (puntajeTotal >= 45) { 
-            nivel = "Básico"; 
-            mensaje = "Existen procesos incipientes. Se requiere formalización y estandarización."; 
-            colorFondo = "#ffc107"; // Amarillo
+            colorFondoGlobal = "#28a745"; // Verde
+        } else if (puntajeTotal >= 90) { 
+            colorFondoGlobal = "#17a2b8"; // Azul/Cian
+        } else if (puntajeTotal >= 45) { 
+            colorFondoGlobal = "#ffc107"; // Amarillo
         } 
 
-        // 5. GENERAR TABLA HTML DEL DESGLOSE (Ahora sí usará reporteSecciones[2] actualizado)
+        // 5. GENERAR FILAS HTML (SEMÁFORO SIN NÚMEROS)
         let filasHTML = '';
+        
         for (let i = 1; i <= 9; i++) {
+            const puntos = reporteSecciones[i];
+            const maximo = MAXIMOS_SECCION[i] || 1;
+            const porcentaje = (puntos / maximo) * 100;
+
+            let colorSeccion = '#6c757d'; // Gris
+            let textoEstado = "";
+
+            if (i === 1) {
+                colorSeccion = '#17a2b8'; // Azul
+                textoEstado = "Información General";
+            } else {
+                if (porcentaje >= 80) {
+                    colorSeccion = '#28a745'; // Verde
+                    textoEstado = "Nivel Consolidado";
+                } else if (porcentaje >= 50) {
+                    colorSeccion = '#ffc107'; // Amarillo
+                    textoEstado = "Nivel en Desarrollo";
+                } else {
+                    colorSeccion = '#dc3545'; // Rojo
+                    textoEstado = "Atención Prioritaria";
+                }
+            }
+
             filasHTML += `
                 <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px 10px; color: #555; font-size: 14px;">
+                    <td style="padding: 15px 10px; color: #333; font-size: 14px; vertical-align: middle;">
+                        <span style="display:inline-block; width:12px; height:12px; background-color:${colorSeccion}; border-radius:3px; margin-right:10px;"></span>
                         ${i}. ${NOMBRES_SECCIONES[i]}
                     </td>
-                    <td style="padding: 12px 10px; text-align: right; color: #333; font-weight: bold; font-size: 14px;">
-                        ${reporteSecciones[i]} <span style="color:#aaa; font-weight:normal; font-size: 12px;">/ ${MAXIMOS_SECCION[i]}</span>
+                    <td style="padding: 15px 10px; text-align: right; color: #555; font-size: 13px; font-weight: 600;">
+                        ${textoEstado}
                     </td>
                 </tr>
             `;
@@ -1300,56 +1297,55 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         // 6. ENVIAR CORREO (BREVO)
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
         const emailData = {
-            sender: { 
-                name: "Diagnóstico de Archivos", 
-                email: "axelcerecedo117@gmail.com" 
-            },
-            to: [
-                { email: usuario.email, name: usuario.nombre_completo }
-            ],
-            subject: `📊 Resultados Finales: ${puntajeTotal} pts`,
+            sender: { name: "Diagnóstico de Archivos", email: "axelcerecedo117@gmail.com" }, // Ajusta tu remitente
+            to: [{ email: usuario.email, name: usuario.nombre_completo }],
+            subject: `📊 Resultados de su Diagnóstico`,
             htmlContent: `
             <!DOCTYPE html>
             <html>
-            <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: sans-serif;">
+            <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
                         <td align="center" style="padding: 40px 10px;">
-                            <table width="100%" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                            <table width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                                
                                 <tr>
-                                    <td align="center" style="background-color: ${colorFondo}; padding: 40px 20px; color: #ffffff;">
-                                        <div style="background: rgba(255,255,255,0.25); padding: 8px 25px; border-radius: 50px; font-weight: 800; font-size: 16px; text-transform: uppercase; display: inline-block; margin-bottom: 15px;">
-                                            ${nivel}
-                                        </div>
-                                        <div style="font-size: 80px; font-weight: 800; line-height: 1; margin-bottom: 5px;">${puntajeTotal}</div>
-                                        <div style="font-size: 16px; opacity: 0.95; margin-bottom: 25px;">
-                                            puntos de <strong>${MAX_PUNTAJE}</strong> posibles
-                                        </div>
-                                        <table width="80%" height="10" border="0" cellspacing="0" cellpadding="0" style="background: rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden;">
-                                            <tr>
-                                                <td width="${porcentaje}%" style="background-color: #ffffff;"></td>
-                                                <td width="${100 - porcentaje}%"></td>
-                                            </tr>
-                                        </table>
-                                        <div style="margin-top: 25px; font-weight: 500; font-size: 15px;">${mensaje}</div>
+                                    <td align="center" style="background-color: ${colorFondoGlobal}; padding: 40px 30px; color: #ffffff;">
+                                        <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
+                                        
+                                        <h2 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 700;">${textoNivelGlobal}</h2>
+                                        
+                                        <hr style="width: 50%; border: 0; border-top: 1px solid rgba(255,255,255,0.4); margin: 20px auto;">
+                                        
+                                        <p style="font-size: 16px; line-height: 1.6; margin: 0; opacity: 0.95;">
+                                            Agradecemos su tiempo y colaboración.<br><br>
+                                            La información ha sido procesada exitosamente. A continuación encontrará el desglose detallado y las recomendaciones específicas por área.
+                                        </p>
                                     </td>
                                 </tr>
+
                                 <tr>
                                     <td style="padding: 30px;">
-                                        <h3 style="color: #333; margin: 0 0 20px 0; font-size: 18px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">Desglose por Sección</h3>
+                                        <h3 style="color: ${colorFondoGlobal}; margin: 0 0 20px 0; font-size: 18px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+                                            Desglose por Áreas y Estado
+                                        </h3>
+                                        
                                         <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
                                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <thead style="background-color: #f9f9f9; color: #888; font-size: 12px; text-transform: uppercase;">
                                                     <tr>
-                                                        <th align="left" style="padding: 12px 10px; font-weight: 600;">Sección</th>
-                                                        <th align="right" style="padding: 12px 10px; font-weight: 600;">Puntos</th>
+                                                        <th align="left" style="padding: 12px 15px; font-weight: 600;">Área Evaluada</th>
+                                                        <th align="right" style="padding: 12px 15px; font-weight: 600;">Estado</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>${filasHTML}</tbody>
+                                                <tbody>
+                                                    ${filasHTML}
+                                                </tbody>
                                             </table>
                                         </div>
+
                                         <p style="text-align: center; color: #aaa; font-size: 12px; margin-top: 30px;">
-                                            Reporte para <strong>${usuario.nombre_completo}</strong>
+                                            Reporte generado para <strong>${usuario.nombre_completo}</strong>
                                         </p>
                                     </td>
                                 </tr>
@@ -1374,15 +1370,10 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("❌ Error Brevo:", errorData);
             return res.status(500).json({ error: errorData.message });
         }
 
-        console.log("✅ Correo enviado con BONO corregido.");
-        res.json({ 
-            message: 'Correo enviado correctamente', 
-            email: usuario.email 
-        });
+        res.json({ message: 'Correo enviado correctamente', email: usuario.email });
 
     } catch (error) {
         console.error("❌ Error interno:", error);
