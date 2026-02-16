@@ -206,18 +206,18 @@
                     // LÓGICA DE SEMÁFORO (Se mantiene igual)
                     if (numSec === 1) {
                         colorCuadrito = '#28a745'; 
-                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación. Asegúrese de mantenerlos actualizados.";
+                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
                     } else {
                         const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
                         if (porcentaje >= 80) {
                             colorCuadrito = '#28a745'; 
-                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares. Se sugiere mantener la documentación de buenas prácticas.";
+                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
                         } else if (porcentaje >= 50) {
                             colorCuadrito = '#ffc107'; 
-                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> Se cuenta con elementos funcionales, pero existen vacíos normativos o técnicos. Se recomienda formalizar procedimientos.";
+                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
                         } else {
                             colorCuadrito = '#dc3545'; 
-                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se detectaron debilidades críticas. Es urgente implementar un plan de acción para condiciones mínimas.";
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se recomienda la revisión e implementación de medidas correctivas para mejorar significativamente el desempeño en las diferentes secciones.";
                         }
                     }
 
