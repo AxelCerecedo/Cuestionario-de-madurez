@@ -1161,10 +1161,12 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =======================
-// 📧 ENDPOINT: CORREO (CON DETALLES Y SEMÁFORO DE 3 COLORES)
+// 📧 ENDPOINT: CORREO (CORREGIDO)
 // =======================
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
+
+    console.log(`📩 Iniciando envío de correo para Usuario ID: ${idUsuario}`);
 
     const NOMBRES_SECCIONES = {
         1: "Identificación de la Institución",
@@ -1229,6 +1231,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         const reporteSecciones = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
         
         filasPuntos.forEach(fila => {
+            // AQUÍ USAMOS numSeccion, NO numSec
             const numSeccion = identificarSeccion(fila.id_pregunta);
             const pts = parseInt(fila.puntos) || 0;
             if (reporteSecciones[numSeccion] !== undefined) {
@@ -1236,54 +1239,47 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             }
         });
 
-        // 3. APLICAR BONO (SECCIÓN 2)
+        // 3. APLICAR BONO
         const sqlBono = `SELECT COUNT(*) as c FROM respuestas WHERE id_institucion=? AND id_pregunta IN (14,15) AND respuesta_texto IS NOT NULL AND respuesta_texto != ''`;
         const [rowsBono] = await db.query(sqlBono, [idInstitucion]);
         if(rowsBono[0].c === 2) { reporteSecciones[2] += 1; }
 
-        // =========================================================
-        // 4. DETERMINAR COLOR GLOBAL (SOLO 3 COLORES: 🔴 🟡 🟢)
-        // =========================================================
-        let colorFondoGlobal = "#dc3545"; // Rojo por defecto
-        
-        if (puntajeTotal >= 140) { 
-            colorFondoGlobal = "#28a745"; // Verde (Consolidado)
-        } else if (puntajeTotal >= 45) { 
-            colorFondoGlobal = "#ffc107"; // Amarillo (En Desarrollo - Cubre el rango medio)
-        } else {
-            colorFondoGlobal = "#dc3545"; // Rojo (Inicial)
-        }
+        // 4. COLOR GLOBAL
+        let colorFondoGlobal = "#dc3545"; 
+        if (puntajeTotal >= 140) colorFondoGlobal = "#28a745";
+        else if (puntajeTotal >= 45) colorFondoGlobal = "#ffc107";
 
-        // 5. GENERAR FILAS HTML CON DETALLES (TEXTO VISIBLE)
+        // 5. GENERAR HTML (AQUÍ ESTABA EL POSIBLE ERROR)
         let filasHTML = '';
         
+        // Usamos la variable 'i', NO 'numSec'
         for (let i = 1; i <= 9; i++) {
             const puntos = reporteSecciones[i];
             const maximo = MAXIMOS_SECCION[i] || 1;
             const porcentaje = (puntos / maximo) * 100;
 
-            let colorSeccion = '#6c757d'; // Gris
+            let colorSeccion = '#6c757d'; 
             let textoRecomendacion = "";
             let iconoEstado = "";
 
             if (numSec === 1) {
-                colorCuadrito = '#28a745'; 
-                recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
-            } else {
-                const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
-                if (porcentaje >= 80) {
-                    colorCuadrito = '#28a745'; 
-                    recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
-                } else if (porcentaje >= 50) {
-                    colorCuadrito = '#ffc107'; 
-                    recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
-                } else {
-                    colorCuadrito = '#dc3545'; 
-                    recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se han identificado carencias críticas que comprometen la gestión. Es urgente implementar un plan de acción para establecer las condiciones mínimas de operación.";
-                }
-            }
+                        colorCuadrito = '#28a745'; 
+                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
+                    } else {
+                        const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
+                        if (porcentaje >= 80) {
+                            colorCuadrito = '#28a745'; 
+                            recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
+                        } else if (porcentaje >= 50) {
+                            colorCuadrito = '#ffc107'; 
+                            recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
+                        } else {
+                            colorCuadrito = '#dc3545'; 
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se han identificado carencias críticas que comprometen la gestión. Es urgente implementar un plan de acción para establecer las condiciones mínimas de operación.";
+                        }
+                    }
 
-            // Aquí construimos la fila con el texto visible debajo del título
+            // Construcción del String HTML
             filasHTML += `
                 <tr>
                     <td style="padding: 15px; border-bottom: 1px solid #eee;">
@@ -1291,12 +1287,10 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                             <span style="display:inline-block; width:12px; height:12px; background-color:${colorSeccion}; border-radius:3px; margin-right:8px;"></span>
                             <strong style="color: #333; font-size: 14px;">${i}. ${NOMBRES_SECCIONES[i]}</strong>
                         </div>
-                        
                         <div style="font-size: 13px; color: #666; margin-left: 24px; line-height: 1.4;">
                             ${textoRecomendacion}
                         </div>
                     </td>
-                    
                     <td style="padding: 15px; border-bottom: 1px solid #eee; text-align: right; vertical-align: top;">
                         <span style="font-size: 12px; font-weight: 600; color: #555; background: #f8f9fa; padding: 4px 8px; border-radius: 4px; white-space: nowrap;">
                             ${iconoEstado}
@@ -1306,7 +1300,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             `;
         }
 
-        // 6. ENVIAR CORREO (BREVO)
+        // 6. ENVIAR CON BREVO
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
         const emailData = {
             sender: { name: "Diagnóstico de Archivos", email: "axelcerecedo117@gmail.com" },
@@ -1315,15 +1309,14 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             htmlContent: `
             <!DOCTYPE html>
             <html>
-            <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: sans-serif;">
                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
                         <td align="center" style="padding: 40px 10px;">
                             <table width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                                
                                 <tr>
                                     <td align="center" style="background-color: ${colorFondoGlobal}; padding: 40px 30px; color: #ffffff;">
-                                        <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+                                        <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
                                         <h2 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 700;">Diagnóstico Finalizado</h2>
                                         <hr style="width: 50%; border: 0; border-top: 1px solid rgba(255,255,255,0.4); margin: 20px auto;">
                                         <p style="font-size: 16px; line-height: 1.6; margin: 0; opacity: 0.95;">
@@ -1332,21 +1325,16 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                                         </p>
                                     </td>
                                 </tr>
-
                                 <tr>
                                     <td style="padding: 30px;">
                                         <h3 style="color: ${colorFondoGlobal}; margin: 0 0 20px 0; font-size: 18px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
                                             Reporte Detallado por Área
                                         </h3>
-                                        
                                         <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
                                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                                <tbody>
-                                                    ${filasHTML}
-                                                </tbody>
+                                                <tbody>${filasHTML}</tbody>
                                             </table>
                                         </div>
-
                                         <p style="text-align: center; color: #aaa; font-size: 12px; margin-top: 30px;">
                                             Reporte generado para <strong>${usuario.nombre_completo}</strong>
                                         </p>
@@ -1380,6 +1368,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 
     } catch (error) {
         console.error("❌ Error interno:", error);
+        // Esto envía el error exacto al frontend para que lo veas en la consola
         res.status(500).json({ error: error.message });
     }
 });
