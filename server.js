@@ -1268,21 +1268,21 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 
             // --- CORRECCIÓN: Usamos 'i' en lugar de 'numSec' ---
             if (i === 1) {
-                colorSeccion = '#17a2b8'; // Azul
+                colorSeccion = '#28a745'; // Azul
                 textoRecomendacion = "Verifique que los datos de contacto estén actualizados.";
                 iconoEstado = "ℹ️ Información";
             } else {
                 if (porcentaje >= 80) {
                     colorSeccion = '#28a745'; 
-                    textoRecomendacion = "Cumple satisfactoriamente con los estándares. Se sugiere mantener la documentación.";
+                    recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
                     iconoEstado = "✅ Consolidado";
                 } else if (porcentaje >= 50) {
                     colorSeccion = '#ffc107'; 
-                    textoRecomendacion = "Existen avances pero se detectaron carencias normativas o técnicas.";
+                    recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
                     iconoEstado = "⚠️ En Desarrollo";
                 } else {
                     colorSeccion = '#dc3545'; 
-                    textoRecomendacion = "Se identificaron debilidades críticas. Requiere plan de acción inmediato.";
+                    recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se han identificado carencias críticas que comprometen la gestión. Es urgente implementar un plan de acción para establecer las condiciones mínimas de operación.";
                     iconoEstado = "🛑 Atención Prioritaria";
                 }
             }
