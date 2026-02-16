@@ -1268,7 +1268,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 
             // --- CORRECCIÓN: Usamos 'i' en lugar de 'numSec' ---
             if (i === 1) {
-                colorSeccion = '#28a745'; // Azul
+                colorSeccion = '#28a745'; 
                 textoRecomendacion = "Datos de contacto y ubicación.";
                 iconoEstado = "ℹ️ Información";
             } else {
