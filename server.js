@@ -1258,7 +1258,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             reporteSecciones[2] += 1; 
         }
 
-        // 4. LÓGICA DE NIVELES (COPIADA EXACTA DE TU RESUMEN)
+        // 4. LÓGICA DE NIVELES 
         const MAX_PUNTAJE = 200; 
         const porcentaje = MAX_PUNTAJE > 0 ? Math.round((puntajeTotal / MAX_PUNTAJE) * 100) : 0;
 
