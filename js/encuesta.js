@@ -1187,7 +1187,7 @@ function crearHTMLPregunta(p) {
         div.appendChild(container);
     }
 
-   // -- K. RANGO DE FECHAS FLEXIBLE (CON VALIDACIÓN DE DÍAS) --
+   // -- K. RANGO DE FECHAS FLEXIBLE (CORREGIDO: NO PERMITE 31 EN FEBRERO) --
     else if (p.tipo === 'rango_fechas_flexibles') {
         const mainContainer = document.createElement('div');
         mainContainer.style.cssText = 'display: flex; flex-direction: column; gap: 15px;';
@@ -1231,22 +1231,33 @@ function crearHTMLPregunta(p) {
 
                 if (m) {
                     const yearCalc = y || new Date().getFullYear();
-                    // Obtener días máximos del mes
+                    // Obtener días máximos del mes (28, 29, 30 o 31)
                     const maxDias = new Date(yearCalc, parseInt(m), 0).getDate();
+                    
+                    // Actualizar el atributo max
                     iDia.max = maxDias;
 
-                    // Corregir si se pasa
-                    if (parseInt(iDia.value) > maxDias) {
-                        iDia.value = maxDias;
+                    // Corregir si el usuario escribió un número mayor
+                    if (iDia.value && parseInt(iDia.value) > maxDias) {
+                        iDia.value = maxDias; // Lo regresa al máximo permitido (ej: de 31 a 28)
+                    }
+                    // Corregir si escribió 0 o negativos
+                    if (iDia.value && parseInt(iDia.value) < 1) {
+                        iDia.value = 1;
                     }
                 } else {
                     iDia.max = 31;
+                    if (iDia.value && parseInt(iDia.value) > 31) iDia.value = 31;
                 }
             };
 
-            // Escuchar cambios para validar
+            // Escuchar cambios para validar en TODOS los campos
             iAno.addEventListener('input', validarDiasBloque);
             sMes.addEventListener('change', validarDiasBloque);
+            
+            // 🔥 AQUÍ ESTABA EL ERROR: Agregamos validación al escribir en el día
+            iDia.addEventListener('input', validarDiasBloque);
+            iDia.addEventListener('blur', validarDiasBloque); // Doble seguridad al salir del campo
             
             row.append(iAno, sMes, iDia); wrapper.appendChild(row);
             return { wrapper, iAno, sMes, iDia };
@@ -1270,6 +1281,7 @@ function crearHTMLPregunta(p) {
         };
 
         [b1, b2].forEach(b => { 
+            // El evento 'unir' se ejecuta DESPUÉS de la validación interna gracias al orden de burbujeo
             b.iAno.addEventListener('input', unir); 
             b.sMes.addEventListener('change', unir); 
             b.iDia.addEventListener('input', unir); 
