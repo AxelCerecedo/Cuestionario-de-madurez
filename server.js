@@ -1269,7 +1269,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             // --- CORRECCIÓN: Usamos 'i' en lugar de 'numSec' ---
             if (i === 1) {
                 colorSeccion = '#28a745'; // Azul
-                textoRecomendacion = "Verifique que los datos de contacto estén actualizados.";
+                textoRecomendacion = "Datos de contacto y ubicación.";
                 iconoEstado = "ℹ️ Información";
             } else {
                 if (porcentaje >= 100) {
