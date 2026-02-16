@@ -128,7 +128,7 @@ const CONFIG_SECCION = {
             id: 46,
             orden: 45,
             texto: "¿Con que frecuencia el personal del acervo recibe capacitación en las areas mencionadas?",
-            ayuda: "Para cada tema seleccionado arriba, marque la opción que corresponda.",
+            ayuda: "Por cada área seleccionada en la pregunta previa, se activará la frecuencia.",
             tipo: "matriz_dinamica", 
             modo: "matriz_radio", 
             id_pregunta_origen: 45, 
