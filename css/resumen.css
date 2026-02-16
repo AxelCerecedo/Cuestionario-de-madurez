@@ -1,10 +1,10 @@
 /* =========================================
-   1. VARIABLES Y RESET (Igual)
+   1. VARIABLES Y RESET
    ========================================= */
 :root {
     --primary-color: #2c3e50;
     --text-color: #333;
-    --bg-color: #f4f7f6;
+    --bg-overlay: rgba(255, 255, 255, 0.96);
     --card-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
@@ -12,28 +12,29 @@ body {
     font-family: 'Segoe UI', Roboto, sans-serif;
     color: var(--text-color);
     padding: 20px;
-    background-image: url('../Imagenes/f2.avif'); /* Tu fondo */
+    /* Mantenemos tu imagen de fondo original */
+    background-image: url('../Imagenes/f2.avif'); 
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     min-height: 100vh;
+    margin: 0;
 }
 
 /* =========================================
-   2. CONTENEDOR ANCHO (DASHBOARD)
+   2. CONTENEDOR PRINCIPAL
    ========================================= */
 .resumen-container {
-    /* Hacemos el contenedor más ancho para que quepan las 2 columnas */
     max-width: 1100px; 
     margin: 20px auto;
-    background: rgba(255, 255, 255, 0.96); /* Casi opaco */
+    background: var(--bg-overlay);
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 15px 30px rgba(0,0,0,0.2);
     animation: slideUp 0.6s ease-out;
 }
 
-/* Cabecera compacta */
+/* Cabecera */
 .header-resumen {
     display: flex;
     align-items: center;
@@ -44,7 +45,7 @@ body {
 }
 
 .header-resumen .logo {
-    max-height: 70px; /* Logo más pequeño para que no estorbe */
+    max-height: 70px;
     width: auto;
 }
 
@@ -56,73 +57,63 @@ body {
 
 .header-resumen .intro { margin: 0; color: #666; font-size: 0.95em; }
 
-/* =========================================
-   3. GRID LAYOUT (IZQUIERDA / DERECHA)
-   ========================================= */
+/* Grid Layout (Izquierda / Derecha) */
 .dashboard-grid {
     display: grid;
-    /* Columna Izquierda (35%) | Columna Derecha (65%) */
     grid-template-columns: 350px 1fr; 
     gap: 30px;
-    align-items: start; /* Alinear arriba */
+    align-items: start;
 }
 
 /* =========================================
-   4. TARJETA DE PUNTAJE (IZQUIERDA)
+   3. TARJETA IZQUIERDA (DISEÑO MEJORADO)
    ========================================= */
 .card-puntaje {
-    text-align: center;
-    padding: 30px 20px;
-    border-radius: 12px;
-    color: white;
-    box-shadow: var(--card-shadow);
-    background: #667eea;
+    text-align: center; 
+    padding: 40px 30px; 
+    color: white; 
+    border-radius: 15px; 
+    
+    /* Efecto Vidrio (Glassmorphism) */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
     position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    transition: background 0.5s ease;
 }
 
-.titulo-score { text-transform: uppercase; font-size: 0.85em; opacity: 0.8; letter-spacing: 1px; }
-
-.big-number {
-    font-size: 4.5rem; /* Grande */
-    font-weight: 800;
-    line-height: 1;
-    margin: 10px 0;
+.nivel-badge {
+    background: rgba(255, 255, 255, 0.25); 
+    color: white; 
+    padding: 10px 35px; 
+    border-radius: 50px; 
+    text-transform: uppercase; 
+    font-weight: 800; 
+    font-size: 1.5rem; 
+    display: inline-block; 
+    margin-bottom: 20px; 
+    letter-spacing: 1.5px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-#lblMaximo { font-size: 0.4em; opacity: 0.8; }
-
-.nivel-label {
-    font-size: 1.4em;
-    font-weight: bold;
-    background: rgba(0,0,0,0.2);
-    display: inline-block;
-    padding: 4px 15px;
-    border-radius: 20px;
-    margin-bottom: 10px;
+.mensaje-final {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    font-weight: 500;
+    opacity: 0.98;
+    max-width: 90%;
 }
 
-.mensaje-score { font-size: 0.95em; line-height: 1.4; opacity: 0.95; }
-
-/* Panel de botones debajo de la tarjeta */
-.actions-panel {
-    margin-top: 20px;
-}
-
-.btn-imprimir {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1em;
-    cursor: pointer;
-    text-decoration: none;
-    transition: 0.3s;
-}
-
-.btn-imprimir:hover { background-color: #1a252f; transform: translateY(-2px); }
+/* Panel de botones */
+.actions-panel { margin-top: 20px; }
 
 .link-salir {
     display: block;
@@ -134,7 +125,7 @@ body {
 }
 
 /* =========================================
-   5. TABLA (DERECHA)
+   4. TABLA DERECHA (ACORDEÓN)
    ========================================= */
 .titulo-seccion {
     margin-top: 0;
@@ -145,147 +136,115 @@ body {
     padding-left: 10px;
 }
 
-.tabla-container {
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #eee;
-    overflow: hidden; /* Redondea esquinas */
-}
+.tabla-container { overflow-x: hidden; background: white; border-radius: 8px; border: 1px solid #eee; }
 
-.tabla-desglosada {
-    width: 100%;
-    border-collapse: collapse;
-}
+.tabla-desglosada { width: 100%; border-collapse: separate; border-spacing: 0 0; }
 
 .tabla-desglosada th {
-    background-color: #f1f3f5;
-    color: #444;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.75em;
-    padding: 12px 15px;
     text-align: left;
+    padding: 12px 15px;
+    color: #666;
+    font-size: 0.9rem;
+    border-bottom: 2px solid #ddd;
+    background-color: #f9f9f9;
 }
 
-.tabla-desglosada td {
-    padding: 10px 15px;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 0.95em;
-    color: #555;
+/* Fila Principal (Clickeable) */
+.fila-seccion { background: #fff; transition: all 0.2s ease; cursor: pointer; }
+.fila-seccion:hover { background: #f8f9fa; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 1; position: relative; }
+
+.fila-seccion td { padding: 18px 15px; border-bottom: 1px solid #eee; }
+.fila-seccion td:first-child { border-left: 4px solid transparent; } /* Borde para indicar activo */
+
+/* Semáforo */
+.indicador-color { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 15px; vertical-align: middle; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.texto-seccion { display: inline-block; font-weight: 600; color: #34495e; vertical-align: middle; font-size: 1rem; }
+
+/* Flecha */
+.btn-toggle { background: none; border: none; color: #95a5a6; font-size: 1.1rem; transition: transform 0.3s ease; cursor: pointer; }
+.fila-seccion.activa .btn-toggle { transform: rotate(180deg); color: #2c3e50; }
+.fila-seccion.activa { background-color: #f8f9fa; }
+
+/* Fila Detalle (Animación) */
+.fila-detalle { display: none; }
+.fila-detalle.visible { display: table-row; animation: slideDown 0.3s ease-out forwards; }
+
+.contenido-detalle { 
+    background-color: #fcfcfc; 
+    padding: 20px 25px 20px 45px; 
+    border-left: 4px solid #eee; 
+    font-size: 0.95rem; 
+    color: #555; 
+    line-height: 1.6; 
+    border-bottom: 1px solid #eee; 
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
 }
 
-.tabla-desglosada tr:last-child td { border-bottom: none; }
-.tabla-desglosada tr:hover { background-color: #fafafa; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-.col-puntos {
-    text-align: right;
-    font-weight: bold;
-    color: var(--primary-color);
+/* =========================================
+   5. BOTONES DE ACCIÓN
+   ========================================= */
+.btn-correo { 
+    background-color: #2c3e50; 
+    color: white; 
+    border: none; 
+    padding: 12px 20px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    margin-top: 15px; 
+    width: 100%; 
+    font-weight: 600; 
+    transition: background 0.2s; 
+    display: flex; justify-content: center; align-items: center; gap: 8px; 
 }
+.btn-correo:hover { background-color: #34495e; transform: translateY(-2px); }
+.btn-correo:disabled { background-color: #95a5a6; cursor: wait; transform: none; }
+
+.btn-imprimir { 
+    background-color: #fff; 
+    color: #2c3e50; 
+    border: 2px solid #2c3e50; 
+    padding: 10px; 
+    width: 100%; 
+    border-radius: 8px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+}
+.btn-imprimir:hover { background-color: #f0f0f0; transform: translateY(-2px); }
 
 /* =========================================
    6. RESPONSIVO (MÓVIL)
    ========================================= */
 @media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr; /* Una sola columna en móvil */
-    }
+    .dashboard-grid { grid-template-columns: 1fr; }
     .header-resumen { flex-direction: column; text-align: center; }
 }
 
 /* =========================================
-   7. ESTILOS DE IMPRESIÓN (PDF)
+   7. IMPRESIÓN (PDF)
    ========================================= */
 @media print {
-    /* 1. Configuración de la hoja */
-    @page {
-        margin: 1cm; /* Margen limpio alrededor del papel */
-        size: auto;  /* Usa el tamaño de papel definido por el usuario */
-    }
-
-    body {
-        background: none !important; /* Quita la imagen de fondo pesado */
-        padding: 0;
-        margin: 0;
-        /* IMPORTANTE: Fuerza al navegador a imprimir colores de fondo (la tarjeta) */
-        -webkit-print-color-adjust: exact; 
-        print-color-adjust: exact;
-    }
-
-    /* 2. Arreglar el Contenedor Principal */
-    .resumen-container {
-        box-shadow: none !important;
-        margin: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-        background: white !important;
-    }
-
-    /* 3. BLOQUEAR EL LOGO Y ENCABEZADO (Para que no se muevan) */
-    .header-resumen {
-        display: flex !important;        /* Forzamos Flexbox */
-        flex-direction: row !important;  /* Horizontal */
-        align-items: center !important;  /* Centrado vertical */
-        gap: 20px !important;            /* Espacio fijo */
-        border-bottom: 2px solid #333 !important; /* Línea divisoria elegante */
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-    }
-
-    .header-resumen .logo {
-        max-width: 180px !important;      /* Tamaño fijo estricto */
-        height: auto !important;
-        margin: 0 !important;            /* Sin márgenes extraños */
-        display: block !important;
-    }
-
-    .header-resumen h1 {
-        font-size: 1.1em !important;     /* Texto un poco más chico para papel */
-        color: black !important;
-        margin: 0 !important;
-    }
-
-    .header-resumen .intro {
-        color: #444 !important;
-    }
-
-    /* 4. MANTENER EL DISEÑO DE 2 COLUMNAS (Opcional) */
-    /* Si quieres que salga igual que en pantalla (lado a lado): */
-    .dashboard-grid {
-        display: grid !important;
-        grid-template-columns: 300px 1fr !important; /* Tarjeta izq, Tabla der */
-        gap: 20px !important;
-        align-items: start;
-    }
-
-    /* 5. ARREGLAR LA TARJETA DE PUNTAJE */
-    .card-puntaje {
-        /* Forzamos el color de fondo para que salga en papel */
-        color: white !important;
-        /* El background se pone vía JS, pero esto asegura que se respete */
-        box-shadow: none !important;
-        border: 1px solid #ccc;
-        page-break-inside: avoid; /* Evita que se corte a la mitad */
-    }
+    @page { margin: 1cm; size: auto; }
+    body { background: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .resumen-container { box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+    .header-resumen { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 20px !important; border-bottom: 2px solid #333 !important; }
+    .header-resumen .logo { max-width: 150px !important; }
     
-    /* Asegurar que los textos blancos de la tarjeta se vean */
-    .big-number, .nivel-label, .mensaje-score, .titulo-score {
-        color: white !important;
-        text-shadow: none !important;
-    }
-
-    /* 6. ARREGLAR LA TABLA */
-    .tabla-desglosada th {
-        background-color: #eee !important;
-        color: black !important;
-    }
-    .tabla-desglosada td {
-        color: black !important;
-    }
-
-    /* 7. OCULTAR ELEMENTOS INNECESARIOS */
-    .btn-imprimir, .link-salir {
-        display: none !important;
-    }
+    /* Layout */
+    .dashboard-grid { display: grid !important; grid-template-columns: 300px 1fr !important; gap: 20px !important; }
+    
+    /* Tarjeta */
+    .card-puntaje { color: white !important; page-break-inside: avoid; border: 1px solid #ccc; box-shadow: none !important; }
+    .mensaje-final, .nivel-badge { color: white !important; text-shadow: none !important; }
+    
+    /* Ocultar botones */
+    .btn-imprimir, .btn-correo, .link-salir, .btn-toggle { display: none !important; }
+    
+    /* Tabla */
+    .fila-detalle { display: table-row !important; } /* Mostrar detalles al imprimir */
+    .fila-detalle td { border-bottom: 1px solid #ccc !important; }
 }

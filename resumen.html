@@ -6,94 +6,17 @@
     <title>Resumen de Resultados</title>
     
     <link rel="stylesheet" href="css/resumen.css"> 
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <style>
-        /* --- ESTILOS TARJETA IZQUIERDA --- */
-        .card-puntaje {
-            text-align: center; 
-            padding: 40px 30px; 
-            color: white; 
-            border-radius: 15px; 
-            
-            /* Efecto Vidrio (Glassmorphism) */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 300px;
-            transition: background 0.5s ease;
-        }
-
-        .nivel-badge {
-            background: rgba(255, 255, 255, 0.25); 
-            color: white; 
-            padding: 10px 35px; 
-            border-radius: 50px; 
-            text-transform: uppercase; 
-            font-weight: 800; 
-            font-size: 1.5rem; /* Un poco más pequeño para que sea título */
-            display: inline-block; 
-            margin-bottom: 20px; 
-            letter-spacing: 1.5px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .mensaje-final {
-            font-size: 1.15rem;
-            line-height: 1.6;
-            font-weight: 500;
-            opacity: 0.98;
-            max-width: 90%;
-        }
-
-        /* --- ESTILOS TABLA DERECHA --- */
-        .tabla-container { overflow-x: hidden; }
-        .tabla-desglosada { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-        .tabla-desglosada th { text-align: left; padding: 10px; color: #666; font-size: 0.9rem; border-bottom: 2px solid #ddd; }
-
-        .fila-seccion { background: #fff; transition: all 0.2s ease; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .fila-seccion:hover { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-        
-        .fila-seccion td { padding: 18px 15px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
-        .fila-seccion td:first-child { border-left: 1px solid #eee; border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
-        .fila-seccion td:last-child { border-right: 1px solid #eee; border-top-right-radius: 8px; border-bottom-right-radius: 8px; text-align: right; }
-
-        .indicador-color { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 15px; vertical-align: middle; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .texto-seccion { display: inline-block; font-weight: 600; color: #34495e; vertical-align: middle; font-size: 1rem; }
-
-        .btn-toggle { background: none; border: none; color: #95a5a6; font-size: 1.1rem; transition: transform 0.3s ease; }
-        .fila-seccion.activa .btn-toggle { transform: rotate(180deg); color: #2c3e50; }
-
-        .fila-detalle { display: none; }
-        .fila-detalle.visible { display: table-row; animation: slideDown 0.3s ease-out forwards; }
-
-        .contenido-detalle { background-color: #fcfcfc; padding: 20px 25px 20px 45px; border-left: 4px solid #eee; font-size: 0.95rem; color: #555; line-height: 1.6; border-bottom: 1px solid #eee; margin-bottom: 10px; border-radius: 0 0 8px 8px; }
-
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .btn-correo { background-color: #2c3e50; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; margin-top: 15px; width: 100%; font-weight: 600; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-correo:hover { background-color: #34495e; }
-        .btn-correo:disabled { background-color: #95a5a6; cursor: wait; }
-        .btn-imprimir { background-color: #fff; color: #2c3e50; border: 2px solid #2c3e50; padding: 10px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-imprimir:hover { background-color: #f0f0f0; }
-    </style>
 </head>
 <body>
 
     <div class="resumen-container">
         <div class="header-resumen">
             <img src="Imagenes/logo.png" alt="Logo" class="logo" />
-            <div style="margin-left: 230px;"> 
+            <div style="margin-left: 20px;"> 
                 <h1>📊 Resultados del Diagnóstico</h1>
                 <p class="intro">Informe ejecutivo de evaluación.</p>
             </div>
@@ -121,7 +44,7 @@
                     <button id="btnEnviarCorreo" onclick="enviarCorreo()" class="btn-correo">
                         <i class="fas fa-envelope"></i> Enviar a mi correo
                     </button>
-                    <a href="login.html" class="link-salir" style="margin-top: 15px; display:block; text-align:center; color: #7f8c8d; text-decoration: none; font-size: 0.9em;">
+                    <a href="login.html" class="link-salir">
                         <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </a>
                 </div>
@@ -183,16 +106,10 @@
 
                 if(data.error) { alert(data.error); return; }
 
-                // --- 1. TARJETA IZQUIERDA ---
-                
-                // --- 1. TARJETA IZQUIERDA (DEGRADADO MODERNO) ---
-                // Creamos dos versiones del color: una más sólida y otra más transparente
-                const colorInicio = hexToRgba(data.color, 0.95); // 95% de opacidad (casi sólido)
-                const colorFin = hexToRgba(data.color, 0.40);    // 40% de opacidad (más transparente)
-
-                // Aplicamos el degradado lineal en ángulo (135 grados)
+                // --- 1. TARJETA IZQUIERDA (DEGRADADO) ---
+                const colorInicio = hexToRgba(data.color, 0.95);
+                const colorFin = hexToRgba(data.color, 0.40);
                 document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
-                        
 
                 // --- 2. TABLA DERECHA ---
                 const tbody = document.getElementById('tablaBody');
@@ -208,9 +125,9 @@
                     let colorCuadrito = '#6c757d'; 
                     let recomendacionTexto = "";
 
-                    // LÓGICA DE SEMÁFORO (Se mantiene igual)
+                    // Lógica del Semáforo
                     if (numSec === 1) {
-                        colorCuadrito = '#28a745'; 
+                        colorCuadrito = '#17a2b8'; 
                         recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
                     } else {
                         const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
@@ -222,7 +139,7 @@
                             recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
                         } else {
                             colorCuadrito = '#dc3545'; 
-                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se recomienda la revisión e implementación de medidas correctivas para mejorar significativamente el desempeño en las diferentes secciones.";
+                            recomendacionTexto = "🛑 <b>Atención Prioritaria:</b> Se han identificado carencias críticas que comprometen la gestión. Es urgente implementar un plan de acción para establecer las condiciones mínimas de operación.";
                         }
                     }
 
@@ -270,7 +187,6 @@
             const btn = document.getElementById(`btn-${id}`);
             const filaPrincipal = btn.closest('tr');
 
-            // Cierra otros (Opcional)
             document.querySelectorAll('.fila-detalle').forEach(el => {
                 if (el.id !== `detalle-${id}`) el.classList.remove('visible');
             });
@@ -291,7 +207,7 @@
             const idUsuario = localStorage.getItem('idUsuario');
             const btn = document.getElementById('btnEnviarCorreo');
             btn.disabled = true;
-            btn.innerHTML = '⏳ Enviando...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
             try {
                 const response = await fetch(`${API_URL}/api/enviar-correo-resultados`, {
@@ -303,14 +219,14 @@
 
                 if (response.ok) {
                     Swal.fire({ title: '¡Correo Enviado!', text: `Resultados enviados correctamente.`, icon: 'success', confirmButtonColor: '#7c1225' });
-                    btn.innerHTML = '✅ Enviado';
+                    btn.innerHTML = '<i class="fas fa-check"></i> Enviado';
                 } else {
                     throw new Error(resultado.error);
                 }
             } catch (error) {
                 Swal.fire('Error', 'No se pudo enviar.', 'error');
                 btn.disabled = false;
-                btn.innerHTML = '📧 Enviar a mi correo';
+                btn.innerHTML = '<i class="fas fa-envelope"></i> Enviar a mi correo';
             }
         }
         
