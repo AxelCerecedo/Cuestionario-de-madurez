@@ -1161,7 +1161,7 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
 });
 
 // =======================
-// 📧 ENDPOINT: CORREO (CORREGIDO Y SIN ERRORES)
+// 📧 ENDPOINT: CORREO (CORREGIDO - TEXTOS VISIBLES)
 // =======================
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
@@ -1244,50 +1244,48 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         if(rowsBono[0].c === 2) { reporteSecciones[2] += 1; }
 
         // 4. COLOR GLOBAL (TARJETA PRINCIPAL)
-        let colorFondoGlobal = "#dc3545"; // Rojo
+        let colorFondoGlobal = "#dc3545"; 
         let textoNivelGlobal = "Diagnóstico Finalizado";
 
         if (puntajeTotal >= 140) { 
-            colorFondoGlobal = "#28a745"; // Verde
+            colorFondoGlobal = "#28a745"; 
         } else if (puntajeTotal >= 45) { 
-            colorFondoGlobal = "#ffc107"; // Amarillo
+            colorFondoGlobal = "#ffc107"; 
         } 
 
-        // 5. GENERAR HTML DE LA TABLA (AQUÍ ESTABA EL ERROR)
+        // 5. GENERAR HTML (CORREGIDO: VARIABLE UNIFICADA)
         let filasHTML = '';
         
-        // Usamos 'i' como iterador
         for (let i = 1; i <= 9; i++) {
             const puntos = reporteSecciones[i];
             const maximo = MAXIMOS_SECCION[i] || 1;
             const porcentaje = (puntos / maximo) * 100;
 
             let colorSeccion = '#6c757d'; 
-            let textoRecomendacion = "";
+            let textoRecomendacion = ""; // USAMOS ESTA VARIABLE SIEMPRE
             let iconoEstado = "";
 
-            // --- CORRECCIÓN: Usamos 'i' en lugar de 'numSec' ---
             if (i === 1) {
                 colorSeccion = '#28a745'; 
                 textoRecomendacion = "Datos de contacto y ubicación.";
                 iconoEstado = "ℹ️ Información";
             } else {
-                if (porcentaje >= 100) {
+                if (porcentaje >= 100) { 
                     colorSeccion = '#28a745'; 
-                    recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
+                    textoRecomendacion = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
                     iconoEstado = "✅ Consolidado";
                 } else if (porcentaje >= 50) {
                     colorSeccion = '#ffc107'; 
-                    recomendacionTexto = "⚠️ <b>Nivel en Desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
+                    textoRecomendacion = "⚠️ <b>Nivel en Desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
                     iconoEstado = "⚠️ En Desarrollo";
                 } else {
                     colorSeccion = '#dc3545'; 
-                    recomendacionTexto = "🛑 <b>Nivel minimo:</b> Se han identificado carencias que comprometen la gestión. Se recomienda implementar un plan de acción para mejorar las condiciones mínimas de operación.";
+                    textoRecomendacion = "🛑 <b>Nivel mínimo:</b> Se han identificado carencias que comprometen la gestión. Se recomienda implementar un plan de acción para mejorar las condiciones mínimas de operación.";
                     iconoEstado = "🛑 Atención Prioritaria";
                 }
             }
 
-            // Construimos la fila para el correo
+            // Construcción del String HTML
             filasHTML += `
                 <tr>
                     <td style="padding: 15px; border-bottom: 1px solid #eee;">
@@ -1308,7 +1306,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             `;
         }
 
-        // 6. ENVIAR CORREO
+        // 6. ENVIAR CON BREVO
         const brevoUrl = 'https://api.brevo.com/v3/smtp/email';
         const emailData = {
             sender: { name: "Diagnóstico de Archivos", email: "axelcerecedo117@gmail.com" },
@@ -1343,9 +1341,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                                         
                                         <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
                                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                                <tbody>
-                                                    ${filasHTML}
-                                                </tbody>
+                                                <tbody>${filasHTML}</tbody>
                                             </table>
                                         </div>
 
