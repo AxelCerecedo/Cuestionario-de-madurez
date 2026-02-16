@@ -1272,7 +1272,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                 textoRecomendacion = "Verifique que los datos de contacto estén actualizados.";
                 iconoEstado = "ℹ️ Información";
             } else {
-                if (porcentaje >= 80) {
+                if (porcentaje >= 100) {
                     colorSeccion = '#28a745'; 
                     recomendacionTexto = "✅ <b>Nivel Consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
                     iconoEstado = "✅ Consolidado";
