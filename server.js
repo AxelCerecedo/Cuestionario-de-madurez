@@ -1266,7 +1266,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             let textoEstado = "";
 
             if (i === 1) {
-                colorSeccion = '#17a2b8'; // Azul
+                colorSeccion = '#28a745'; 
                 textoEstado = "Información General";
             } else {
                 if (porcentaje >= 80) {
