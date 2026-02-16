@@ -184,10 +184,15 @@
                 if(data.error) { alert(data.error); return; }
 
                 // --- 1. TARJETA IZQUIERDA ---
-                // CAMBIO 3: Solo actualizamos el color, NO el texto.
-                const colorTranslucido = hexToRgba(data.color, 0.85); 
-                document.getElementById('cardPuntaje').style.background = colorTranslucido;
-        
+                
+                // --- 1. TARJETA IZQUIERDA (DEGRADADO MODERNO) ---
+                // Creamos dos versiones del color: una más sólida y otra más transparente
+                const colorInicio = hexToRgba(data.color, 0.95); // 95% de opacidad (casi sólido)
+                const colorFin = hexToRgba(data.color, 0.40);    // 40% de opacidad (más transparente)
+
+                // Aplicamos el degradado lineal en ángulo (135 grados)
+                document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
+                        
 
                 // --- 2. TABLA DERECHA ---
                 const tbody = document.getElementById('tablaBody');
