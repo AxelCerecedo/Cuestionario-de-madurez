@@ -6,6 +6,7 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const session = require('express-session');
 const nodemailer = require('nodemailer');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // ==========================
 // 2. Configuración general
@@ -1357,6 +1358,114 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
     } catch (error) {
         console.error("❌ Error interno:", error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// =========================================================
+// 🧠 ENDPOINT: GENERAR ANÁLISIS CON IA (GEMINI)
+// =========================================================
+// OJO: Asegúrate de tener esta línea hasta arriba de tu server.js (en tus requires)
+// const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+app.post('/api/generar-analisis-ia', async (req, res) => {
+    const { id_usuario } = req.body;
+    
+    console.log(`\n🤖 [GEMINI] Iniciando análisis para usuario ID: ${id_usuario}`);
+
+    try {
+        // 1. OBTENER EL ID DE LA INSTITUCIÓN
+        const [instRows] = await db.query('SELECT id_institucion FROM instituciones WHERE id_usuario = ?', [id_usuario]);
+        if (instRows.length === 0) return res.status(404).json({ error: "Institución no encontrada" });
+        const idInstitucion = instRows[0].id_institucion;
+
+        // 2. RECOPILAR RESPUESTAS EN TEXTO HUMANO (Pregunta -> Respuesta)
+        const queryTextos = `
+            SELECT 
+                p.seccion,
+                p.texto_pregunta,
+                COALESCE(r.respuesta_texto, o.texto_opcion, 'Sin respuesta') AS respuesta_dada
+            FROM respuestas r
+            JOIN preguntas p ON r.id_pregunta = p.id_pregunta
+            LEFT JOIN opciones_catalogo o ON r.id_opcion_seleccionada = o.id_opcion
+            WHERE r.id_institucion = ?
+            ORDER BY p.seccion, p.orden
+        `;
+        
+        const [respuestasUsuario] = await db.query(queryTextos, [idInstitucion]);
+
+        if (respuestasUsuario.length === 0) {
+            console.log("   ⚠️ [GEMINI] No hay respuestas para analizar.");
+            return res.status(400).json({ error: "No hay respuestas suficientes para analizar." });
+        }
+
+        // 3. ARMAR EL DOCUMENTO PARA LA IA
+        let contextoParaIA = "A continuación se presentan las respuestas del diagnóstico institucional agrupadas por sección:\n\n";
+        
+        respuestasUsuario.forEach(r => {
+            contextoParaIA += `[Sección ${r.seccion}] Pregunta: "${r.texto_pregunta}" | Respuesta: "${r.respuesta_dada}"\n`;
+        });
+
+        console.log("   📄 Contexto armado y listo para enviar a Gemini (Mostrando primeras 200 letras):");
+        console.log("   " + contextoParaIA.substring(0, 200) + "...\n");
+
+        // 4. CONEXIÓN CON GEMINI
+        if (!process.env.GEMINI_API_KEY) {
+            throw new Error("Falta la variable de entorno GEMINI_API_KEY en Render.");
+        }
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const prompt = `
+        Eres un auditor experto en gestión de acervos, archivos e instituciones patrimoniales.
+        Lee detenidamente las siguientes respuestas de un diagnóstico institucional:
+        
+        ${contextoParaIA}
+        
+        Tu tarea es generar un reporte de resultados en formato JSON estrictamente válido. 
+        El JSON debe tener exactamente esta estructura:
+        {
+          "resumen_general": "Un párrafo de máximo 4 líneas (aprox 40-50 palabras) resumiendo el estado global de la institución, resaltando su mayor fortaleza y su riesgo más urgente.",
+          "secciones": {
+            "1": "Análisis y recomendación directa de 2 líneas sobre la Identificación de la Institución.",
+            "2": "Análisis y recomendación directa de 2 líneas sobre la Gestión Institucional.",
+            "3": "Análisis y recomendación directa de 2 líneas sobre la Caracterización del Acervo.",
+            "4": "Análisis y recomendación directa de 2 líneas sobre Inventario y Catalogación.",
+            "5": "Análisis y recomendación directa de 2 líneas sobre Gestión de Información.",
+            "6": "Análisis y recomendación directa de 2 líneas sobre Recursos Humanos.",
+            "7": "Análisis y recomendación directa de 2 líneas sobre Infraestructura Tecnológica.",
+            "8": "Análisis y recomendación directa de 2 líneas sobre Normatividad y Procesos.",
+            "9": "Análisis y recomendación directa de 2 líneas sobre Servicios."
+          }
+        }
+        
+        Reglas obligatorias:
+        - Sé profesional, constructivo y directo. Dirígete a la institución (ej: "Se observa que cuentan con...", "Se recomienda implementar...").
+        - NO uses formato Markdown (como \`\`\`json), devuelve SOLO el objeto JSON puro y válido.
+        `;
+
+        console.log("   ⏳ Esperando respuesta de Gemini...");
+        
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        
+        // 5. LIMPIAR Y PARSEAR EL JSON
+        const jsonLimpio = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+        
+        console.log("   ✅ Respuesta de Gemini recibida y limpiada.");
+        
+        const analisisParseado = JSON.parse(jsonLimpio);
+
+        // 6. GUARDAR EN LA BASE DE DATOS
+        const sqlUpdate = 'UPDATE instituciones SET analisis_ia = ? WHERE id_institucion = ?';
+        await db.query(sqlUpdate, [JSON.stringify(analisisParseado), idInstitucion]);
+
+        console.log("   💾 [GEMINI] Análisis guardado exitosamente en la base de datos.");
+        res.json({ message: "Análisis generado y guardado correctamente." });
+
+    } catch (error) {
+        console.error("❌ [ERROR GEMINI]:", error);
+        res.status(500).json({ error: "Error al generar el análisis con IA." });
     }
 });
 
