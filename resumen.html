@@ -115,10 +115,31 @@
 
                 if(data.error) { alert(data.error); return; }
 
-                // --- 1. TARJETA IZQUIERDA (DEGRADADO) ---
+                // --- 🤖 PARSEAR DATOS DE LA IA ---
+                let analisis = null;
+                if (data.analisis_ia) {
+                    try {
+                        analisis = typeof data.analisis_ia === 'string' ? JSON.parse(data.analisis_ia) : data.analisis_ia;
+                    } catch (e) {
+                        console.error("Error leyendo JSON de IA:", e);
+                    }
+                }
+
+                // --- 1. TARJETA IZQUIERDA (DEGRADADO Y TEXTO IA) ---
                 const colorInicio = hexToRgba(data.color, 0.95);
                 const colorFin = hexToRgba(data.color, 0.40);
                 document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
+
+                // Inyectamos el resumen general de la IA si existe
+                const contenedorMensaje = document.querySelector('.mensaje-final');
+                if (analisis && analisis.resumen_general) {
+                    contenedorMensaje.innerHTML = `
+                        <span style="font-size:1.15em; font-weight:800; display:block; margin-bottom:12px; letter-spacing:0.5px; text-shadow:0 1px 2px rgba(0,0,0,0.2);">🤖 Análisis Ejecutivo IA</span>
+                        <div style="font-size:1.05rem; line-height:1.6; font-weight:400; opacity:0.98; text-align:justify;">
+                            ${analisis.resumen_general}
+                        </div>
+                    `;
+                }
 
                 // --- 2. TABLA DERECHA ---
                 const tbody = document.getElementById('tablaBody');
@@ -134,21 +155,36 @@
                     let colorCuadrito = '#6c757d'; 
                     let recomendacionTexto = "";
 
-                    // Lógica del Semáforo
+                    // Lógica del Semáforo para el color
                     if (numSec === 1) {
                         colorCuadrito = '#28a745'; 
-                        recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
                     } else {
                         const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
                         if (porcentaje >= 100) {
                             colorCuadrito = '#28a745'; 
-                            recomendacionTexto = "✅ <b>Nivel consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
                         } else if (porcentaje >= 50) {
                             colorCuadrito = '#ffc107'; 
-                            recomendacionTexto = "⚠️ <b>Nivel en desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
                         } else {
                             colorCuadrito = '#dc3545'; 
-                            recomendacionTexto = "🛑 <b>Nivel minimo:</b> Se han identificado carencias que comprometen la gestión. Se recomienda implementar un plan de acción para mejorar las condiciones mínimas de operación.";
+                        }
+                    }
+
+                    // 🤖 LÓGICA DE TEXTOS: Prioridad a Gemini, respaldo a tus textos
+                    if (analisis && analisis.secciones && analisis.secciones[sec]) {
+                        recomendacionTexto = analisis.secciones[sec];
+                    } else {
+                        // Respaldo original
+                        if (numSec === 1) {
+                            recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
+                        } else {
+                            const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
+                            if (porcentaje >= 100) {
+                                recomendacionTexto = "✅ <b>Nivel consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
+                            } else if (porcentaje >= 50) {
+                                recomendacionTexto = "⚠️ <b>Nivel en desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
+                            } else {
+                                recomendacionTexto = "🛑 <b>Nivel minimo:</b> Se han identificado carencias que comprometen la gestión. Se recomienda implementar un plan de acción para mejorar las condiciones mínimas de operación.";
+                            }
                         }
                     }
 

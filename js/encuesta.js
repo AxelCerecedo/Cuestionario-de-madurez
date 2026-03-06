@@ -1960,51 +1960,72 @@ async function enviarFormulario(e) {
         if(response.ok) {
             
             // =========================================================
-            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN (CANDADO)
+            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN CON GEMINI IA + CANDADO
             // =========================================================
             
             if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
                 // CASO: SECCIÓN FINAL (SERVICIOS)
                 
-                // 1. Llamar a la API para cerrar (UPDATE finalizado=1)
+                // 1. Mostrar pantalla de carga de Inteligencia Artificial (Reemplaza al Swal de "¡Encuesta Finalizada!")
+                Swal.fire({
+                    title: '🤖 Analizando respuestas...',
+                    html: 'La Inteligencia Artificial está generando tu reporte personalizado.<br><br><b>Esto tomará de 5 a 10 segundos, no cierres la ventana.</b>',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 try {
-                    await fetch(`${API_URL_SAVE}/finalizar-cuestionario`, {
+                    // 2. Llamar a GEMINI para generar el análisis JSON
+                    const baseURL = typeof API_URL !== 'undefined' ? API_URL : API_URL_SAVE.replace('/api', '');
+                    
+                    const resIA = await fetch(`${baseURL}/api/generar-analisis-ia`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id_usuario: idUsuario })
                     });
                     
-                    // 2. Bloquear localmente
+                    if (!resIA.ok) {
+                        console.warn("⚠️ La IA no pudo generar el reporte, pero el cuestionario se guardó.");
+                    }
+
+                    // ---------------------------------------------------------
+                    // 🔒 3. AQUÍ ESTÁ TU CANDADO (Llamada a la API para cerrar)
+                    // ---------------------------------------------------------
+                    await fetch(`${baseURL}/finalizar-cuestionario`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id_usuario: idUsuario })
+                    });
+                    
+                    // 🔒 4. AQUÍ ESTÁ TU BLOQUEO LOCAL
                     localStorage.setItem('encuestaFinalizada', '1');
 
-                    // 3. Alerta de éxito Final
-                    await Swal.fire({
-                        icon: 'success',
-                        title: '¡Encuesta Finalizada!',
-                        text: 'Gracias por completar el cuestionario. Tus respuestas han sido enviadas.',
-                        timer: 3000,
-                        showConfirmButton: false
-                    });
+                    // 5. Redirigir al resumen
+                    window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
 
                 } catch (errFin) {
-                    console.error("Error al finalizar:", errFin);
+                    console.error("Error en el proceso final:", errFin);
+                    window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
                 }
 
             } else {
-                // CASO: SECCIÓN NORMAL
+                // CASO: SECCIÓN NORMAL (De la 1 a la 8)
                 await Swal.fire({
                     icon: 'success',
                     title: '¡Guardado!',
                     timer: 1000,
                     showConfirmButton: false
                 });
-            }
 
-            // --- REDIRECCIÓN ---
-            if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
-                window.location.href = CONFIG_SECCION.siguiente;
-            } else {
-                Swal.fire('¡Listo!', 'Proceso completado.', 'success');
+                // --- REDIRECCIÓN NORMAL ---
+                if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
+                    window.location.href = CONFIG_SECCION.siguiente;
+                } else {
+                    Swal.fire('¡Listo!', 'Proceso completado.', 'success');
+                }
             }
 
         } else {
