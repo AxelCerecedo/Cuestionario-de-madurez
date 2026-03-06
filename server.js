@@ -1072,46 +1072,27 @@ app.get('/admin/detalle-graficas/:idInstitucion', async (req, res) => {
     }
 });
 
+// =========================================================
 // RUTA: FINALIZAR CUESTIONARIO (CANDADO)
+// =========================================================
 app.post('/finalizar-cuestionario', async (req, res) => {
     const { id_usuario } = req.body;
     console.log(`🔒 [FINALIZAR] Cerrando cuestionario para usuario ID: ${id_usuario}`);
 
     try {
-        // Actualizamos la bandera 'finalizado' a 1
         const sql = 'UPDATE instituciones SET finalizado = 1 WHERE id_usuario = ?';
         await db.query(sql, [id_usuario]);
-
         res.json({ mensaje: 'Cuestionario finalizado correctamente' });
     } catch (error) {
         console.error("❌ [ERROR FINALIZAR]:", error);
         res.status(500).json({ error: 'Error al finalizar el cuestionario' });
     }
 });
-
-// RUTA: FINALIZAR CUESTIONARIO (CANDADO)
-app.post('/finalizar-cuestionario', async (req, res) => {
-    const { id_usuario } = req.body;
-    console.log(`🔒 [FINALIZAR] Cerrando cuestionario para usuario ID: ${id_usuario}`);
-
-    try {
-        // Actualizamos la bandera 'finalizado' a 1
-        const sql = 'UPDATE instituciones SET finalizado = 1 WHERE id_usuario = ?';
-        await db.query(sql, [id_usuario]);
-
-        res.json({ mensaje: 'Cuestionario finalizado correctamente' });
-    } catch (error) {
-        console.error("❌ [ERROR FINALIZAR]:", error);
-        res.status(500).json({ error: 'Error al finalizar el cuestionario' });
-    }
-});
-
 
 // =========================================================
 // 📍 ENDPOINT: OBTENER UBICACIONES PARA EL MAPA
 // =========================================================
 
-// 1. RUTA PARA QUE EL ADMIN VEA EL MAPA (GET)
 app.get('/api/ubicaciones', async (req, res) => {
     try {
         const sql = `
@@ -1128,18 +1109,15 @@ app.get('/api/ubicaciones', async (req, res) => {
         
         const [usuarios] = await db.query(sql);
         res.json(usuarios);
-
     } catch (error) {
         console.error("Error al obtener mapa:", error);
         res.status(500).json({ error: 'Error interno' });
     }
 });
 
-// 2. RUTA PARA GUARDAR COORDENADAS DESDE SECCIÓN 1 (POST)
 app.post('/api/actualizar-ubicacion', async (req, res) => {
     const { id_usuario, latitud, longitud, ubicacion_texto } = req.body;
     
-    // Validación básica
     if (!id_usuario || !latitud) {
         return res.status(400).json({ error: 'Faltan datos de ubicación' });
     }
@@ -1160,9 +1138,9 @@ app.post('/api/actualizar-ubicacion', async (req, res) => {
     }
 });
 
-// =======================
+// =========================================================
 // 📧 ENDPOINT: CORREO (CORREGIDO - TEXTOS VISIBLES)
-// =======================
+// =========================================================
 app.post('/api/enviar-correo-resultados', async (req, res) => {
     const { idUsuario } = req.body;
 
@@ -1253,7 +1231,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             colorFondoGlobal = "#ffc107"; 
         } 
 
-        // 5. GENERAR HTML (CORREGIDO: VARIABLE UNIFICADA)
+        // 5. GENERAR HTML 
         let filasHTML = '';
         
         for (let i = 1; i <= 9; i++) {
@@ -1262,7 +1240,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
             const porcentaje = (puntos / maximo) * 100;
 
             let colorSeccion = '#6c757d'; 
-            let textoRecomendacion = ""; // USAMOS ESTA VARIABLE SIEMPRE
+            let textoRecomendacion = ""; 
             let iconoEstado = "";
 
             if (i === 1) {
@@ -1285,7 +1263,6 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
                 }
             }
 
-            // Construcción del String HTML
             filasHTML += `
                 <tr>
                     <td style="padding: 15px; border-bottom: 1px solid #eee;">
@@ -1389,4 +1366,3 @@ app.listen(PORT, () => {
     console.log(`✅ Servidor corriendo en http://172.17.175.137:${PORT}`);
     console.log(`   Esperando peticiones...`);
 });
-
