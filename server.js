@@ -918,8 +918,8 @@ app.get('/resumen/:idUsuario', async (req, res) => {
         const { idUsuario } = req.params;
 
         // 1. Obtener datos generales
-        const [rows] = await db.query('SELECT id_institucion, nombre_usuario, puntaje_total FROM instituciones WHERE id_usuario = ?', [idUsuario]);
-        
+        const [rows] = await db.query('SELECT id_institucion, nombre_usuario, puntaje_total, analisis_ia FROM instituciones WHERE id_usuario = ?', [idUsuario]);
+
         if (rows.length === 0) return res.status(404).json({ error: "Institución no encontrada" });
         
         const idInstitucion = rows[0].id_institucion;
@@ -998,11 +998,12 @@ app.get('/resumen/:idUsuario', async (req, res) => {
             institucion: rows[0].nombre_usuario,
             total: puntajeTotal,
             maximo: MAX_PUNTAJE,
-            porcentaje: porcentaje, // Para pintar la dona o barra de progreso
+            porcentaje: porcentaje,
             secciones: reporteSecciones,
             nivel: nivel,
             mensaje: mensaje,
-            color: color
+            color: color,
+            analisis_ia: rows[0].analisis_ia 
         });
 
     } catch (error) {
