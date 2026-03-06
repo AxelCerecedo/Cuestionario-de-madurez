@@ -106,174 +106,167 @@
         }
 
         async function cargarResumen() {
-            const idUsuario = localStorage.getItem('idUsuario');
-            if(!idUsuario) { window.location.href = 'login.html'; return; }
+    const idUsuario = localStorage.getItem('idUsuario');
+    if (!idUsuario) { window.location.href = 'login.html'; return; }
+
+    try {
+        // 1. Pedimos los datos iniciales al servidor
+        let response = await fetch(`${API_URL}/resumen/${idUsuario}`);
+        let data = await response.json();
+
+        if (data.error) { 
+            Swal.fire("Error", data.error, "error"); 
+            return; 
+        }
+
+        // =========================================================
+        // 🤖 GENERACIÓN "AL VUELO" (Si no existe análisis previo)
+        // =========================================================
+        if (!data.analisis_ia) {
+            Swal.fire({
+                title: '🤖 Generando Reporte...',
+                html: 'La IA está analizando tus respuestas para darte consejos personalizados.<br><br><b>Esto tomará unos segundos...</b>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
             try {
-                // 1. Pedimos los datos iniciales
-                let response = await fetch(`${API_URL}/resumen/${idUsuario}`);
-                let data = await response.json();
-
-                if(data.error) { alert(data.error); return; }
-
-                // =========================================================
-                // 🔥 NUEVO: GENERACIÓN "AL VUELO" PARA USUARIOS ANTIGUOS
-                // =========================================================
-                if (!data.analisis_ia) {
-                    // Mostrar pantalla de carga porque vamos a llamar a Gemini
-                    Swal.fire({
-                        title: '🤖 Actualizando reporte...',
-                        html: 'Estamos generando tu análisis con Inteligencia Artificial.<br><br><b>Esto tomará de 5 a 10 segundos...</b>',
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-
-                    try {
-                        const baseURL = typeof API_URL !== 'undefined' ? API_URL : 'https://api-cuestionario.onrender.com';
-                        
-                        // Llamamos al endpoint de IA
-                        const resIA = await fetch(`${baseURL}/api/generar-analisis-ia`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id_usuario: idUsuario })
-                        });
-
-                        if (resIA.ok) {
-                            // Si tuvo éxito, volvemos a pedir los datos (ahora sí traerán el análisis)
-                            response = await fetch(`${API_URL}/resumen/${idUsuario}`);
-                            data = await response.json();
-                        } else {
-                            console.warn("⚠️ La IA no pudo generar el reporte retroactivo.");
-                        }
-                    } catch (errIA) {
-                        console.error("Error al generar IA al vuelo:", errIA);
-                    } finally {
-                        // Cerramos la pantalla de carga pase lo que pase
-                        Swal.close();
-                    }
-                }
-                // =========================================================
-
-                // --- 🤖 PARSEAR DATOS DE LA IA ---
-                let analisis = null;
-                if (data.analisis_ia) {
-                    try {
-                        analisis = typeof data.analisis_ia === 'string' ? JSON.parse(data.analisis_ia) : data.analisis_ia;
-                    } catch (e) {
-                        console.error("Error leyendo JSON de IA:", e);
-                    }
-                }
-
-                // --- 1. TARJETA IZQUIERDA (DEGRADADO Y TEXTO IA) ---
-                const colorInicio = hexToRgba(data.color, 0.95);
-                const colorFin = hexToRgba(data.color, 0.40);
-                document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
-
-                // Inyectamos el resumen general de la IA si existe
-                const contenedorMensaje = document.querySelector('.mensaje-final');
-                if (analisis && analisis.resumen_general) {
-                    contenedorMensaje.innerHTML = `
-                        <span style="font-size:1.15em; font-weight:800; display:block; margin-bottom:12px; letter-spacing:0.5px; text-shadow:0 1px 2px rgba(0,0,0,0.2);">🤖 Análisis Ejecutivo IA</span>
-                        <div style="font-size:1.05rem; line-height:1.6; font-weight:400; opacity:0.98; text-align:justify;">
-                            ${analisis.resumen_general}
-                        </div>
-                    `;
-                } else {
-                    // Respaldo por si no hay IA
-                    contenedorMensaje.innerHTML = `
-                        Agradecemos su tiempo y colaboración.<br><br>
-                        La información ha sido procesada exitosamente. A continuación encontrará el desglose detallado.
-                    `;
-                }
-
-                // --- 2. TABLA DERECHA ---
-                const tbody = document.getElementById('tablaBody');
-                tbody.innerHTML = '';
+                // Usamos la URL base del servidor para el endpoint de IA
+                const baseURL = typeof API_URL !== 'undefined' ? API_URL : 'https://api-cuestionario.onrender.com';
                 
-                Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
-                    const numSec = parseInt(sec);
-                    if(isNaN(numSec)) return; 
-
-                    const puntajeObtenido = data.secciones[sec];
-                    const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1; 
-                    
-                    let colorCuadrito = '#6c757d'; 
-                    let recomendacionTexto = "";
-
-                    // Lógica del Semáforo para el color
-                    if (numSec === 1) {
-                        colorCuadrito = '#17a2b8'; 
-                    } else {
-                        const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
-                        if (porcentaje >= 80) {
-                            colorCuadrito = '#28a745'; 
-                        } else if (porcentaje >= 50) {
-                            colorCuadrito = '#ffc107'; 
-                        } else {
-                            colorCuadrito = '#dc3545'; 
-                        }
-                    }
-
-                    // 🤖 LÓGICA DE TEXTOS: Prioridad a Gemini, respaldo a tus textos
-                    if (analisis && analisis.secciones && analisis.secciones[sec]) {
-                        recomendacionTexto = analisis.secciones[sec];
-                    } else {
-                        // Respaldo original
-                        if (numSec === 1) {
-                            recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
-                        } else {
-                            const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
-                            if (porcentaje >= 80) {
-                                recomendacionTexto = "✅ <b>Nivel consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
-                            } else if (porcentaje >= 50) {
-                                recomendacionTexto = "⚠️ <b>Nivel en desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
-                            } else {
-                                recomendacionTexto = "🛑 <b>Nivel minimo:</b> Se han identificado carencias que comprometen la gestión. Se recomienda implementar un plan de acción para mejorar las condiciones mínimas de operación.";
-                            }
-                        }
-                    }
-
-                    // Fila Principal
-                    const trPrincipal = document.createElement('tr');
-                    trPrincipal.className = 'fila-seccion';
-                    trPrincipal.onclick = () => toggleDetalle(sec);
-
-                    trPrincipal.innerHTML = `
-                        <td>
-                            <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
-                            <span class="texto-seccion">${sec}. ${NOMBRES_SECCIONES[sec] || 'General'}</span>
-                        </td>
-                        <td>
-                            <button class="btn-toggle" id="btn-${sec}">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                        </td>
-                    `;
-
-                    // Fila Detalle
-                    const trDetalle = document.createElement('tr');
-                    trDetalle.id = `detalle-${sec}`;
-                    trDetalle.className = 'fila-detalle';
-                    trDetalle.innerHTML = `
-                        <td colspan="2" style="padding: 0; border: none;">
-                            <div class="contenido-detalle">
-                                ${recomendacionTexto}
-                            </div>
-                        </td>
-                    `;
-
-                    tbody.appendChild(trPrincipal);
-                    tbody.appendChild(trDetalle);
+                const resIA = await fetch(`${baseURL}/api/generar-analisis-ia`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_usuario: idUsuario })
                 });
 
-            } catch (error) { 
-                console.error(error);
-                Swal.fire("Error", "No se pudo conectar con el servidor.", "error");
+                if (resIA.ok) {
+                    // Si tuvo éxito, recargamos los datos para obtener el nuevo JSON
+                    response = await fetch(`${API_URL}/resumen/${idUsuario}`);
+                    data = await response.json();
+                }
+            } catch (errIA) {
+                console.error("Error al generar IA al vuelo:", errIA);
+            } finally {
+                Swal.close();
             }
         }
+
+        // --- PARSEAR DATOS DE LA IA ---
+        let analisis = null;
+        if (data.analisis_ia) {
+            try {
+                analisis = typeof data.analisis_ia === 'string' ? JSON.parse(data.analisis_ia) : data.analisis_ia;
+            } catch (e) {
+                console.error("Error leyendo JSON de IA:", e);
+            }
+        }
+
+        // --- 1. TARJETA IZQUIERDA (DISEÑO CON AGRADECIMIENTO) ---
+        const colorInicio = hexToRgba(data.color, 0.95);
+        const colorFin = hexToRgba(data.color, 0.40);
+        document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
+
+        const contenedorMensaje = document.querySelector('.mensaje-final');
+        
+        // Estructura visual: Agradecimiento + Bloque IA
+        contenedorMensaje.innerHTML = `
+            <div style="text-align: left;">
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: #fff;">¡Gracias por participar!</h3>
+                <p style="font-size: 0.85rem; opacity: 0.9; margin: 10px 0 20px 0; line-height: 1.3; color: #fff;">
+                    Has concluido el Diagnóstico Institucional. Este análisis te ayudará a identificar áreas de oportunidad en tu gestión digital.
+                </p>
+                
+                <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); box-shadow: inset 0 0 10px rgba(0,0,0,0.05); color: #fff;">
+                    <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+                        🤖 Informe Ejecutivo IA
+                    </span>
+                    <p style="font-size: 0.92rem; line-height: 1.4; margin: 0; font-style: italic; text-align: justify;">
+                        "${analisis ? analisis.resumen_general : 'Agradecemos su tiempo y colaboración. La información ha sido procesada exitosamente.'}"
+                    </p>
+                </div>
+            </div>
+        `;
+
+        // --- 2. TABLA DERECHA (ACORDEÓN) ---
+        const tbody = document.getElementById('tablaBody');
+        tbody.innerHTML = '';
+        
+        Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
+            const numSec = parseInt(sec);
+            if(isNaN(numSec)) return; 
+
+            const puntajeObtenido = data.secciones[sec];
+            const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1; 
+            const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
+            
+            let colorCuadrito = '#6c757d'; 
+            let recomendacionTexto = "";
+
+            // Lógica del Semáforo para el color
+            if (numSec === 1) {
+                colorCuadrito = '#17a2b8'; // Color informativo para Sección 1
+            } else {
+                if (porcentaje >= 80) colorCuadrito = '#28a745'; 
+                else if (porcentaje >= 50) colorCuadrito = '#ffc107'; 
+                else colorCuadrito = '#dc3545'; 
+            }
+
+            // Prioridad a Gemini, respaldo a tus textos originales
+            if (analisis && analisis.secciones && analisis.secciones[sec]) {
+                recomendacionTexto = analisis.secciones[sec];
+            } else {
+                if (numSec === 1) {
+                    recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
+                } else {
+                    if (porcentaje >= 80) {
+                        recomendacionTexto = "✅ <b>Nivel consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
+                    } else if (porcentaje >= 50) {
+                        recomendacionTexto = "⚠️ <b>Nivel en desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención.";
+                    } else {
+                        recomendacionTexto = "🛑 <b>Nivel mínimo:</b> Se han identificado carencias. Se recomienda implementar un plan de acción urgente.";
+                    }
+                }
+            }
+
+            // Fila Principal del Acordeón
+            const trPrincipal = document.createElement('tr');
+            trPrincipal.className = 'fila-seccion';
+            trPrincipal.onclick = () => toggleDetalle(sec);
+            trPrincipal.innerHTML = `
+                <td>
+                    <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
+                    <span class="texto-seccion">${sec}. ${NOMBRES_SECCIONES[sec] || 'General'}</span>
+                </td>
+                <td>
+                    <button class="btn-toggle" id="btn-${sec}">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </td>
+            `;
+
+            // Fila de Contenido Expandible
+            const trDetalle = document.createElement('tr');
+            trDetalle.id = `detalle-${sec}`;
+            trDetalle.className = 'fila-detalle';
+            trDetalle.innerHTML = `
+                <td colspan="2" style="padding: 0; border: none;">
+                    <div class="contenido-detalle" style="padding: 15px; font-size: 0.9rem; line-height: 1.4; color: #444; background: #fff; text-align: justify;">
+                        ${recomendacionTexto}
+                    </div>
+                </td>
+            `;
+
+            tbody.appendChild(trPrincipal);
+            tbody.appendChild(trDetalle);
+        });
+
+    } catch (error) { 
+        console.error(error);
+        Swal.fire("Error", "No se pudo conectar con el servidor para cargar el resumen.", "error");
+    }
+}
 
         function toggleDetalle(id) {
             const filaDetalle = document.getElementById(`detalle-${id}`);

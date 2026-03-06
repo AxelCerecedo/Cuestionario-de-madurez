@@ -1454,79 +1454,61 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         `;
         const [respuestasRaw] = await db.query(queryRespuestas, [idInstitucion, idInstitucion, idInstitucion]);
 
-        if (respuestasRaw.length === 0) return res.status(400).json({ error: "No hay respuestas." });
-
         const respuestasPorSeccion = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] };
-
         respuestasRaw.forEach(r => {
             const numSec = identificarSeccion(r.id_pregunta); 
-            
-            const infoPregunta = DICCIONARIO[r.id_pregunta] || { pregunta: `Pregunta ID ${r.id_pregunta}`, opciones: {} };
-            const textoPregunta = infoPregunta.pregunta;
-            
+            const infoPregunta = DICCIONARIO[r.id_pregunta] || { pregunta: `Pregunta ${r.id_pregunta}`, opciones: {} };
             let textoRespuesta = r.respuesta_texto || "";
-            
-            if (r.id_opcion !== null && r.id_opcion !== undefined) {
-                const textoOpcion = infoPregunta.opciones[r.id_opcion] || `Opción ID: ${r.id_opcion}`;
+            if (r.id_opcion !== null) {
+                const textoOpcion = infoPregunta.opciones[r.id_opcion] || `ID: ${r.id_opcion}`;
                 textoRespuesta = textoRespuesta ? `${textoOpcion} (${textoRespuesta})` : textoOpcion;
             }
-
             if (textoRespuesta.trim() !== "" && numSec >= 1 && numSec <= 9) {
-                respuestasPorSeccion[numSec].push(`- ${textoPregunta}: ${textoRespuesta}`);
+                respuestasPorSeccion[numSec].push(`- ${infoPregunta.pregunta}: ${textoRespuesta}`);
             }
         });
 
-        let contextoParaIA = "A continuación, las respuestas del diagnóstico por sección:\n\n";
+        let contextoParaIA = "";
         for (let i = 1; i <= 9; i++) {
             if (respuestasPorSeccion[i].length > 0) {
                 contextoParaIA += `[Sección ${i}]\n${respuestasPorSeccion[i].join('\n')}\n\n`;
             }
         }
 
-        console.log("   📄 Contexto armado para la IA (Muestra): " + contextoParaIA.substring(0, 150) + "...");
-
-        if (!process.env.GEMINI_API_KEY) throw new Error("Falta GEMINI_API_KEY");
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
-        Eres un auditor experto en gestión de acervos, archivos e instituciones patrimoniales.
-        Analiza estas respuestas de un diagnóstico:
-        
+        Actúa como un consultor experto. Analiza estos resultados de un diagnóstico de madurez digital:
         ${contextoParaIA}
         
-        Tu tarea es generar un reporte de resultados en formato JSON estrictamente válido. 
-        El JSON debe tener exactamente esta estructura:
+        Genera un JSON con esta estructura exacta:
         {
-          "resumen_general": "Párrafo de máx 4 líneas resumiendo el estado global, fortaleza y riesgo.",
+          "resumen_general": "Un párrafo de MÁXIMO 40 PALABRAS. Comienza agradeciendo la participación y luego resume el estado global con una fortaleza y un riesgo.",
           "secciones": {
-            "1": "Análisis y recomendación directa de 2 líneas sobre la Identificación de la Institución.",
-            "2": "Análisis y recomendación directa de 2 líneas sobre la Gestión Institucional.",
-            "3": "Análisis y recomendación directa de 2 líneas sobre la Caracterización del Acervo.",
-            "4": "Análisis y recomendación directa de 2 líneas sobre Inventario y Catalogación.",
-            "5": "Análisis y recomendación directa de 2 líneas sobre Gestión de Información.",
-            "6": "Análisis y recomendación directa de 2 líneas sobre Recursos Humanos.",
-            "7": "Análisis y recomendación directa de 2 líneas sobre Infraestructura Tecnológica.",
-            "8": "Análisis y recomendación directa de 2 líneas sobre Normatividad y Procesos.",
-            "9": "Análisis y recomendación directa de 2 líneas sobre Servicios."
+            "1": "Máximo 20 palabras.",
+            "2": "Máximo 20 palabras.",
+            "3": "Máximo 20 palabras.",
+            "4": "Máximo 20 palabras.",
+            "5": "Máximo 20 palabras.",
+            "6": "Máximo 20 palabras.",
+            "7": "Máximo 20 palabras.",
+            "8": "Máximo 20 palabras.",
+            "9": "Máximo 20 palabras."
           }
         }
-        
-        Reglas: NO uses formato Markdown, devuelve SOLO el JSON puro. Si faltan datos de una sección, infiere basándote en lo general o da un consejo estándar. Dirígete a la institución (ej: "Cuentan con...").
-        `;
+        REGLAS: No uses Markdown, solo JSON puro. Sé muy breve y ejecutivo.`;
 
         const result = await model.generateContent(prompt);
         const jsonLimpio = result.response.text().replace(/```json/gi, '').replace(/```/gi, '').trim();
         const analisisParseado = JSON.parse(jsonLimpio);
 
-        const sqlUpdate = 'UPDATE instituciones SET analisis_ia = ? WHERE id_institucion = ?';
-        await db.query(sqlUpdate, [JSON.stringify(analisisParseado), idInstitucion]);
-
-        res.json({ message: "Análisis generado y guardado." });
+        await db.query('UPDATE instituciones SET analisis_ia = ? WHERE id_institucion = ?', [JSON.stringify(analisisParseado), idInstitucion]);
+        res.json({ message: "Éxito" });
 
     } catch (error) {
-        console.error("❌ [ERROR GEMINI]:", error);
-        res.status(500).json({ error: "Error al generar el análisis con IA." });
+        console.error("❌ ERROR:", error);
+        res.status(500).json({ error: "Error interno" });
     }
 });
 
