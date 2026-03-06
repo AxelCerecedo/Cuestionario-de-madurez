@@ -110,10 +110,52 @@
             if(!idUsuario) { window.location.href = 'login.html'; return; }
 
             try {
-                const response = await fetch(`${API_URL}/resumen/${idUsuario}`);
-                const data = await response.json();
+                // 1. Pedimos los datos iniciales
+                let response = await fetch(`${API_URL}/resumen/${idUsuario}`);
+                let data = await response.json();
 
                 if(data.error) { alert(data.error); return; }
+
+                // =========================================================
+                // 🔥 NUEVO: GENERACIÓN "AL VUELO" PARA USUARIOS ANTIGUOS
+                // =========================================================
+                if (!data.analisis_ia) {
+                    // Mostrar pantalla de carga porque vamos a llamar a Gemini
+                    Swal.fire({
+                        title: '🤖 Actualizando reporte...',
+                        html: 'Estamos generando tu análisis con Inteligencia Artificial.<br><br><b>Esto tomará de 5 a 10 segundos...</b>',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    try {
+                        const baseURL = typeof API_URL !== 'undefined' ? API_URL : 'https://api-cuestionario.onrender.com';
+                        
+                        // Llamamos al endpoint de IA
+                        const resIA = await fetch(`${baseURL}/api/generar-analisis-ia`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id_usuario: idUsuario })
+                        });
+
+                        if (resIA.ok) {
+                            // Si tuvo éxito, volvemos a pedir los datos (ahora sí traerán el análisis)
+                            response = await fetch(`${API_URL}/resumen/${idUsuario}`);
+                            data = await response.json();
+                        } else {
+                            console.warn("⚠️ La IA no pudo generar el reporte retroactivo.");
+                        }
+                    } catch (errIA) {
+                        console.error("Error al generar IA al vuelo:", errIA);
+                    } finally {
+                        // Cerramos la pantalla de carga pase lo que pase
+                        Swal.close();
+                    }
+                }
+                // =========================================================
 
                 // --- 🤖 PARSEAR DATOS DE LA IA ---
                 let analisis = null;
@@ -139,6 +181,12 @@
                             ${analisis.resumen_general}
                         </div>
                     `;
+                } else {
+                    // Respaldo por si no hay IA
+                    contenedorMensaje.innerHTML = `
+                        Agradecemos su tiempo y colaboración.<br><br>
+                        La información ha sido procesada exitosamente. A continuación encontrará el desglose detallado.
+                    `;
                 }
 
                 // --- 2. TABLA DERECHA ---
@@ -157,10 +205,10 @@
 
                     // Lógica del Semáforo para el color
                     if (numSec === 1) {
-                        colorCuadrito = '#28a745'; 
+                        colorCuadrito = '#17a2b8'; 
                     } else {
                         const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
-                        if (porcentaje >= 100) {
+                        if (porcentaje >= 80) {
                             colorCuadrito = '#28a745'; 
                         } else if (porcentaje >= 50) {
                             colorCuadrito = '#ffc107'; 
@@ -178,7 +226,7 @@
                             recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
                         } else {
                             const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
-                            if (porcentaje >= 100) {
+                            if (porcentaje >= 80) {
                                 recomendacionTexto = "✅ <b>Nivel consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
                             } else if (porcentaje >= 50) {
                                 recomendacionTexto = "⚠️ <b>Nivel en desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención para alcanzar un nivel óptimo.";
