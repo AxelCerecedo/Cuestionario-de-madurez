@@ -1517,7 +1517,7 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
             
             // Un pequeño semáforo visual para la terminal
             let icono = porcentaje >= 80 ? '🟢' : (porcentaje >= 50 ? '🟡' : '🔴');
-            if (i === 1) icono = '🔵'; 
+            //if (i === 1) icono = '🔵'; 
 
             console.log(`   ${icono} Sección ${i}: ${ptsObtenidos}/${ptsMaximos} pts (${porcentaje}%)`);
         }
