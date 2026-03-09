@@ -1534,7 +1534,7 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         INFORMACIÓN IMPORTANTE: 
         Para cada sección, te he proporcionado el "RESULTADO MATEMÁTICO" (Consolidado, En Desarrollo o Atención Prioritaria).
         TU ANÁLISIS DEBE COINCIDIR ESTRICTAMENTE CON ESE TONO. 
-        Si el resultado es "Atención Prioritaria", no los felicites aunque tengan posgrados o herramientas aisladas; enfócate en advertir por qué su puntaje global en esa sección fue deficiente y qué les falta.
+        Si el resultado es "Atención Prioritaria", no los felicites aunque tengan posgrados o herramientas aisladas; enfócate en advertir por qué su desempeño global en esa sección fue deficiente y qué les falta.
         
         ${contextoParaIA}
         
@@ -1553,7 +1553,11 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
             "9": "Máximo 20 palabras adaptadas a su Resultado Matemático."
           }
         }
-        REGLAS: No uses Markdown, devuelve SOLO el objeto JSON puro.`;
+        
+        REGLAS ESTRICTAS: 
+        1. No uses Markdown, devuelve SOLO el objeto JSON puro.
+        2. ESTÁ ESTRICTAMENTE PROHIBIDO mencionar porcentajes (ej. 0%, 50%), números de calificación, o decir las frases "Atención Prioritaria", "En Desarrollo" o "Consolidado" en tu redacción. Usa esa información ÚNICAMENTE en tu mente para adaptar el tono del texto de forma natural y humana.
+        `;
 
         const result = await model.generateContent(prompt);
         const jsonLimpio = result.response.text().replace(/```json/gi, '').replace(/```/gi, '').trim();
