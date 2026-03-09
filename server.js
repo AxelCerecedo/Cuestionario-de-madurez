@@ -1362,17 +1362,17 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
 });
 
 // =========================================================
-// 🧠 ENDPOINT: GENERAR ANÁLISIS CON IA (GEMINI - SIN BD CATÁLOGO)
+// 🧠 ENDPOINT: GENERAR ANÁLISIS CON IA (VERSIÓN FINAL + SEMÁFORO)
 // =========================================================
 app.post('/api/generar-analisis-ia', async (req, res) => {
     const { id_usuario } = req.body;
-    console.log(`\n🤖 [GEMINI] Iniciando análisis para usuario ID: ${id_usuario}`);
+    console.log(`\n🤖 [GEMINI] Iniciando análisis sincronizado para usuario ID: ${id_usuario}`);
 
-    // =========================================================
-    // 📚 DICCIONARIO UNIVERSAL DE TRADUCCIÓN (Para Gemini)
-    // =========================================================
+    // --- 1. DICCIONARIOS Y CONSTANTES ---
+    const MAXIMOS_SECCION = { 1: 0, 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4 };
+    
+    // (Pegar aquí el DICCIONARIO UNIVERSAL largo que armamos en los mensajes anteriores)
     const DICCIONARIO = {
-        // --- SECCIÓN 1 ---
         1: { pregunta: "Nombre del Archivo / Institución", opciones: {} },
         2: { pregunta: "Fecha de creación o fundación", opciones: {} },
         3: { pregunta: "Historia del archivo", opciones: {} },
@@ -1385,16 +1385,12 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         11: { pregunta: "El acervo esta en resguardo de", opciones: { 1: "Acervo institucional", 2: "Colección privada", 3: "Biblioteca", 4: "Centro de documentación", 5: "Fototeca", 6: "Museo", 7: "Otro" } },
         12: { pregunta: "Tipos de acervos resguardados", opciones: { 1: "Artes visuales", 2: "Arqueológica", 3: "Histórica", 4: "Arquitectónica", 5: "Documental", 6: "Etnográfica", 7: "Bibliográfica", 8: "Científica", 9: "Industrial", 10: "Numismática", 11: "Fotográfica", 12: "Hemerográfica", 13: "Planoteca", 14: "Otro" } },
         13: { pregunta: "Propósito del acervo", opciones: { 1: "Conservación patrimonial", 2: "Producción", 3: "Investigación / Educación", 4: "Comercialización", 5: "Otro" } },
-
-        // --- SECCIÓN 2 ---
         14: { pregunta: "Misión institucional", opciones: {} },
         15: { pregunta: "Visión institucional", opciones: {} },
         16: { pregunta: "Objetivos Institucionales", opciones: {} },
         17: { pregunta: "¿Cuenta con procesos y procedimientos documentados?", opciones: { 1: "Sí", 2: "No" } },
         18: { pregunta: "¿Cuenta con un organigrama?", opciones: { 1: "Sí", 2: "No" } },
         19: { pregunta: "Fuentes de financiamiento", opciones: { 1: "Gubernamental nacional", 2: "Gubernamental estatal", 3: "Gubernamental municipal", 4: "Recursos propios", 5: "Particular nacional", 6: "Particular extranjero", 7: "Organismo internacional", 8: "Otro", 99: "Ninguno" } },
-
-        // --- SECCIÓN 3 ---
         20: { pregunta: "Volumen aproximado del acervo fotográfico", opciones: { 1: "Hasta 500 ítems", 2: "Hasta 5000 ítems", 3: "Hasta 50,000 ítems", 4: "Más de 50,000 ítems" } },
         21: { pregunta: "Fondos/subfondos y/o colecciones representativos", opciones: { 1: "Fondo 1", 2: "Fondo 2", 3: "Fondo 3" } },
         22: { pregunta: "Tipos de materiales resguardados", opciones: { 1: "Positivos en papel", 2: "Positivos en película", 3: "Negativos", 4: "Nacidas digitales", 5: "Digitalizadas", 6: "Documentos asociados", 7: "Dispositivos fotográficos", 8: "Otro" } },
@@ -1404,8 +1400,6 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         26: { pregunta: "Nivel de equipamiento disponible", opciones: { 1: "Inadecuado", 2: "Básico", 3: "Adecuado", 4: "Bueno", 5: "Óptimo" } },
         27: { pregunta: "Espacios de almacenamiento acondicionados", opciones: { 1: "Control de temperatura", 2: "Control de humedad", 3: "Iluminación adecuada", 4: "Mobiliario adecuado", 5: "Protección contra riesgos", 6: "Todas las anteriores" } },
         28: { pregunta: "Instalaciones fotográficas", opciones: { 1: "Laboratorio fotográfico", 2: "Estudio fotográfico", 3: "Área de reproducción", 4: "Estación de digitalización", 99: "Ninguna" } },
-
-        // --- SECCIÓN 4 ---
         29: { pregunta: "Porcentaje del acervo inventariado", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
         30: { pregunta: "Porcentaje del acervo catalogado", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
         31: { pregunta: "Reglas de catalogación utilizadas", opciones: { 1: "MARC21", 2: "ISAD(G)", 3: "ISBD", 4: "Norma Mexicana: NMX", 5: "RDA / Object ID / VRA Core", 6: "CCO / Otro", 99: "Ninguna" } },
@@ -1415,13 +1409,9 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         35: { pregunta: "Métodos de resguardo digital", opciones: { 1: "Computadora", 2: "Unidades externas", 3: "Nube gratuita", 4: "Nube de pago", 5: "Servidor / NAS", 6: "Sistema DAM", 7: "Repositorio digital", 99: "Ninguna" } },
         36: { pregunta: "Digitalización que realiza la institución", opciones: { 1: "Escaneo", 2: "Reprografía", 3: "Plan escrito", 4: "Plan para conservación", 5: "Bajo demanda" } },
         37: { pregunta: "Calidad de la digitalización", opciones: { 1: "No se digitaliza", 2: "Sin estándar", 3: "Estándar básico", 4: "Estándar intermedio", 5: "Estándar de preservación" } },
-
-        // --- SECCIÓN 5 ---
         38: { pregunta: "Herramientas de gestión de información", opciones: { 381: "Fichas manuales", 382: "Hojas de cálculo", 383: "Base de datos local", 384: "Base de datos en línea", 385: "Sistema DAM", 386: "Repositorio digital", 3899: "Ninguna" } },
         39: { pregunta: "Nivel de experiencia/dominio en gestión", opciones: { 1:"Nivel 1", 2:"Nivel 2", 3:"Nivel 3", 4:"Nivel 4", 5:"Nivel 5" } },
         40: { pregunta: "Porcentaje disponible en línea", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
-
-        // --- SECCIÓN 6 ---
         41: { pregunta: "Número total de personas en el acervo", opciones: {} },
         42: { pregunta: "Antigüedad promedio del personal", opciones: { 1: "0-2 años", 2: "3-5 años", 3: "6-10 años", 4: "11-20 años", 5: "Más de 20 años" } },
         43: { pregunta: "Nivel educativo del personal", opciones: { 1: "Básico", 2: "Medio superior", 3: "Superior", 4: "Posgrado" } },
@@ -1429,14 +1419,8 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         45: { pregunta: "Áreas de capacitación", opciones: { 1: "Archivística", 2: "Catalogación", 3: "Fotografía", 4: "Conservación", 5: "Restauración", 6: "Digitalización", 7: "Herramientas digitales", 8: "Historia/Arte", 9: "Manipulación física", 10: "Otro" } },
         46: { pregunta: "Frecuencia de capacitación", opciones: { 1: "No recibe", 2: "Ocasional", 3: "Periódica", 4: "Frecuente", 5: "Muy frecuente" } },
         47: { pregunta: "¿Se evalúa el desempeño del personal?", opciones: { 1: "Sí", 0: "No" } },
-
-        // --- SECCIÓN 7 ---
         48: { pregunta: "Infraestructura tecnológica y Software", opciones: { 481: "Equipo de cómputo", 482: "Conexión a Internet", 483: "Servidor / Hosting", 484: "Equipo de digitalización", 485: "Software especializado", 4810: "Omeka", 4811: "Tainacan", 4812: "Collective Access", 4813: "Filemaker", 4814: "Koha", 4815: "Access", 4816: "DSpace", 4817: "Unique Collection", 4818: "Collector", 4819: "Airtable", 4820: "AtoM", 4821: "Desarrollo a la medida", 4822: "Otro" } },
-
-        // --- SECCIÓN 8 ---
         49: { pregunta: "Normatividad y procesos", opciones: { 491: "Ingreso de objetos", 492: "Salida de objetos", 493: "Plan de emergencia", 494: "Préstamo de documentos", 4941: "Formato institucional", 4942: "Contrato", 4943: "Hoja de movimientos", 4944: "Otro", 495: "Frecuencia de auditorías", 4951: "No se realizan", 4952: "Cada 2+ años", 4953: "Anual", 4954: "Semestral", 4955: "Trimestral", 496: "Evaluación de conservación", 4961: "Interno", 4962: "Externo", 4963: "Ambos", 497: "Registro de daños", 4971: "No se lleva", 4972: "Anual", 4973: "Semestral", 4974: "Bimestral", 4975: "Inmediato" } },
-
-        // --- SECCIÓN 9 ---
         50: { pregunta: "Oferta de servicios y accesibilidad", opciones: { 91: "Servicios básicos", 101: "Consulta en sala", 102: "Préstamos", 103: "Reprografía", 104: "Investigación", 105: "Gestión de permisos", 106: "Otro", 92: "Requisitos de consulta", 110: "Libre", 111: "Cita previa", 112: "Carta de solicitud", 113: "Registro", 114: "Supervisada", 115: "Restringida", 116: "No cuenta", 117: "Otra", 93: "Servicios educativos", 120: "Cursos", 121: "Talleres", 122: "Conferencias", 123: "Visitas guiadas", 124: "Otros", 94: "Mecanismos de difusión", 130: "Exposiciones", 131: "Prensa", 132: "Publicaciones", 133: "Venta", 134: "Otros", 136: "Redes sociales" } }
     };
 
@@ -1445,70 +1429,116 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         if (instRows.length === 0) return res.status(404).json({ error: "Institución no encontrada" });
         const idInstitucion = instRows[0].id_institucion;
 
+        // --- 2. OBTENER RESPUESTAS Y PUNTAJES ---
+        // (Modificamos la consulta para traer también los 'puntos_otorgados')
         const queryRespuestas = `
-            SELECT id_pregunta, respuesta_texto, id_opcion_seleccionada AS id_opcion FROM respuestas WHERE id_institucion = ?
+            SELECT id_pregunta, respuesta_texto, id_opcion_seleccionada AS id_opcion, puntos_otorgados FROM respuestas WHERE id_institucion = ?
             UNION ALL
-            SELECT id_pregunta, NULL AS respuesta_texto, id_opcion FROM respuestas_multiples WHERE id_institucion = ?
+            SELECT id_pregunta, NULL AS respuesta_texto, id_opcion, puntos_otorgados FROM respuestas_multiples WHERE id_institucion = ?
             UNION ALL
-            SELECT id_pregunta_matriz AS id_pregunta, NULL AS respuesta_texto, valor AS id_opcion FROM respuestas_matriz WHERE id_institucion = ?
+            SELECT id_pregunta_matriz AS id_pregunta, NULL AS respuesta_texto, valor AS id_opcion, 0 AS puntos_otorgados FROM respuestas_matriz WHERE id_institucion = ?
         `;
         const [respuestasRaw] = await db.query(queryRespuestas, [idInstitucion, idInstitucion, idInstitucion]);
 
-        const respuestasPorSeccion = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] };
+        if (respuestasRaw.length === 0) return res.status(400).json({ error: "No hay respuestas." });
+
+        // Calculamos los puntos totales por sección para el semáforo
+        const puntosPorSeccion = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
+        const respuestasAgrupadas = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] };
+
         respuestasRaw.forEach(r => {
             const numSec = identificarSeccion(r.id_pregunta); 
-            const infoPregunta = DICCIONARIO[r.id_pregunta] || { pregunta: `Pregunta ${r.id_pregunta}`, opciones: {} };
+            
+            // Sumar puntos
+            const pts = parseInt(r.puntos_otorgados) || 0;
+            if (puntosPorSeccion[numSec] !== undefined) puntosPorSeccion[numSec] += pts;
+
+            // Traducir texto
+            const infoPregunta = DICCIONARIO[r.id_pregunta] || { pregunta: `Pregunta ID ${r.id_pregunta}`, opciones: {} };
             let textoRespuesta = r.respuesta_texto || "";
-            if (r.id_opcion !== null) {
+            if (r.id_opcion !== null && r.id_opcion !== undefined) {
                 const textoOpcion = infoPregunta.opciones[r.id_opcion] || `ID: ${r.id_opcion}`;
                 textoRespuesta = textoRespuesta ? `${textoOpcion} (${textoRespuesta})` : textoOpcion;
             }
+
             if (textoRespuesta.trim() !== "" && numSec >= 1 && numSec <= 9) {
-                respuestasPorSeccion[numSec].push(`- ${infoPregunta.pregunta}: ${textoRespuesta}`);
+                respuestasAgrupadas[numSec].push(`- ${infoPregunta.pregunta}: ${textoRespuesta}`);
             }
         });
 
-        let contextoParaIA = "";
+        // Sumar bono a la Sección 2 si aplica (Igual que en tu código original)
+        const sqlBono = `SELECT COUNT(*) as c FROM respuestas WHERE id_institucion=? AND id_pregunta IN (14,15) AND respuesta_texto IS NOT NULL AND respuesta_texto != ''`;
+        const [rowsBono] = await db.query(sqlBono, [idInstitucion]);
+        if(rowsBono[0].c === 2) puntosPorSeccion[2] += 1;
+
+        // --- 3. ARMAR EL CONTEXTO INYECTANDO EL SEMÁFORO ---
+        let contextoParaIA = "A continuación, las respuestas del diagnóstico por sección y su nivel de desempeño matemático:\n\n";
+        
         for (let i = 1; i <= 9; i++) {
-            if (respuestasPorSeccion[i].length > 0) {
-                contextoParaIA += `[Sección ${i}]\n${respuestasPorSeccion[i].join('\n')}\n\n`;
+            if (respuestasAgrupadas[i].length > 0) {
+                // Cálculo matemático
+                const ptsObtenidos = puntosPorSeccion[i];
+                const ptsMaximos = MAXIMOS_SECCION[i] || 1;
+                const porcentaje = (i === 1) ? 100 : Math.round((ptsObtenidos / ptsMaximos) * 100);
+                
+                // Determinar el "Tono" que debe usar la IA
+                let tonoIA = "";
+                if (i === 1) {
+                    tonoIA = "INFORMATIVA (Solo resume brevemente, sin juzgar).";
+                } else if (porcentaje >= 80) {
+                    tonoIA = `CONSOLIDADO (${porcentaje}%). El tono debe ser de felicitación y confirmación de buenas prácticas.`;
+                } else if (porcentaje >= 50) {
+                    tonoIA = `EN DESARROLLO (${porcentaje}%). El tono debe ser neutral-constructivo. Tienen algunas cosas bien, pero necesitan mejorar.`;
+                } else {
+                    tonoIA = `ATENCIÓN PRIORITARIA (${porcentaje}%). El tono debe ser de advertencia constructiva. Su puntaje es muy bajo. Señala las deficiencias críticas y urge tomar medidas.`;
+                }
+
+                contextoParaIA += `[Sección ${i}] -> RESULTADO MATEMÁTICO: ${tonoIA}\nRespuestas dadas por la institución:\n${respuestasAgrupadas[i].join('\n')}\n\n`;
             }
         }
 
+        // --- 4. LLAMADA A GEMINI CON INSTRUCCIONES ESTRICTAS ---
+        if (!process.env.GEMINI_API_KEY) throw new Error("Falta GEMINI_API_KEY");
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
-        Actúa como un consultor experto. Analiza estos resultados de un diagnóstico de madurez digital:
+        Actúa como un consultor experto. Analiza estos resultados de un diagnóstico institucional.
+        
+        INFORMACIÓN IMPORTANTE: 
+        Para cada sección, te he proporcionado el "RESULTADO MATEMÁTICO" (Consolidado, En Desarrollo o Atención Prioritaria).
+        TU ANÁLISIS DEBE COINCIDIR ESTRICTAMENTE CON ESE TONO. 
+        Si el resultado es "Atención Prioritaria", no los felicites aunque tengan posgrados o herramientas aisladas; enfócate en advertir por qué su puntaje global en esa sección fue deficiente y qué les falta.
+        
         ${contextoParaIA}
         
         Genera un JSON con esta estructura exacta:
         {
-          "resumen_general": "Un párrafo de MÁXIMO 40 PALABRAS. Comienza agradeciendo la participación y luego resume el estado global con una fortaleza y un riesgo.",
+          "resumen_general": "Un párrafo de MÁXIMO 40 PALABRAS. Comienza agradeciendo la participación y luego resume el estado global con una fortaleza y el riesgo más grande.",
           "secciones": {
-            "1": "Máximo 20 palabras.",
-            "2": "Máximo 20 palabras.",
-            "3": "Máximo 20 palabras.",
-            "4": "Máximo 20 palabras.",
-            "5": "Máximo 20 palabras.",
-            "6": "Máximo 20 palabras.",
-            "7": "Máximo 20 palabras.",
-            "8": "Máximo 20 palabras.",
-            "9": "Máximo 20 palabras."
+            "1": "Máximo 20 palabras. (Tono informativo)",
+            "2": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
+            "3": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
+            "4": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
+            "5": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
+            "6": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
+            "7": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
+            "8": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
+            "9": "Máximo 20 palabras adaptadas a su Resultado Matemático."
           }
         }
-        REGLAS: No uses Markdown, solo JSON puro. Sé muy breve y ejecutivo.`;
+        REGLAS: No uses Markdown, devuelve SOLO el objeto JSON puro.`;
 
         const result = await model.generateContent(prompt);
         const jsonLimpio = result.response.text().replace(/```json/gi, '').replace(/```/gi, '').trim();
         const analisisParseado = JSON.parse(jsonLimpio);
 
         await db.query('UPDATE instituciones SET analisis_ia = ? WHERE id_institucion = ?', [JSON.stringify(analisisParseado), idInstitucion]);
-        res.json({ message: "Éxito" });
+        res.json({ message: "Análisis sincronizado generado y guardado." });
 
     } catch (error) {
-        console.error("❌ ERROR:", error);
-        res.status(500).json({ error: "Error interno" });
+        console.error("❌ ERROR GEMINI:", error);
+        res.status(500).json({ error: "Error interno en la IA" });
     }
 });
 
