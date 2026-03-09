@@ -985,12 +985,12 @@ app.get('/resumen/:idUsuario', async (req, res) => {
         else if (puntajeTotal >= 90) { 
             nivel = "Intermedio"; 
             mensaje = "Buen nivel de gestión y control. Enfoque sus esfuerzos en la mejora continua."; 
-            color = "#17a2b8"; // Azul Cian (Info)
+            color = "#ffc107"; // Azul Cian (Info)
         } 
         else if (puntajeTotal >= 45) { 
             nivel = "Básico"; 
             mensaje = "Existen procesos incipientes. Se requiere formalización y estandarización."; 
-            color = "#ffc107"; // Amarillo (Warning)
+            color = "#dc3545"; // Amarillo (Warning)
         } 
         // Si es menor a 45, se queda en "Inicial" (Rojo)
 
