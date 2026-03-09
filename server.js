@@ -994,6 +994,15 @@ app.get('/resumen/:idUsuario', async (req, res) => {
         } 
         // Si es menor a 45, se queda en "Inicial" (Rojo)
 
+        // =========================================================
+        // 🖨️ IMPRIMIR EN CONSOLA CUANDO ALGUIEN VE SU RESUMEN
+        // =========================================================
+        console.log(`\n🔔 [GET] /resumen/${idUsuario}`);
+        console.log(`   🏢 Institución: ${rows[0].nombre_usuario}`);
+        console.log(`   ⭐ Puntaje Total: ${puntajeTotal} / ${MAX_PUNTAJE} (${porcentaje}%)`);
+        console.log(`   🚦 Nivel Calculado: ${nivel}`);
+        console.log("---------------------------------------------------\n");
+
         // Enviar respuesta
         res.json({
             institucion: rows[0].nombre_usuario,
@@ -1496,6 +1505,23 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
                 contextoParaIA += `[Sección ${i}] -> RESULTADO MATEMÁTICO: ${tonoIA}\nRespuestas dadas por la institución:\n${respuestasAgrupadas[i].join('\n')}\n\n`;
             }
         }
+
+        // =========================================================
+        // 🖨️ IMPRIMIR REPORTE EN LA TERMINAL (Para depuración)
+        // =========================================================
+        console.log(`\n📊 [PUNTAJES ENVIADOS A GEMINI - USUARIO ${id_usuario}]`);
+        for (let i = 1; i <= 9; i++) {
+            const ptsObtenidos = puntosPorSeccion[i] || 0;
+            const ptsMaximos = MAXIMOS_SECCION[i] || 1;
+            const porcentaje = (i === 1) ? 100 : Math.round((ptsObtenidos / ptsMaximos) * 100);
+            
+            // Un pequeño semáforo visual para la terminal
+            let icono = porcentaje >= 80 ? '🟢' : (porcentaje >= 50 ? '🟡' : '🔴');
+            if (i === 1) icono = '🔵'; 
+
+            console.log(`   ${icono} Sección ${i}: ${ptsObtenidos}/${ptsMaximos} pts (${porcentaje}%)`);
+        }
+        console.log("---------------------------------------------------\n");
 
         // --- 4. LLAMADA A GEMINI CON INSTRUCCIONES ESTRICTAS ---
         if (!process.env.GEMINI_API_KEY) throw new Error("Falta GEMINI_API_KEY");
