@@ -997,7 +997,7 @@ app.get('/resumen/:idUsuario', async (req, res) => {
         // =========================================================
         // 🖨️ IMPRIMIR EN CONSOLA CUANDO ALGUIEN VE SU RESUMEN
         // =========================================================
-        console.log(`\n🔔 [GET] /resumen/${idUsuario}`);
+        //console.log(`\n🔔 [GET] /resumen/${idUsuario}`);
         console.log(`   🏢 Institución: ${rows[0].nombre_usuario}`);
         console.log(`   ⭐ Puntaje Total: ${puntajeTotal} / ${MAX_PUNTAJE} (${porcentaje}%)`);
         console.log(`   🚦 Nivel Calculado: ${nivel}`);
