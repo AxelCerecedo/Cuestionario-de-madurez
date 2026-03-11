@@ -629,3 +629,123 @@ function configurarBuscador() {
         });
     });
 }
+
+// =========================================================
+// 📥 EXPORTAR A CSV
+// =========================================================
+async function descargarCSVInstitucion() {
+    if (!institucionActual) return;
+
+    // Pantalla de carga
+    Swal.fire({ 
+        title: 'Generando archivo Excel...', 
+        text: 'Traduciendo respuestas...',
+        allowOutsideClick: false, 
+        didOpen: () => Swal.showLoading() 
+    });
+
+    try {
+        // 1. Pedir todas las respuestas de esta institución al servidor
+        const res = await fetch(`${API_URL}/admin/detalle-graficas/${institucionActual.id_institucion}`);
+        const data = await res.json();
+        const respuestasUsuario = data.usuario;
+
+        // 2. Preparar el CSV (Añadimos \uFEFF para que Excel lea bien los acentos - UTF8)
+        let csvContent = "\uFEFFSección,ID Pregunta,Pregunta,Respuesta\n";
+
+        // 3. Recorrer la configuración oficial (TODAS_LAS_SECCIONES) para tener el orden correcto
+        TODAS_LAS_SECCIONES.forEach(sec => {
+            const nombreSeccion = sec.seccion.replace(/"/g, '""'); // Escapar comillas dobles
+
+            sec.preguntas.forEach(p => {
+                const preguntaTexto = p.texto ? p.texto.replace(/"/g, '""') : `Pregunta ${p.id}`;
+                
+                // Buscar si el usuario respondió esta pregunta
+                const respuestasP = respuestasUsuario.filter(r => r.id_pregunta == p.id);
+                
+                let textoRespuestaFinal = "Sin respuesta";
+
+                if (respuestasP.length > 0) {
+                    
+                    // CASO A: Es la tabla de contactos (JSON)
+                    if (p.tipo === 'tabla_contactos' && respuestasP[0].respuesta_texto) {
+                        try {
+                            const contactos = JSON.parse(respuestasP[0].respuesta_texto);
+                            if (Array.isArray(contactos)) {
+                                textoRespuestaFinal = contactos.map(c => {
+                                    const nombre = c.nombre || c.Nombre || '-';
+                                    const cargo = c.cargo || c.Cargo || '-';
+                                    const email = c.email || c.correo || c.Email || c.Correo || '';
+                                    const tel = c.telefono || c.Telefono || '';
+                                    return `${nombre} (${cargo}) Correo: ${email} Tel: ${tel}`;
+                                }).join(" | ");
+                            }
+                        } catch(e) {}
+                    } 
+                    
+                    // CASO B: Respuestas normales, catálogos, matrices, múltiples
+                    else {
+                        const textosObtenidos = respuestasP.map(r => {
+                            // 1. ¿Es texto libre?
+                            if (r.respuesta_texto) return r.respuesta_texto;
+
+                            // 2. ¿Es ID? Buscar en opciones normales
+                            if (r.id_opcion && p.opciones) {
+                                const op = p.opciones.find(o => o.id == r.id_opcion);
+                                if (op) return op.texto;
+                                
+                                // Búsqueda profunda para sub_opciones (Sección 7, 8, 9)
+                                for (let opPrincipal of p.opciones) {
+                                    if (opPrincipal.sub_opciones) {
+                                        const sub = opPrincipal.sub_opciones.find(s => s.id == r.id_opcion);
+                                        if (sub) return sub.texto;
+                                    }
+                                }
+                            }
+
+                            // 3. Buscar en columnas (Para la Matriz de la Q38/39)
+                            if (r.id_opcion && p.columnas) {
+                                const col = p.columnas.find(c => c.id == r.id_opcion);
+                                if (col) return col.texto;
+                            }
+
+                            // 4. Fallback (Si no encuentra texto, pone el ID)
+                            return `Opción seleccionada (ID: ${r.id_opcion})`;
+                        });
+
+                        // Unir las respuestas si son múltiples (separadas por " | ")
+                        textoRespuestaFinal = textosObtenidos.filter(Boolean).join(" | ");
+                    }
+                }
+
+                // Limpieza final para CSV: Envolver en comillas "" para evitar que las comas rompan las celdas
+                const celdaSeccion = `"${nombreSeccion}"`;
+                const celdaID = `"${p.id}"`;
+                const celdaPregunta = `"${preguntaTexto}"`;
+                const celdaRespuesta = `"${textoRespuestaFinal.replace(/"/g, '""')}"`; // Escapar comillas internas
+
+                csvContent += `${celdaSeccion},${celdaID},${celdaPregunta},${celdaRespuesta}\n`;
+            });
+        });
+
+        // 4. Generar y descargar el archivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        // Formatear el nombre del archivo con el nombre de la institución
+        const nombreArchivo = `Respuestas_${institucionActual.nombre_usuario.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`;
+        link.setAttribute("download", nombreArchivo);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        Swal.close();
+
+    } catch (error) {
+        console.error("Error generando CSV:", error);
+        Swal.fire('Error', 'No se pudo generar el archivo CSV', 'error');
+    }
+}
