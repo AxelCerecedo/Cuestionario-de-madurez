@@ -309,55 +309,17 @@ app.post('/guardar-encuesta', async (req, res) => {
             await db.query('INSERT INTO respuestas (id_institucion, id_pregunta, respuesta_texto, id_opcion_seleccionada, puntos_otorgados) VALUES ?', [values]);
         }
 
-        // --- B. RESPUESTAS MÚLTIPLES (AQUÍ ESTÁ EL CAMBIO CLAVE ⭐) ---
+        // --- B. RESPUESTAS MÚLTIPLES 
         const { ids_multiples_activas } = req.body; 
-
-        // 1. Limpieza preventiva
         if (ids_multiples_activas && ids_multiples_activas.length > 0) {
             await db.query(`DELETE FROM respuestas_multiples WHERE id_institucion=? AND id_pregunta IN (?)`, [idInstitucion, ids_multiples_activas]);
         }
 
-        // 2. Insertar lo nuevo con lógica especial para Q28
         if (respuestas_multiples && respuestas_multiples.length > 0) {
-            
-            // --- 🟢 LÓGICA ESPECIAL PREGUNTA 28: CONTEO + 1 ---
-            let puntosTotal28 = 0;
-            let flagPuntos28Asignados = false; // Para dar los puntos solo al primer registro
-
-            // Filtramos las respuestas de la 28 para calcular su total antes de guardar
-            const respuestas28 = respuestas_multiples.filter(r => r.id_pregunta == 28);
-            if (respuestas28.length > 0) {
-                // Contamos las que NO son "Ninguna" (ID 99)
-                const validas = respuestas28.filter(r => r.id_opcion != 99);
-                // Fórmula: Cantidad + 1
-                puntosTotal28 = validas.length + 1;
-                // Tope máximo (por si acaso)
-                if (puntosTotal28 > 5) puntosTotal28 = 5;
-            }
-            // --------------------------------------------------
-
             const valuesMulti = respuestas_multiples.map(r => {
-                let puntosCalculados = 0;
-
-                // CASO ESPECIAL: Es la Pregunta 28
-                if (r.id_pregunta == 28) {
-                    if (!flagPuntos28Asignados) {
-                        // Al PRIMER registro le asignamos TODO el puntaje acumulado
-                        puntosCalculados = puntosTotal28;
-                        flagPuntos28Asignados = true;
-                    } else {
-                        // A los siguientes registros les ponemos 0 (para no duplicar suma)
-                        puntosCalculados = 0;
-                    }
-                } 
-                // CASO NORMAL: Cualquier otra pregunta
-                else {
-                    puntosCalculados = obtenerPuntos(r.id_pregunta, r.id_opcion, null);
-                }
-
-                return [idInstitucion, r.id_pregunta, r.id_opcion, puntosCalculados];
+                // Como las múltiples ya no dan puntos en el nuevo modelo, siempre es 0
+                return [idInstitucion, r.id_pregunta, r.id_opcion, 0];
             });
-
             await db.query('INSERT INTO respuestas_multiples (id_institucion, id_pregunta, id_opcion, puntos_otorgados) VALUES ?', [valuesMulti]);
         }
 
@@ -1049,32 +1011,22 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
     console.log(`📩 Iniciando proceso de correo para Usuario ID: ${idUsuario}`);
 
     const NOMBRES_SECCIONES = {
-        1: "Identificación de la Institución",
-        2: "Gestión Institucional",
-        3: "Caracterización del Acervo",
-        4: "Inventario y Catalogación",
-        5: "Gestión de información",
-        6: "Recursos Humanos",
-        7: "Infraestructura Tecnológica",
-        8: "Normatividad y Procesos",
-        9: "Servicios"
+        1: "Gestión Institucional",
+        2: "Recursos Humanos",
+        3: "Características del Acervo",
+        4: "Infraestructura Física y Tecnológica",
+        5: "Servicios al Público"
     };
 
-    const MAXIMOS_SECCION = {
-        1: 0, 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
-    };
+    const MAXIMOS_SECCION = { 1: 5, 2: 5, 3: 5, 4: 5, 5: 5 };
 
     function identificarSeccion(idPregunta) {
         const id = parseInt(idPregunta);
-        if (id >= 1 && id <= 13) return 1;
-        if (id >= 14 && id <= 19) return 2;
-        if (id >= 20 && id <= 28) return 3;
-        if (id >= 29 && id <= 37) return 4;
-        if (id >= 38 && id <= 40) return 5;
-        if (id >= 41 && id <= 47) return 6;
-        if (id >= 48 && id <= 48) return 7;
-        if (id >= 49 && id <= 49) return 8;
-        if (id >= 50 && id <= 50) return 9;
+        if (id >= 1 && id <= 14) return 1;
+        if (id >= 15 && id <= 21) return 2;
+        if (id >= 22 && id <= 37) return 3;
+        if (id >= 38 && id <= 48) return 4;
+        if (id >= 49 && id <= 54) return 5;
         return 0;
     }
 
@@ -1136,7 +1088,7 @@ app.post('/api/enviar-correo-resultados', async (req, res) => {
         // 5. GENERAR HTML 
         let filasHTML = '';
         
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= 5; i++) {
             const puntos = reporteSecciones[i];
             const maximo = MAXIMOS_SECCION[i] || 1;
             const porcentaje = (puntos / maximo) * 100;
@@ -1269,7 +1221,7 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
     console.log(`\n🤖 [GEMINI] Iniciando análisis sincronizado para usuario ID: ${id_usuario}`);
 
     // --- 1. DICCIONARIOS Y CONSTANTES ---
-    const MAXIMOS_SECCION = { 1: 0, 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4 };
+    const MAXIMOS_SECCION = { 1: 5, 2: 5, 3: 5, 4: 5, 5: 5 };
     
     // (Pegar aquí el DICCIONARIO UNIVERSAL largo que armamos en los mensajes anteriores)
     const DICCIONARIO = {
@@ -1343,8 +1295,8 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         if (respuestasRaw.length === 0) return res.status(400).json({ error: "No hay respuestas." });
 
         // Calculamos los puntos totales por sección para el semáforo
-        const puntosPorSeccion = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
-        const respuestasAgrupadas = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] };
+        const puntosPorSeccion = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+        const respuestasAgrupadas = { 1: [], 2: [], 3: [], 4: [], 5: [] };
 
         respuestasRaw.forEach(r => {
             const numSec = identificarSeccion(r.id_pregunta); 
@@ -1374,7 +1326,7 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         // --- 3. ARMAR EL CONTEXTO INYECTANDO EL SEMÁFORO ---
         let contextoParaIA = "A continuación, las respuestas del diagnóstico por sección y su nivel de desempeño matemático:\n\n";
         
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= 5; i++) {
             if (respuestasAgrupadas[i].length > 0) {
                 // Cálculo matemático
                 const ptsObtenidos = puntosPorSeccion[i];
@@ -1401,7 +1353,7 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         // 🖨️ IMPRIMIR REPORTE EN LA TERMINAL (Para depuración)
         // =========================================================
         console.log(`\n📊 [PUNTAJES ENVIADOS A GEMINI - USUARIO ${id_usuario}]`);
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= 5; i++) {
             const ptsObtenidos = puntosPorSeccion[i] || 0;
             const ptsMaximos = MAXIMOS_SECCION[i] || 1;
             const porcentaje = (i === 1) ? 100 : Math.round((ptsObtenidos / ptsMaximos) * 100);
