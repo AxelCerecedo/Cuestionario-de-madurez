@@ -29,19 +29,13 @@ const CONFIG_SECCION = {
         {
             id: 17, orden: 17,
             texto: "Indique el nivel educativo del personal que trabaja en el archivo/institución (Indicar el número de personas según corresponda).",
-            tipo: "catalogo_multiple",
+            tipo: "lista_inputs",
             obligatorio: true,
             opciones: [
-                { id: 1, texto: "Archivística [clasificación, ordenación, descripción]" },
-                { id: 2, texto: "Catalogación" },
-                { id: 3, texto: "Fotografía / historia de la fotografía" },
-                { id: 4, texto: "Conservación preventiva" },
-                { id: 5, texto: "Restauración" },
-                { id: 6, texto: "Digitalización/Reprografía" },
-                { id: 7, texto: "Cómputo, herramientas digitales o bases de datos" },
-                { id: 8, texto: "Historia / arte" },
-                { id: 9, texto: "Manipulación física del material del acervo" },
-                { id: 10, texto: "Otro", especificar: true }
+                { id: 1, texto: "Nivel básico:" },
+                { id: 2, texto: "Nivel medio superior:" },
+                { id: 3, texto: "Nivel superior:" },
+                { id: 4, texto: "Posgrado:" }
             ]
         },
         {
