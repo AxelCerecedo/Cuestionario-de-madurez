@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DE LA SECCIÓN 3 (NUEVA ESTRUCTURA)
 // =========================================================
 const CONFIG_SECCION = {
-    seccion: "III. Características del Acervo",
+    seccion: "3. Características del Acervo",
     siguiente: "seccion4.html", 
     anterior: "seccion2.html", 
 

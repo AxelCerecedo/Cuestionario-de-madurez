@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DE LA SECCIÓN 1 (NUEVA ESTRUCTURA)
 // =========================================================
 const CONFIG_SECCION = {
-    seccion: "I. Gestión Institucional y Gestión del Acervo",
+    seccion: "1. Gestión Institucional y Gestión del Acervo",
     siguiente: "seccion2.html", 
     anterior: null, 
 

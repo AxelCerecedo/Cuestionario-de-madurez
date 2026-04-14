@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DE LA SECCIÓN 2 (NUEVA ESTRUCTURA)
 // =========================================================
 const CONFIG_SECCION = {
-    seccion: "II. Recursos Humanos",
+    seccion: "2. Recursos Humanos",
     siguiente: "seccion3.html", 
     anterior: "seccion1.html", 
 
@@ -26,20 +26,42 @@ const CONFIG_SECCION = {
                 { id: 5, texto: "Más de 20 años" }
             ]
         },
+        
+        // --- BLOQUE: NIVEL EDUCATIVO ---
+        // Usamos un título de subsección para agrupar visualmente los inputs numéricos
         {
-            id: 17, orden: 17,
-            texto: "Indique el nivel educativo del personal que trabaja en el archivo/institución (Indicar el número de personas según corresponda).",
-            tipo: "lista_inputs",
-            obligatorio: true,
-            opciones: [
-                { id: 1, texto: "Nivel básico:" },
-                { id: 2, texto: "Nivel medio superior:" },
-                { id: 3, texto: "Nivel superior:" },
-                { id: 4, texto: "Posgrado:" }
-            ]
+            id: 1002, // ID virtual
+            tipo: "titulo_subseccion",
+            texto: "Indique el nivel educativo del personal (Indicar el número de personas según corresponda):"
         },
         {
-            id: 18, orden: 18,
+            id: 17, orden: " ", // Dejamos el orden en blanco para que parezca parte del mismo bloque
+            texto: "Nivel básico:",
+            tipo: "numero",
+            obligatorio: true // Ponemos obligatorio por si tienen 0, que escriban 0
+        },
+        {
+            id: 171, orden: " ", 
+            texto: "Nivel medio superior:",
+            tipo: "numero",
+            obligatorio: true
+        },
+        {
+            id: 172, orden: " ", 
+            texto: "Nivel superior:",
+            tipo: "numero",
+            obligatorio: true
+        },
+        {
+            id: 173, orden: " ", 
+            texto: "Posgrado:",
+            tipo: "numero",
+            obligatorio: true
+        },
+        // -------------------------------
+
+        {
+            id: 18, orden: 17, // Retomamos la numeración del orden aquí
             texto: "¿El personal recibe capacitación alineada con los objetivos o procedimientos institucionales?",
             tipo: "catalogo_unico",
             obligatorio: true,
@@ -51,7 +73,7 @@ const CONFIG_SECCION = {
             ]
         },
         {
-            id: 19, orden: 19,
+            id: 19, orden: 18,
             texto: "Cuenta con personal capacitado para realizar la evaluación del estado de conservación del acervo.",
             tipo: "catalogo_unico",
             obligatorio: true,
@@ -62,7 +84,7 @@ const CONFIG_SECCION = {
             ]
         },
         {
-            id: 20, orden: 20,
+            id: 20, orden: 19,
             texto: "Indique las áreas o actividades en las que el personal recibe capacitación.",
             tipo: "catalogo_multiple",
             obligatorio: true,
@@ -80,7 +102,7 @@ const CONFIG_SECCION = {
             ]
         },
         {
-            id: 21, orden: 21,
+            id: 21, orden: 20,
             texto: "Tomando en cuenta el personal total del archivo/institución, ¿cómo evalúa la disposición de personal y su experiencia y formación para la gestión del acervo institucional?",
             tipo: "catalogo_unico",
             obligatorio: true,
