@@ -1385,15 +1385,11 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
         {
           "resumen_general": "Un párrafo de MÁXIMO 40 PALABRAS. Comienza agradeciendo la participación y luego resume el estado global con una fortaleza y el riesgo más grande.",
           "secciones": {
-            "1": "Máximo 20 palabras. (Tono informativo)",
+            "1": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
             "2": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
             "3": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
             "4": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
-            "5": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
-            "6": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
-            "7": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
-            "8": "Máximo 20 palabras adaptadas a su Resultado Matemático.",
-            "9": "Máximo 20 palabras adaptadas a su Resultado Matemático."
+            "5": "Máximo 20 palabras adaptadas a su Resultado Matemático."
           }
         }
         
