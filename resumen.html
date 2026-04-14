@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* Estilos ajustados para la gráfica en la columna derecha */
         .chart-container {
             background: #ffffff; 
             padding: 20px; 
@@ -102,7 +101,7 @@
 
                 <div class="chart-container">
                     <span class="chart-title">Mapa de Madurez Institucional</span>
-                    <div style="position: relative; height: 300px; width: 100%;">
+                    <div style="position: relative; height: 350px; width: 100%;">
                         <canvas id="radarChart"></canvas>
                     </div>
                 </div>
@@ -120,6 +119,15 @@
             3: "Características del Acervo",
             4: "Infra. Física y Tecnológica", 
             5: "Servicios al Público"
+        };
+
+        // Nombres divididos en arreglos para que la gráfica los pinte en dos líneas
+        const ETIQUETAS_RADAR = {
+            1: ["Gestión", "Institucional"],
+            2: ["Recursos", "Humanos"],
+            3: ["Características", "del Acervo"],
+            4: ["Infraestructura", "y Tecnología"],
+            5: ["Servicios", "al Público"]
         };
         
         const NOMBRES_NIVELES = {
@@ -171,7 +179,8 @@
                     const secIdStr = String(numSec);
                     const puntajeObtenido = data.secciones[secIdStr] || 0; 
                     
-                    labelsRadar.push(`Sección ${numSec}`);
+                    // Aquí usamos los nombres reales (divididos en líneas) en lugar de "Sección X"
+                    labelsRadar.push(ETIQUETAS_RADAR[numSec]);
                     dataRadar.push(puntajeObtenido);
 
                     let colorCuadrito = '#dc3545'; 
@@ -267,7 +276,7 @@
                             angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
                             grid: { color: 'rgba(0, 0, 0, 0.1)' },
                             pointLabels: {
-                                font: { size: 12, family: "'Inter', sans-serif", weight: 'bold' },
+                                font: { size: 11, family: "'Inter', sans-serif", weight: '600' },
                                 color: '#444'
                             },
                             ticks: {
