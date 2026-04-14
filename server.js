@@ -113,129 +113,26 @@ const REGLAS_PUNTAJE = {
 
 
 // =========================================================
-// FUNCIÓN: CALCULAR PUNTOS (LÓGICA CENTRAL)
+// FUNCIÓN: CALCULAR PUNTOS (LÓGICA CENTRAL SIMPLIFICADA)
 // =========================================================
 function calcularPuntosPregunta(idPregunta, idOpcion, valorTexto) {
     const regla = REGLAS_PUNTAJE[idPregunta];
     
-    // Si no hay regla configurada para esta pregunta, vale 0
+    // Si no hay regla configurada para esta pregunta (ej. preguntas 1 a la 13), vale 0 puntos.
     if (!regla) return 0;
 
     // ---------------------------------------------------------
-    // 1. REGLA: PUNTOS POR OPCIÓN ESPECÍFICA (NUEVO - SECCIÓN 8)
+    // ÚNICA REGLA: ESCALA DIRECTA (El ID de la opción es el puntaje)
     // ---------------------------------------------------------
-
-    if (regla.tipo === 'puntos_por_opcion') {
-        if (typeof VALOR_OPCIONES !== 'undefined') {
-            const puntos = VALOR_OPCIONES[idOpcion];
-            // Verificamos !== undefined porque el puntaje puede ser 0
-            return (puntos !== undefined) ? puntos : 0;
-        }
-        return 0;
-    }
-
-    // ---------------------------------------------------------
-    // 2. REGLA: BOOLEANO (Sí=1, No=0)
-    // ---------------------------------------------------------
-    if (regla.tipo === 'booleano') {
-        // Acepta tanto ID como texto "1"
-        return (idOpcion == '1' || valorTexto == '1') ? 1 : 0;
-    }
-
-    // ---------------------------------------------------------
-    // 3. REGLA: SIMPLE (Cualquier selección válida suma X)
-    // ---------------------------------------------------------
-    if (regla.tipo === 'simple') {
-        // A. Excepción: Si es "Ninguno" (ID 99), vale 0
-        if (idOpcion == '99') return 0;
-
-        // B. Caso Opción: Si hay un ID seleccionado válido
-        if (idOpcion) return regla.valor;
-
-        // C. Caso Texto: Si no hay ID, pero hay texto escrito (ej. Preguntas abiertas)
-        if (valorTexto && valorTexto.trim() !== '') {
-            return regla.valor;
-        }
-
-        return 0;
-    }
-
-    // ---------------------------------------------------------
-    // 4. REGLA: ESCALA DIRECTA (El ID es el puntaje)
-    // ---------------------------------------------------------
-    // Ejemplo: ID 1 = 1 pto ... ID 5 = 5 ptos
+    // Ejemplo: 
+    // Opción ID 1 (Incipiente) = 1 pto 
+    // Opción ID 5 (Avanzado) = 5 ptos
     if (regla.tipo === 'escala_directa') {
         return parseInt(idOpcion) || 0;
     }
 
-    // ---------------------------------------------------------
-    // 5. REGLA: ACUMULATIVO MAX 5
-    // ---------------------------------------------------------
-
-    if (regla.tipo === 'acumulativo_max5') {
-        // Si es "Ninguno", 0
-        if (idOpcion == '99') return 0;
-        
-        // Si tienes un caso especial donde una sola opción vale los 5 puntos (ej "Todos")
-        if (idOpcion == '6') return 5; 
-        
-        // Lo normal: cada check vale 1 punto
-        return 1; 
-    }
-
-    // ---------------------------------------------------------
-    // 6. REGLA: UNICA VEZ
-    // ---------------------------------------------------------
-    // Para preguntas múltiples donde solo cuenta la primera selección
-    // (Aunque marque 3 cosas, solo damos puntos una vez).
-    if (regla.tipo === 'unica_vez') {
-        if (idOpcion == '99') return 0;
-        return regla.valor;
-    }
-
-    // ---------------------------------------------------------
-    // 7. REGLA: CONTEO + 1 (Para Pregunta 28)
-    // ---------------------------------------------------------
-    if (regla.tipo === 'conteo_mas_uno') {
-        // Truco visual:
-        // Decimos que cada opción vale 1 punto.
-        // La suma visual será "4" si marcan 4, o "1" si marcan ninguna.
-        // El servidor corregirá la suma final agregando el +1 restante.
-        
-        if (idOpcion == '99') return 1; // Visualmente "Ninguna" vale 1
-        return 1; // Cada check vale 1 visualmente
-    }
-
+    // Por seguridad, si llegara a existir una regla rara, retorna 0.
     return 0;
-}
-
-// =========================================================
-// FUNCIÓN ESPECIAL SECCIÓN 9: PUNTOS POR CATEGORÍAS ACTIVAS
-// =========================================================
-function calcularPuntosSeccion9(respuestasMultiples) {
-    const respuestasSeccion9 = respuestasMultiples.filter(r => r.id_pregunta == 60);
-    const categoriasEncontradas = new Set();
-
-    respuestasSeccion9.forEach(r => {
-        const id = parseInt(r.id_opcion);
-        
-        // Ignorar "Ninguno"
-        if (id === 107 || id === 116 || id === 125 || id === 135) return;
-
-        // Categoría 1: ID Padre 91 O Hijos 100-109
-        if (id === 91 || (id >= 100 && id <= 109)) categoriasEncontradas.add(1);
-
-        // Categoría 2: ID Padre 92 O Hijos 110-119
-        if (id === 92 || (id >= 110 && id <= 119)) categoriasEncontradas.add(2);
-
-        // Categoría 3: ID Padre 93 O Hijos 120-129
-        if (id === 93 || (id >= 120 && id <= 129)) categoriasEncontradas.add(3);
-
-        // Categoría 4: ID Padre 94 O Hijos 130-139
-        if (id === 94 || (id >= 130 && id <= 139)) categoriasEncontradas.add(4);
-    });
-
-    return categoriasEncontradas.size; // Retorna 0, 1, 2, 3 o 4
 }
 
 
