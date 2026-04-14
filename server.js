@@ -325,10 +325,14 @@ app.post('/guardar-encuesta', async (req, res) => {
     }
 });
 
-// RUTA B: REGISTRO DE USUARIO (CON GEOLOCALIZACIÓN 🌍)
+// RUTA B: REGISTRO DE USUARIO (CON GEOLOCALIZACIÓN Y NUEVOS CAMPOS)
 app.post('/auth/registro', async (req, res) => {
-    // 1. Recibimos los nuevos campos del frontend (ubicacion, latitud, longitud)
-    const { institucion, nombre, email, password, ubicacion, latitud, longitud } = req.body;
+    // 1. Recibimos TODOS los campos del frontend
+    const { 
+        institucion, nombre, email, password, 
+        ubicacion, latitud, longitud,
+        tipo_institucion, adscripcion 
+    } = req.body;
     
     console.log(`👤 [REGISTRO] Intentando registrar a: ${email}`);
     if(ubicacion) console.log(`   📍 Ubicación detectada: ${ubicacion} (${latitud}, ${longitud})`);
@@ -343,19 +347,19 @@ app.post('/auth/registro', async (req, res) => {
             return res.status(400).json({ error: 'Este correo ya está registrado.' });
         }
 
-        // 3. Insertar usuario (ACTUALIZADO CON COORDENADAS)
+        // 3. Insertar usuario (ACTUALIZADO CON NUEVAS COLUMNAS)
         console.log('   💾 Insertando nuevo usuario en BD...');
         
         const sql = `
             INSERT INTO usuarios_registrados 
-            (institucion_procedencia, nombre_completo, email, password, ubicacion_texto, latitud, longitud) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (institucion_procedencia, nombre_completo, tipo_institucion, adscripcion, email, password, ubicacion_texto, latitud, longitud) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
         // Pasamos los valores en el orden exacto de la consulta
-        await db.query(sql, [institucion, nombre, email, password, ubicacion, latitud, longitud]);
+        await db.query(sql, [institucion, nombre, tipo_institucion, adscripcion, email, password, ubicacion, latitud, longitud]);
 
-        console.log('   ✅ [REGISTRO] ¡Éxito! Usuario registrado con ubicación.');
+        console.log('   ✅ [REGISTRO] ¡Éxito! Usuario registrado correctamente.');
         res.json({ message: 'Usuario registrado exitosamente' });
 
     } catch (error) {
@@ -1120,57 +1124,71 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
     // --- 1. DICCIONARIOS Y CONSTANTES ---
     const MAXIMOS_SECCION = { 1: 5, 2: 5, 3: 5, 4: 5, 5: 5 };
     
-    // (Pegar aquí el DICCIONARIO UNIVERSAL largo que armamos en los mensajes anteriores)
+    // --- NUEVO DICCIONARIO UNIVERSAL (54 PREGUNTAS) ---
     const DICCIONARIO = {
-        1: { pregunta: "Nombre del Archivo / Institución", opciones: {} },
-        2: { pregunta: "Fecha de creación o fundación", opciones: {} },
-        3: { pregunta: "Historia del archivo", opciones: {} },
-        4: { pregunta: "Dirección postal", opciones: {} },
-        6: { pregunta: "Contactos", opciones: {} },
-        7: { pregunta: "Página Web", opciones: {} },
-        8: { pregunta: "Redes Sociales", opciones: { 1: "Instagram", 2: "Facebook", 3: "TikTok", 4: "Twitter / X", 5: "YouTube", 6: "WhatsApp", 7: "Snapchat", 8: "Pinterest", 9: "LinkedIn", 10: "Otra", 99: "Ninguno" } },
-        9: { pregunta: "Tipo de institución", opciones: { 1: "Pública", 2: "Privada", 3: "Organización de la Sociedad Civil", 4: "Mixta", 5: "Otro" } },
-        10: { pregunta: "Adscripción", opciones: {} },
-        11: { pregunta: "El acervo esta en resguardo de", opciones: { 1: "Acervo institucional", 2: "Colección privada", 3: "Biblioteca", 4: "Centro de documentación", 5: "Fototeca", 6: "Museo", 7: "Otro" } },
-        12: { pregunta: "Tipos de acervos resguardados", opciones: { 1: "Artes visuales", 2: "Arqueológica", 3: "Histórica", 4: "Arquitectónica", 5: "Documental", 6: "Etnográfica", 7: "Bibliográfica", 8: "Científica", 9: "Industrial", 10: "Numismática", 11: "Fotográfica", 12: "Hemerográfica", 13: "Planoteca", 14: "Otro" } },
-        13: { pregunta: "Propósito del acervo", opciones: { 1: "Conservación patrimonial", 2: "Producción", 3: "Investigación / Educación", 4: "Comercialización", 5: "Otro" } },
-        14: { pregunta: "Misión institucional", opciones: {} },
-        15: { pregunta: "Visión institucional", opciones: {} },
-        16: { pregunta: "Objetivos Institucionales", opciones: {} },
-        17: { pregunta: "¿Cuenta con procesos y procedimientos documentados?", opciones: { 1: "Sí", 2: "No" } },
-        18: { pregunta: "¿Cuenta con un organigrama?", opciones: { 1: "Sí", 2: "No" } },
-        19: { pregunta: "Fuentes de financiamiento", opciones: { 1: "Gubernamental nacional", 2: "Gubernamental estatal", 3: "Gubernamental municipal", 4: "Recursos propios", 5: "Particular nacional", 6: "Particular extranjero", 7: "Organismo internacional", 8: "Otro", 99: "Ninguno" } },
-        20: { pregunta: "Volumen aproximado del acervo fotográfico", opciones: { 1: "Hasta 500 ítems", 2: "Hasta 5000 ítems", 3: "Hasta 50,000 ítems", 4: "Más de 50,000 ítems" } },
-        21: { pregunta: "Fondos/subfondos y/o colecciones representativos", opciones: { 1: "Fondo 1", 2: "Fondo 2", 3: "Fondo 3" } },
-        22: { pregunta: "Tipos de materiales resguardados", opciones: { 1: "Positivos en papel", 2: "Positivos en película", 3: "Negativos", 4: "Nacidas digitales", 5: "Digitalizadas", 6: "Documentos asociados", 7: "Dispositivos fotográficos", 8: "Otro" } },
-        23: { pregunta: "Período temporal que abarca el acervo", opciones: {} },
-        24: { pregunta: "¿Cuenta con un registro o control de autoridades?", opciones: { 1: "Sí", 0: "No" } },
-        25: { pregunta: "Nivel de adecuación del establecimiento", opciones: { 1: "Inadecuado", 2: "Básico", 3: "Adecuado", 4: "Bueno", 5: "Óptimo" } },
-        26: { pregunta: "Nivel de equipamiento disponible", opciones: { 1: "Inadecuado", 2: "Básico", 3: "Adecuado", 4: "Bueno", 5: "Óptimo" } },
-        27: { pregunta: "Espacios de almacenamiento acondicionados", opciones: { 1: "Control de temperatura", 2: "Control de humedad", 3: "Iluminación adecuada", 4: "Mobiliario adecuado", 5: "Protección contra riesgos", 6: "Todas las anteriores" } },
-        28: { pregunta: "Instalaciones fotográficas", opciones: { 1: "Laboratorio fotográfico", 2: "Estudio fotográfico", 3: "Área de reproducción", 4: "Estación de digitalización", 99: "Ninguna" } },
-        29: { pregunta: "Porcentaje del acervo inventariado", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
-        30: { pregunta: "Porcentaje del acervo catalogado", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
-        31: { pregunta: "Reglas de catalogación utilizadas", opciones: { 1: "MARC21", 2: "ISAD(G)", 3: "ISBD", 4: "Norma Mexicana: NMX", 5: "RDA / Object ID / VRA Core", 6: "CCO / Otro", 99: "Ninguna" } },
-        32: { pregunta: "Nivel de dominio del personal en reglas", opciones: { 1: "Inexperto", 2: "Nivel Básico", 3: "Nivel intermedio", 4: "Nivel avanzado", 5: "Experto" } },
-        33: { pregunta: "Unidad de descripción usada", opciones: { 1: "Por fotografía", 2: "Unidad documental", 3: "Ambas", 99: "Ninguna" } },
-        34: { pregunta: "Porcentaje del acervo digitalizado", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
-        35: { pregunta: "Métodos de resguardo digital", opciones: { 1: "Computadora", 2: "Unidades externas", 3: "Nube gratuita", 4: "Nube de pago", 5: "Servidor / NAS", 6: "Sistema DAM", 7: "Repositorio digital", 99: "Ninguna" } },
-        36: { pregunta: "Digitalización que realiza la institución", opciones: { 1: "Escaneo", 2: "Reprografía", 3: "Plan escrito", 4: "Plan para conservación", 5: "Bajo demanda" } },
-        37: { pregunta: "Calidad de la digitalización", opciones: { 1: "No se digitaliza", 2: "Sin estándar", 3: "Estándar básico", 4: "Estándar intermedio", 5: "Estándar de preservación" } },
-        38: { pregunta: "Herramientas de gestión de información", opciones: { 381: "Fichas manuales", 382: "Hojas de cálculo", 383: "Base de datos local", 384: "Base de datos en línea", 385: "Sistema DAM", 386: "Repositorio digital", 3899: "Ninguna" } },
-        39: { pregunta: "Nivel de experiencia/dominio en gestión", opciones: { 1:"Nivel 1", 2:"Nivel 2", 3:"Nivel 3", 4:"Nivel 4", 5:"Nivel 5" } },
-        40: { pregunta: "Porcentaje disponible en línea", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
-        41: { pregunta: "Número total de personas en el acervo", opciones: {} },
-        42: { pregunta: "Antigüedad promedio del personal", opciones: { 1: "0-2 años", 2: "3-5 años", 3: "6-10 años", 4: "11-20 años", 5: "Más de 20 años" } },
-        43: { pregunta: "Nivel educativo del personal", opciones: { 1: "Básico", 2: "Medio superior", 3: "Superior", 4: "Posgrado" } },
-        44: { pregunta: "¿El personal recibe capacitación?", opciones: { 1: "Sí", 0: "No" } },
-        45: { pregunta: "Áreas de capacitación", opciones: { 1: "Archivística", 2: "Catalogación", 3: "Fotografía", 4: "Conservación", 5: "Restauración", 6: "Digitalización", 7: "Herramientas digitales", 8: "Historia/Arte", 9: "Manipulación física", 10: "Otro" } },
-        46: { pregunta: "Frecuencia de capacitación", opciones: { 1: "No recibe", 2: "Ocasional", 3: "Periódica", 4: "Frecuente", 5: "Muy frecuente" } },
-        47: { pregunta: "¿Se evalúa el desempeño del personal?", opciones: { 1: "Sí", 0: "No" } },
-        48: { pregunta: "Infraestructura tecnológica y Software", opciones: { 481: "Equipo de cómputo", 482: "Conexión a Internet", 483: "Servidor / Hosting", 484: "Equipo de digitalización", 485: "Software especializado", 4810: "Omeka", 4811: "Tainacan", 4812: "Collective Access", 4813: "Filemaker", 4814: "Koha", 4815: "Access", 4816: "DSpace", 4817: "Unique Collection", 4818: "Collector", 4819: "Airtable", 4820: "AtoM", 4821: "Desarrollo a la medida", 4822: "Otro" } },
-        49: { pregunta: "Normatividad y procesos", opciones: { 491: "Ingreso de objetos", 492: "Salida de objetos", 493: "Plan de emergencia", 494: "Préstamo de documentos", 4941: "Formato institucional", 4942: "Contrato", 4943: "Hoja de movimientos", 4944: "Otro", 495: "Frecuencia de auditorías", 4951: "No se realizan", 4952: "Cada 2+ años", 4953: "Anual", 4954: "Semestral", 4955: "Trimestral", 496: "Evaluación de conservación", 4961: "Interno", 4962: "Externo", 4963: "Ambos", 497: "Registro de daños", 4971: "No se lleva", 4972: "Anual", 4973: "Semestral", 4974: "Bimestral", 4975: "Inmediato" } },
-        50: { pregunta: "Oferta de servicios y accesibilidad", opciones: { 91: "Servicios básicos", 101: "Consulta en sala", 102: "Préstamos", 103: "Reprografía", 104: "Investigación", 105: "Gestión de permisos", 106: "Otro", 92: "Requisitos de consulta", 110: "Libre", 111: "Cita previa", 112: "Carta de solicitud", 113: "Registro", 114: "Supervisada", 115: "Restringida", 116: "No cuenta", 117: "Otra", 93: "Servicios educativos", 120: "Cursos", 121: "Talleres", 122: "Conferencias", 123: "Visitas guiadas", 124: "Otros", 94: "Mecanismos de difusión", 130: "Exposiciones", 131: "Prensa", 132: "Publicaciones", 133: "Venta", 134: "Otros", 136: "Redes sociales" } }
+        // SECCIÓN 1: Gestión Institucional
+        1: { pregunta: "¿Cuenta con planeación estratégica?", opciones: { 1: "Sí", 0: "No" } },
+        2: { pregunta: "Misión institucional", opciones: {} },
+        3: { pregunta: "Visión institucional", opciones: {} },
+        4: { pregunta: "¿Cuenta con organigrama?", opciones: { 1: "Sí", 0: "No" } },
+        5: { pregunta: "¿Cuenta con manuales de procedimiento?", opciones: { 1: "Sí", 0: "No" } },
+        6: { pregunta: "Política formal de adquisiciones", opciones: { 1: "Sí", 0: "No" } },
+        7: { pregunta: "Proceso formal de ingreso al acervo", opciones: { 1: "Sí", 0: "No" } },
+        8: { pregunta: "Proceso formal de salida del acervo", opciones: { 1: "Sí", 0: "No" } },
+        9: { pregunta: "Plan de emergencias", opciones: { 1: "Sí", 0: "No" } },
+        10: { pregunta: "Frecuencia de auditorías", opciones: { 1: "No se realizan", 2: "Trimestrales", 3: "Semestrales", 4: "Anuales", 5: "Cada dos años o más" } },
+        11: { pregunta: "Registro de daños o pérdidas", opciones: { 1: "No se lleva registro", 2: "Por cada incidente", 3: "Mensual o bimestral", 4: "Trimestral o semestral" } },
+        12: { pregunta: "Diagnóstico legal (Derechos de autor)", opciones: { 1: "No identificada", 2: "Identificada parcialmente", 3: "Identificada en su totalidad" } },
+        13: { pregunta: "Fuentes de financiamiento", opciones: { 1: "Gubernamental nacional", 2: "Estatal", 3: "Municipal", 4: "Recursos propios", 5: "Particular nacional", 6: "Particular extranjero", 7: "Organismo internacional", 8: "Otro", 99: "Ninguno" } },
+        14: { pregunta: "RÚBRICA: GESTIÓN INSTITUCIONAL", opciones: { 1: "Incipiente", 2: "Básico estructural", 3: "Intermedio", 4: "Consolidado", 5: "Avanzado" } },
+
+        // SECCIÓN 2: Recursos Humanos
+        15: { pregunta: "Número total de personas en el acervo", opciones: {} },
+        16: { pregunta: "Antigüedad promedio del personal", opciones: { 1: "0-2 años", 2: "3-5 años", 3: "6-10 años", 4: "11-20 años", 5: "Más de 20 años" } },
+        17: { pregunta: "Nivel educativo del personal", opciones: {} },
+        18: { pregunta: "¿El personal recibe capacitación alineada?", opciones: { 1: "No se imparte", 2: "Por propios medios", 3: "Interna", 4: "Externa" } },
+        19: { pregunta: "Personal para evaluación de conservación", opciones: { 1: "Interna", 2: "Externa", 3: "Ambas" } },
+        20: { pregunta: "Áreas de capacitación recibida", opciones: { 1: "Archivística", 2: "Catalogación", 3: "Fotografía", 4: "Conservación", 5: "Restauración", 6: "Digitalización", 7: "Cómputo", 8: "Historia/Arte", 9: "Manipulación física", 10: "Otro" } },
+        21: { pregunta: "RÚBRICA: RECURSOS HUMANOS", opciones: { 1: "Incipiente", 2: "Básico estructural", 3: "Intermedio", 4: "Consolidado", 5: "Avanzado" } },
+
+        // SECCIÓN 3: Características del Acervo
+        22: { pregunta: "Volumen del acervo fotográfico", opciones: { 1: "Hasta 500", 2: "Hasta 5,000", 3: "Hasta 50,000", 4: "Más de 50,000" } },
+        23: { pregunta: "Fondos representativos", opciones: {} },
+        24: { pregunta: "Tipos de materiales", opciones: { 1: "Positivos papel", 2: "Diapositivas", 3: "Negativos", 4: "Digitales", 5: "Digitalizadas", 6: "Documentos asociados", 7: "Dispositivos fotográficos", 8: "Otro" } },
+        25: { pregunta: "Materiales originales o reproducciones", opciones: { 1: "Originales", 2: "Reproducciones", 3: "Principalmente reproducciones", 4: "Principalmente originales" } },
+        26: { pregunta: "Soportes en riesgo químico", opciones: { 1: "Nitrato de celulosa", 2: "Acetato (síndrome vinagre)", 3: "Impresiones térmicas", 99: "Ninguno" } },
+        27: { pregunta: "Estado de conservación general", opciones: { 1: "Malo", 2: "Regular", 3: "Bueno" } },
+        28: { pregunta: "Período temporal", opciones: {} },
+        29: { pregunta: "Porcentaje inventariado", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
+        30: { pregunta: "Porcentaje catalogado", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
+        31: { pregunta: "Reglas de catalogación empleadas", opciones: { 1: "MARC21", 2: "ISAD-G", 3: "ISBD", 4: "Norma Mexicana", 5: "RDA", 6: "CCO", 7: "ObjectID", 8: "VRA", 9: "Otra", 99: "Ninguna" } },
+        32: { pregunta: "Nivel de dominio en catalogación", opciones: { 1: "Inexperto", 2: "Básico", 3: "Intermedio", 4: "Avanzado", 5: "Experto" } },
+        33: { pregunta: "Unidad de descripción usada", opciones: { 1: "Por fotografía", 2: "Unidad documental compuesta", 3: "Ambas", 99: "Ninguna" } },
+        34: { pregunta: "Porcentaje digitalizado", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
+        35: { pregunta: "Procesos de digitalización", opciones: { 1: "Por escaneo", 2: "Por reprografía", 3: "Plan escrito", 4: "Plan para conservación", 5: "Bajo demanda" } },
+        36: { pregunta: "Calidad de digitalización", opciones: { 1: "No se digitaliza", 2: "Sin estándar", 3: "Estándar básico", 4: "Estándar intermedio", 5: "Estándar de preservación" } },
+        37: { pregunta: "RÚBRICA: CARACTERÍSTICAS DEL ACERVO", opciones: { 1: "Incipiente", 2: "Básico estructural", 3: "Intermedio", 4: "Consolidado", 5: "Avanzado" } },
+
+        // SECCIÓN 4: Infraestructura Física y Tecnológica
+        38: { pregunta: "Nivel de adecuación de espacios", opciones: { 1: "Inadecuado", 2: "Básico estructural", 3: "Adecuado", 4: "Bueno", 5: "Óptimo" } },
+        39: { pregunta: "Nivel de equipamiento", opciones: { 1: "Inadecuado", 2: "Básico", 3: "Adecuado", 4: "Bueno", 5: "Óptimo" } },
+        40: { pregunta: "Almacenamiento acondicionado", opciones: { 1: "Temperatura", 2: "Humedad", 3: "Iluminación", 4: "Mobiliario", 5: "Protección riesgos", 6: "Todas" } },
+        41: { pregunta: "Instalaciones fotográficas", opciones: { 1: "Laboratorio", 2: "Estudio", 3: "Área reprografía", 4: "Estación digitalización", 99: "Ninguna" } },
+        42: { pregunta: "Infraestructura tecnológica", opciones: { 1: "Cómputo", 2: "Internet", 3: "Servidor", 4: "Hosting", 5: "Equipo digitalización" } },
+        43: { pregunta: "Herramientas de gestión de información", opciones: { 1: "Papel", 2: "Hojas de cálculo", 3: "BD Local", 4: "BD en línea", 5: "Sistema DAM", 6: "Repositorio digital", 99: "Ninguna" } },
+        44: { pregunta: "Software empleado", opciones: { 1: "Access", 2: "Airtable", 3: "AtoM", 4: "Collective Access", 5: "Collector", 6: "A la medida", 7: "DSpace", 8: "Filemaker", 9: "Koha", 10: "Omeka", 11: "Tainacan", 12: "Otro", 99: "Ninguno" } },
+        45: { pregunta: "Métodos de resguardo digital", opciones: { 1: "Computadoras", 2: "Unidades externas", 3: "Nube gratuita", 4: "Nube pago", 5: "Servidor/NAS", 6: "Sistema DAM", 7: "Repositorio", 99: "Ninguna" } },
+        46: { pregunta: "Porcentaje disponible en internet", opciones: { 1: "1-20%", 2: "21-40%", 3: "41-60%", 4: "61-80%", 5: "81-100%" } },
+        47: { pregunta: "Dirección web del acervo", opciones: {} },
+        48: { pregunta: "RÚBRICA: INFRAESTRUCTURA", opciones: { 1: "Inadecuado", 2: "Básico", 3: "Intermedio", 4: "Consolidado", 5: "Avanzado" } },
+
+        // SECCIÓN 5: Servicios al Público
+        49: { pregunta: "Servicios al público", opciones: { 1: "Consulta", 2: "Préstamos", 3: "Reprografía", 4: "Investigación", 5: "Gestión de permisos", 6: "Otros" } },
+        50: { pregunta: "Requisitos de consulta", opciones: { 1: "Libre", 2: "Cita previa", 3: "Carta solicitud", 4: "Autorización interna", 5: "Supervisada", 6: "Restringida", 7: "Sin condiciones", 8: "Otra" } },
+        51: { pregunta: "Servicios educativos", opciones: { 1: "Cursos", 2: "Talleres", 3: "Conferencias", 4: "Visitas guiadas", 5: "Otros", 99: "Ninguno" } },
+        52: { pregunta: "Mecanismos de difusión", opciones: { 1: "Exposiciones", 2: "Prensa", 3: "Publicaciones", 4: "Venta obra", 5: "Redes sociales", 6: "Otros", 99: "Ninguno" } },
+        53: { pregunta: "Estudios de usuarios/satisfacción", opciones: { 1: "No se realizan", 2: "Esporádica", 3: "Anualmente" } },
+        54: { pregunta: "RÚBRICA: SERVICIOS AL PÚBLICO", opciones: { 1: "Incipiente", 2: "Básico estructural", 3: "Intermedio", 4: "Consolidado", 5: "Avanzado" } }
     };
 
     try {
