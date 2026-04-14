@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sección 2: Gestión Institucional</title>
+    <title>Sección 2: Recursos Humanos</title>
     
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
     
@@ -125,12 +125,12 @@
         
         /* Estilo Completado (Verde) */
         .step-item.completed .step-number { background: #28a745; color: white; }
-        .step-item.completed { color: #28a745; }
+        .step-item.completed { color: #28a745; font-weight: 600; }
 
-        /* --- NAVEGACIÓN INFERIOR (Separación de botones) --- */
+        /* --- NAVEGACIÓN INFERIOR --- */
         .footer-navegacion {
             display: flex;
-            justify-content: space-between; /* Botón atrás izquierda, Guardar derecha */
+            justify-content: space-between;
             align-items: center;
             margin-top: 50px;
             padding-top: 20px;
@@ -168,7 +168,7 @@
         </div>
         <div class="header-title-box">
             <h1 class="header-main-title">Sección 2</h1>
-            <p class="header-subtitle">Gestión Institucional</p>
+            <p class="header-subtitle">Recursos Humanos</p>
         </div>
         <div>
             <button type="button" id="btnCerrarSesion" class="btn-logout">
@@ -181,20 +181,17 @@
 
         <div class="container">
             <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.6em;">
-                2. Gestión Institucional
+                II. Recursos Humanos
             </h2>
             
             <div id="mensajeBienvenida" class="bienvenida-box" style="display: none;"></div>
 
             <form id="formularioDinamico">
-                <div id="contenedorPreguntas">
-                    <p style="text-align:center; color:#666; padding: 40px;">
-                        <i class="fas fa-spinner fa-spin"></i> Cargando preguntas...
-                    </p>
-                </div>
+                <div id="contenedorPreguntas"></div>
 
                 <div class="footer-navegacion">
-                    <div id="areaBotonRegresar"></div> <div>
+                    <div id="areaBotonRegresar"></div> 
+                    <div>
                         <button type="submit" class="btn-guardar">
                             Guardar y Continuar <i class="fas fa-arrow-right"></i>
                         </button>
@@ -208,21 +205,17 @@
             <ul class="step-list">
                 <li class="step-item completed">
                     <span class="step-number"><i class="fas fa-check"></i></span>
-                    <span>Identificación</span>
+                    <span>Gestión Institucional</span>
                 </li>
                 
                 <li class="step-item active">
                     <span class="step-number">2</span>
-                    <span>Gestión Institucional</span>
+                    <span>Recursos Humanos</span>
                 </li>
 
-                <li class="step-item"><span class="step-number">3</span><span>Caracterización</span></li>
-                <li class="step-item"><span class="step-number">4</span><span>Documentación</span></li>
-                <li class="step-item"><span class="step-number">5</span><span>Info. y Software</span></li>
-                <li class="step-item"><span class="step-number">6</span><span>Recursos Humanos</span></li>
-                <li class="step-item"><span class="step-number">7</span><span>Tecnología</span></li>
-                <li class="step-item"><span class="step-number">8</span><span>Normatividad</span></li>
-                <li class="step-item"><span class="step-number">9</span><span>Servicios</span></li>
+                <li class="step-item"><span class="step-number">3</span><span>Características del Acervo</span></li>
+                <li class="step-item"><span class="step-number">4</span><span>Infra. y Tecnología</span></li>
+                <li class="step-item"><span class="step-number">5</span><span>Servicios al Público</span></li>
             </ul>
             
             <div style="margin-top: 20px; font-size: 0.8em; color: #888; text-align: center;">
@@ -234,7 +227,7 @@
 
     <script src="js/seccion2.js"></script> 
     <script>
-        window.NOMBRE_SECCION = "2. Gestión Institucional";
+        window.NOMBRE_SECCION = "II. Recursos Humanos";
     </script>
     <script src="js/encuesta.js"></script>
 
