@@ -28,7 +28,8 @@ const CONFIG_SECCION = {
         },
         {
             id: 17, orden: 17,
-            texto: "Indique el nivel educativo del personal que trabaja en el archivo/institución (Indicar el número de personas según corresponda).",
+            texto: "Indique  el numero de personas por nivel educativo que trabajan en tu archivo/educacion.",
+            ayuda: "Coloque el numero de personas por nivel educativo según corresponda.",
             tipo: "lista_inputs",
             obligatorio: true,
             opciones: [
