@@ -236,12 +236,13 @@
 
     <script src="js/seccion5.js"></script> 
     <script>
+        // 1. Configuramos el nombre para la UI
         window.NOMBRE_SECCION = "V. Servicios al Público";
         
-        // INDICAMOS A ENCUESTA.JS QUE ESTA ES LA ÚLTIMA PANTALLA PARA ACTIVAR EL CANDADO
+        // 2. IMPORTANTE: Modificamos el objeto que viene de seccion5.js ANTES de cargar encuesta.js
         if (typeof CONFIG_SECCION !== 'undefined') {
-            CONFIG_SECCION.es_final = true;
-            CONFIG_SECCION.siguiente = "resumen.html"; // O como se llame tu página final
+            CONFIG_SECCION.es_final = true; // Activa la lógica del botón final
+            CONFIG_SECCION.siguiente = "resumen.html"; // A dónde ir al terminar
         }
     </script>
     <script src="js/encuesta.js"></script>
