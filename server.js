@@ -85,135 +85,30 @@ pool.getConnection((err, conn) => {
 const ADMIN_EMAILS = ['jcf_fcg@cultura.gob.mx', 'alberto.colef@gmail.com', 'lunam.liliana.dgtic@gmail.com'];
 
 // =========================================================
-// 🗺️ MAPA DE SECCIONES (Para reportes en consola)
+// 🗺️ NUEVO MAPA DE SECCIONES (5 Secciones)
 // =========================================================
 function identificarSeccion(idPregunta) {
     const id = parseInt(idPregunta);
     
-    if (id >= 1 && id <= 13) return 1;  // Identificación
-    if (id >= 14 && id <= 19) return 2; // Gestión Institucional
-    if (id >= 20 && id <= 28) return 3; // Caracterización
-    if (id >= 29 && id <= 37) return 4; // Conservación (Asumiendo rangos de tu log)
-    if (id >= 38 && id <= 40) return 5; // Gestión de Información (La matriz)
-    if (id >= 41 && id <= 47) return 6; // Sección 6 (Recursos Humanos) 
-    if (id >= 48 && id <= 48) return 7; // Sección 7 
-    if (id >= 49 && id <= 49) return 8; // Sección 8 (Processos)
-    if (id >= 50 && id <= 50) return 9; // Sección 9 (Servicios)
+    if (id >= 1 && id <= 14) return 1;  // Gestión Institucional
+    if (id >= 15 && id <= 21) return 2; // Recursos Humanos
+    if (id >= 22 && id <= 37) return 3; // Características del Acervo
+    if (id >= 38 && id <= 48) return 4; // Infraestructura
+    if (id >= 49 && id <= 54) return 5; // Servicios al Público
     
     return 'Otra'; 
 }
 
 // =========================================================
-// 📜 CONFIGURACIÓN DE REGLAS DE PUNTAJE (SERVER-SIDE)
+// 📜 CONFIGURACIÓN DE REGLAS DE PUNTAJE (SIMPLIFICADA)
 // =========================================================
+
 const REGLAS_PUNTAJE = {
-
-    // --- SECCIÓN 2 ---
-    16: { tipo: 'simple', valor: 1 }, 
-    17: { tipo: 'booleano', valor: 1 },
-    18: { tipo: 'booleano', valor: 1 },
-    19: { tipo: 'unica_vez', valor: 1 }, 
-
-    // --- SECCIÓN 3 ---
-    24: { tipo: 'booleano', valor: 1 }, 
-    25: { tipo: 'escala_directa' }, 
-    26: { tipo: 'escala_directa' }, 
-    27: { tipo: 'acumulativo_max5' },
-    28: { tipo: 'conteo_mas_uno' }, 
-
-    // --- SECCIÓN 4 --- 
-    29: { tipo: 'escala_directa' }, 
-    30: { tipo: 'escala_directa' }, 
-    32: { tipo: 'escala_directa' },
-    34: { tipo: 'escala_directa' },
-    37: { tipo: 'escala_directa' },
-
-    // --- SECCIÓN 5 --- 
-    38: { tipo: 'puntos_por_opcion' },
-    40: { tipo: 'escala_directa' },
-    
-    // --- SECCIÓN 7 (NUEVO) ---
-    48: { tipo: 'puntos_por_opcion' },
-
-    // --- SECCIÓN 8 (PROCESOS) ---
-    49: { tipo: 'puntos_por_opcion' },
-
-    //Sección 9 (Servicios)
-    50: { tipo: 'puntos_por_opcion' }
-   
-};
-
-const VALOR_OPCIONES = {
-
-    // =================================
-    // --- SECCIÓN 5 (PREGUNTA 38) ---
-    // =================================
-    381: 1, 
-    382: 2,
-    383: 3,
-    384: 4,
-    385: 5,
-    386: 6,
-    3899: 0,
-
-    // ==========================================
-    // --- SECCIÓN 7: INFRAESTRUCTURA (ID 48) ---
-    // ==========================================
-    
-    // 🟢 PADRES (Suman 1 punto cada uno -> Máximo 5 posibles)
-    481: 1, // Equipo cómputo
-    482: 1, // Internet
-    483: 1, // Servidor
-    484: 1, // Digitalización
-    485: 1, // Software Especializado (El check padre)
-
-    // ⚪ HIJOS (Valen 0 puntos, no suman extra)
-    4810: 0, 4811: 0, 4812: 0, 4813: 0, 4814: 0,
-    4815: 0, 4816: 0, 4817: 0, 4818: 0, 4819: 0,
-    4820: 0, 4821: 0, 4822: 0,
- 
-    // ==========================================
-    // --- SECCIÓN 8: PROCESOS (ID 49) ---
-    // ==========================================
-    
-    // 🟢 PADRES (Valen 1 punto cada uno)
-    491: 1, // Proc. Ingreso
-    492: 1, // Proc. Salida
-    493: 1, // Plan Emergencia
-    494: 1, // Docs Préstamo (Check Padre)
-    495: 1, // Auditorías (Check Padre)
-    496: 1, // Evaluación (Check Padre)
-    497: 1, // Registro Daños (Check Padre)
-
-    // ⚪ HIJOS (Valen 0 puntos - meramente informativos)
-    // Hijos de Docs (494)
-    4941: 0, 4942: 0, 4943: 0, 4944: 0, 4945: 0,
-    
-    // Hijos de Auditorías (495)
-    4951: 0, 4952: 0, 4953: 0, 4954: 0, 4955: 0,
-
-    // Hijos de Evaluación (496)
-    4961: 0, 4962: 0, 4963: 0, 4964: 0,
-
-    // Hijos de Registro (497)
-    4971: 0, 4972: 0, 4973: 0, 4974: 0, 4975: 0,
-
-    // --- SECCIÓN 9: SERVICIOS (PREGUNTA 50) ---
-    // 🟢 PADRES (Valen 1 punto cada uno -> Máximo 4 puntos totales)
-    91: 1, // Servicios Básicos
-    92: 1, // Requisitos
-    93: 1, // Educativos
-    94: 1, // Difusión
-
-    // ⚪ HIJOS (Valen 0 puntos, son solo descriptivos)
-    // Servicios
-    101: 0, 102: 0, 103: 0, 104: 0, 105: 0, 106: 0, 107: 0,
-    // Requisitos
-    110: 0, 111: 0, 112: 0, 113: 0, 114: 0, 115: 0, 116: 0, 117: 0,
-    // Educativos
-    120: 0, 121: 0, 122: 0, 123: 0, 124: 0, 125: 0,
-    // Difusión
-    130: 0, 131: 0, 132: 0, 133: 0, 134: 0, 135: 0, 136: 0
+    14: { tipo: 'escala_directa' }, // Autoevaluación Sec 1
+    21: { tipo: 'escala_directa' }, // Autoevaluación Sec 2
+    37: { tipo: 'escala_directa' }, // Autoevaluación Sec 3
+    48: { tipo: 'escala_directa' }, // Autoevaluación Sec 4
+    54: { tipo: 'escala_directa' }  // Autoevaluación Sec 5
 };
 
 
@@ -959,40 +854,36 @@ app.get('/resumen/:idUsuario', async (req, res) => {
         }
 
         // =========================================================
-        // 4. LÓGICA DE NIVELES (SINCRONIZADA CON EL ADMIN)
+        // 4. NUEVA LÓGICA DE NIVELES (Máximo 25 puntos)
         // =========================================================
-
-        // Establecemos el tope teórico en 187 
-        const MAX_PUNTAJE = 200; 
-        
-        // Calculamos porcentaje solo para mostrar la barrita de progreso visual
+        const MAX_PUNTAJE = 25; 
         const porcentaje = MAX_PUNTAJE > 0 ? Math.round((puntajeTotal / MAX_PUNTAJE) * 100) : 0;
 
-        let nivel = "Inicial";
-        let mensaje = "El nivel de madurez es muy bajo. Se requiere iniciar procesos básicos.";
-        let color = "#dc3545"; // Rojo (Danger)
+        let nivel = "Incipiente";
+        let mensaje = "El nivel de madurez es incipiente. Se requiere iniciar procesos básicos de formalización.";
+        let color = "#dc3545"; // Rojo
 
-        // USAMOS PUNTOS DIRECTOS (IGUAL QUE EN /admin/globales)
-        // Avanzado: > 140 pts
-        // Intermedio: > 90 pts
-        // Básico: > 45 pts
-
-        if (puntajeTotal >= 140) { 
+        // Umbrales proporcionales sobre 25 puntos
+        if (puntajeTotal >= 21) { 
             nivel = "Avanzado"; 
-            mensaje = "¡Excelente! Nivel óptimo de cumplimiento, conservación y gestión digital."; 
-            color = "#28a745"; // Verde (Success)
+            mensaje = "¡Excelente! Prácticas consolidadas y estandarizadas en todas las áreas."; 
+            color = "#198754"; // Verde fuerte
         } 
-        else if (puntajeTotal >= 90) { 
+        else if (puntajeTotal >= 16) { 
+            nivel = "Consolidado"; 
+            mensaje = "Nivel sólido. Mantenga el seguimiento estratégico y la mejora continua."; 
+            color = "#20c997"; // Verde claro
+        } 
+        else if (puntajeTotal >= 11) { 
             nivel = "Intermedio"; 
-            mensaje = "Buen nivel de gestión y control. Enfoque sus esfuerzos en la mejora continua."; 
-            color = "#ffc107"; // Azul Cian (Info)
+            mensaje = "Buen nivel de control básico. Enfoque sus esfuerzos en la estandarización."; 
+            color = "#ffc107"; // Amarillo
         } 
-        else if (puntajeTotal >= 45) { 
-            nivel = "Básico"; 
-            mensaje = "Existen procesos incipientes. Se requiere formalización y estandarización."; 
-            color = "#dc3545"; // Amarillo (Warning)
-        } 
-        // Si es menor a 45, se queda en "Inicial" (Rojo)
+        else if (puntajeTotal >= 6) { 
+            nivel = "Básico estructural"; 
+            mensaje = "Existen procesos esenciales, pero se requiere mayor formalización documentada."; 
+            color = "#fd7e14"; // Naranja
+        }
 
         // =========================================================
         // 🖨️ IMPRIMIR EN CONSOLA CUANDO ALGUIEN VE SU RESUMEN
