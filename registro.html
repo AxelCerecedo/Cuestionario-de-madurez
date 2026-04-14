@@ -13,7 +13,9 @@
     <link rel="stylesheet" href="css/login.css"> 
 
     <style>
-        /* Estilos base del Login/Registro */
+        /* =========================================
+           ESTILOS COMPACTADOS PARA QUE QUEPA EN PANTALLA
+           ========================================= */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f4f6f9;
@@ -22,7 +24,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 15px; /* Reducido para pantallas pequeñas */
             box-sizing: border-box;
         }
 
@@ -30,21 +32,24 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-            max-width: 550px; /* Un poco más ancho para las 2 columnas */
+            max-width: 550px; 
             width: 100%;
-            padding: 40px;
+            /* 🔽 Redujimos el padding interior de la tarjeta */
+            padding: 25px 30px; 
             text-align: center;
             box-sizing: border-box;
         }
         
-        .logo-img { width: 200px; height: auto; margin-bottom: 15px; }
-        .app-title { font-size: 1.1em; line-height: 1.3; margin-bottom: 5px; color: #333; }
-        .page-subtitle { color: #7c1225; margin-bottom: 25px; font-size: 1.3em; font-weight: 700; }
+        /* 🔽 Redujimos el logo y los márgenes de los títulos */
+        .logo-img { width: 170px; height: auto; margin-bottom: 5px; }
+        .app-title { font-size: 1rem; line-height: 1.2; margin-bottom: 2px; color: #333; }
+        .page-subtitle { color: #7c1225; margin-bottom: 15px; font-size: 1.15rem; font-weight: 700; margin-top: 5px; }
 
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px 20px;
+            /* 🔽 Redujimos el espacio entre filas y columnas */
+            gap: 10px 15px; 
             text-align: left;
         }
         .full-width { grid-column: span 2; }
@@ -55,17 +60,18 @@
         }
         
         .form-group label { 
-            font-size: 0.85em; 
-            margin-bottom: 6px; 
+            font-size: 0.8rem; 
+            margin-bottom: 4px; 
             font-weight: 600; 
             color: #444; 
         }
         
+        /* 🔽 Hicimos los inputs ligeramente más delgados */
         .form-group input, .form-group select {
             width: 100%; 
             box-sizing: border-box; 
-            padding: 10px 12px;
-            font-size: 0.95em; 
+            padding: 7px 10px;
+            font-size: 0.9rem; 
             border: 1px solid #ccc; 
             border-radius: 6px;
             font-family: 'Inter', sans-serif;
@@ -79,47 +85,49 @@
         }
 
         .input-especificar {
-            margin-top: 8px;
+            margin-top: 6px;
             display: none;
         }
 
+        /* 🔽 Botón más compacto y pegado al formulario */
         .btn-login {
-            margin-top: 25px; 
-            padding: 14px; 
+            margin-top: 15px; 
+            padding: 10px; 
             background-color: #7c1225;
             color: white; 
             border: none; 
             border-radius: 6px; 
             cursor: pointer; 
             font-weight: bold;
-            font-size: 1em;
+            font-size: 0.95rem;
             transition: background-color 0.2s;
         }
         .btn-login:hover { background-color: #5a0d1b; }
 
+        /* 🔽 Separador visual más discreto */
         .section-divider {
             grid-column: span 2;
             border-bottom: 1px solid #eee;
-            margin: 15px 0 5px 0;
-            padding-bottom: 5px;
+            margin: 8px 0 2px 0;
+            padding-bottom: 3px;
             color: #888;
-            font-size: 0.85em;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .ubicacion-feedback { 
-            font-size: 0.8em; 
-            margin-top: 6px; 
+            font-size: 0.75rem; 
+            margin-top: 4px; 
             display: block; 
-            min-height: 18px; 
+            min-height: 16px; 
         }
 
         @media (max-width: 600px) {
-            .form-grid { grid-template-columns: 1fr; gap: 12px; }
+            .form-grid { grid-template-columns: 1fr; gap: 10px; }
             .full-width, .section-divider { grid-column: span 1; }
-            .login-card { padding: 25px 20px; }
+            .login-card { padding: 20px 15px; }
         }
     </style>
 </head>
@@ -128,12 +136,12 @@
     <div class="login-card">
         
         <img src="Imagenes/logo.png" alt="Logo" class="logo-img">
-        <h1 class="app-title">Cuestionario de Evaluación de Madurez</h1>
+        <h1 class="app-title">Evaluación de Madurez</h1>
         <h2 class="page-subtitle">Registro Institucional</h2>
         
         <form id="registroForm" class="form-grid" novalidate>
             
-            <div class="section-divider">Datos de la cuenta (Usuario)</div>
+            <div class="section-divider">Datos del Usuario</div>
 
             <div class="form-group full-width">
                 <label>Nombre del Responsable <span style="color:red">*</span></label>
@@ -156,11 +164,11 @@
             </div>
 
 
-            <div class="section-divider">Perfil de la Institución / Archivo</div>
+            <div class="section-divider">Perfil del Archivo</div>
 
             <div class="form-group full-width">
-                <label>Nombre Oficial de la Institución o Archivo <span style="color:red">*</span></label>
-                <input type="text" id="institucion" required placeholder="Ej. Archivo Histórico de...">
+                <label>Nombre Oficial de la Institución <span style="color:red">*</span></label>
+                <input type="text" id="institucion" required placeholder="Ej. Archivo Histórico...">
             </div>
 
             <div class="form-group">
@@ -169,11 +177,11 @@
                     <option value="">Seleccione...</option>
                     <option value="Pública">Pública</option>
                     <option value="Privada">Privada</option>
-                    <option value="Organización de la Sociedad Civil">Organización de la Sociedad Civil</option>
-                    <option value="Mixta">Mixta [pública/privada/OSC]</option>
+                    <option value="Organización de la Sociedad Civil">Org. de la Sociedad Civil</option>
+                    <option value="Mixta">Mixta</option>
                     <option value="Otro">Otro</option>
                 </select>
-                <input type="text" id="tipo_institucion_otro" class="input-especificar" placeholder="Especifique el tipo...">
+                <input type="text" id="tipo_institucion_otro" class="input-especificar" placeholder="Especifique...">
             </div>
 
             <div class="form-group">
@@ -182,18 +190,18 @@
             </div>
 
             <div class="form-group full-width">
-                <label>Ubicación / Dirección Postal <span style="color:red">*</span></label>
-                <input type="text" id="ubicacion_texto" required placeholder="Ej. Calle, Número, Colonia, Ciudad, Estado, CP...">
-                <small id="statusUbicacion" class="ubicacion-feedback">Escriba una dirección para geolocalizar en el mapa.</small>
+                <label>Dirección / Ubicación Postal <span style="color:red">*</span></label>
+                <input type="text" id="ubicacion_texto" required placeholder="Calle, Número, Colonia, Ciudad, Estado...">
+                <small id="statusUbicacion" class="ubicacion-feedback">Escriba una dirección para geolocalizar.</small>
                 
                 <input type="hidden" id="latitud">
                 <input type="hidden" id="longitud">
             </div>
 
-            <button type="submit" class="btn-login full-width">Crear Cuenta y Comenzar</button>
+            <button type="submit" class="btn-login full-width">Crear Cuenta</button>
         </form>
 
-        <div class="login-footer" style="margin-top: 20px; font-size: 0.9em; color: #555;">
+        <div class="login-footer" style="margin-top: 12px; font-size: 0.85rem; color: #555;">
             ¿Ya tienes cuenta? <a href="login.html" style="color: #7c1225; font-weight: bold; text-decoration: none;">Inicia Sesión aquí</a>
         </div>
     </div>
@@ -201,9 +209,7 @@
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
-        // =======================================================
-        // LÓGICA PARA EL SELECT "OTRO"
-        // =======================================================
+        // Lógica del Select "Otro"
         const selectTipo = document.getElementById('tipo_institucion');
         const inputOtroTipo = document.getElementById('tipo_institucion_otro');
 
@@ -218,9 +224,7 @@
             }
         });
 
-        // =======================================================
-        // LÓGICA DE GEOLOCALIZACIÓN (NOMINATIM)
-        // =======================================================
+        // Geolocalización
         const inputUbicacion = document.getElementById('ubicacion_texto');
         const statusUbicacion = document.getElementById('statusUbicacion');
         const hiddenLat = document.getElementById('latitud');
@@ -228,29 +232,24 @@
 
         let timeoutBusqueda = null;
 
-        // Buscamos cuando el usuario deja de escribir por 1 segundo, o al salir del campo
         inputUbicacion.addEventListener('input', function() {
             clearTimeout(timeoutBusqueda);
-            // Reseteamos coordenadas previas
             hiddenLat.value = ''; hiddenLon.value = '';
             statusUbicacion.innerHTML = '';
-            
             if (this.value.trim().length > 5) {
                 timeoutBusqueda = setTimeout(buscarUbicacion, 1000);
             }
         });
 
         inputUbicacion.addEventListener('blur', function() {
-            if (this.value.trim().length > 5 && !hiddenLat.value) {
-                buscarUbicacion();
-            }
+            if (this.value.trim().length > 5 && !hiddenLat.value) buscarUbicacion();
         });
 
         function buscarUbicacion() {
             const query = inputUbicacion.value.trim();
             if (query.length < 5) return;
 
-            statusUbicacion.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando dirección en el mapa...';
+            statusUbicacion.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando en mapa...';
             statusUbicacion.style.color = '#0056b3';
 
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`)
@@ -258,26 +257,19 @@
                 .then(data => {
                     if (data && data.length > 0) {
                         const lugar = data[0];
-                        // Guardamos lat/lon en los inputs ocultos
                         hiddenLat.value = lugar.lat;
                         hiddenLon.value = lugar.lon;
-                        
-                        statusUbicacion.innerHTML = `<i class="fas fa-check-circle"></i> Ubicación validada satelitalmente.`;
+                        statusUbicacion.innerHTML = `<i class="fas fa-check-circle"></i> Ubicación validada.`;
                         statusUbicacion.style.color = '#28a745';
                     } else {
                         statusUbicacion.innerHTML = '<i class="fas fa-exclamation-triangle"></i> No se encontró ubicación exacta, pero se guardará el texto.';
                         statusUbicacion.style.color = '#fd7e14';
                     }
                 })
-                .catch(err => {
-                    console.error("Error Nominatim:", err);
-                    statusUbicacion.innerHTML = ''; // Silenciamos error de red para no asustar al usuario
-                });
+                .catch(() => statusUbicacion.innerHTML = ''); 
         }
 
-        // =======================================================
-        // ENVÍO DEL FORMULARIO
-        // =======================================================
+        // Envío del Formulario
         document.getElementById('registroForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -287,25 +279,22 @@
             const pass1 = document.getElementById('pass1').value.trim();
             const pass2 = document.getElementById('pass2').value.trim();
             
-            // Nuevos campos
             const tipo_select = document.getElementById('tipo_institucion').value;
             const tipo_otro = document.getElementById('tipo_institucion_otro').value.trim();
             const tipo_final = tipo_select === 'Otro' ? `Otro: ${tipo_otro}` : tipo_select;
-            
             const adscripcion = document.getElementById('adscripcion').value.trim();
             
             const ubicacion_texto = document.getElementById('ubicacion_texto').value.trim();
             const latitud = document.getElementById('latitud').value;
             const longitud = document.getElementById('longitud').value;
 
-            // Validación Básica
             if (!institucion || !nombre || !email || !pass1 || !pass2 || !tipo_select || !ubicacion_texto) {
-                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Complete todos los campos obligatorios (*).', confirmButtonColor: '#7c1225' });
+                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Complete los campos con (*).', confirmButtonColor: '#7c1225' });
                 return;
             }
 
             if (tipo_select === 'Otro' && !tipo_otro) {
-                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Por favor especifique el tipo de institución.', confirmButtonColor: '#7c1225' });
+                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Especifique el tipo de institución.', confirmButtonColor: '#7c1225' });
                 return;
             }
 
@@ -314,48 +303,32 @@
                 return;
             }
 
-            // --- ARMADO DEL PAYLOAD ---
-            // Modifica tu backend (server.js) en app.post('/auth/registro') para que acepte estos nuevos campos
-            // si decides guardarlos en nuevas columnas. Por ahora los mando todos.
             const payload = { 
-                institucion: institucion, 
-                nombre: nombre, 
-                email: email, 
-                password: pass1,
-                
-                // Datos geográficos (Ya los soporta tu backend actual)
-                ubicacion: ubicacion_texto,
-                latitud: latitud || null,
-                longitud: longitud || null,
-
-                // Datos extra institucionales (Requiere agregar columnas en BD si quieres explotarlos,
-                // de lo contrario, tu backend actual los ignorará sin causar error).
-                tipo_institucion: tipo_final,
-                adscripcion: adscripcion
+                institucion, nombre, email, password: pass1,
+                ubicacion: ubicacion_texto, latitud: latitud || null, longitud: longitud || null,
+                tipo_institucion: tipo_final, adscripcion
             };
 
             try {
-                Swal.fire({ title: 'Creando cuenta...', text: 'Preparando tu entorno de diagnóstico.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                Swal.fire({ title: 'Creando cuenta...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
                 const response = await fetch(`${API_URL}/auth/registro`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
                     Swal.fire({
-                        icon: 'success', title: '¡Registro Exitoso!', text: 'Serás redirigido para iniciar sesión.',
-                        confirmButtonColor: '#7c1225', timer: 2000, showConfirmButton: false
-                    }).then(() => { window.location.href = 'login.html'; });
+                        icon: 'success', title: '¡Registro Exitoso!', text: 'Redirigiendo...',
+                        confirmButtonColor: '#7c1225', timer: 1500, showConfirmButton: false
+                    }).then(() => window.location.href = 'login.html');
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Hubo un problema al registrar la cuenta.', confirmButtonColor: '#7c1225' });
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Problema al registrar.', confirmButtonColor: '#7c1225' });
                 }
             } catch (error) {
                 console.error(error);
-                Swal.fire({ icon: 'error', title: 'Error de red', text: 'No se pudo conectar con el servidor. Intenta de nuevo más tarde.', confirmButtonColor: '#7c1225' });
+                Swal.fire({ icon: 'error', title: 'Error de red', text: 'Sin conexión al servidor.', confirmButtonColor: '#7c1225' });
             }
         });
     </script>
