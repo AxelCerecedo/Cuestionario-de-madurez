@@ -1,51 +1,41 @@
+// =========================================================
+// CONFIGURACIÓN DE LA SECCIÓN 3 (NUEVA ESTRUCTURA)
+// =========================================================
 const CONFIG_SECCION = {
-    seccion: "3. Caracterización del acervo",
+    seccion: "III. Características del Acervo",
     siguiente: "seccion4.html", 
     anterior: "seccion2.html", 
 
-    preguntas: [ 
-
-        // --- SUBSECCIÓN 3.1 ---
+    preguntas: [
         {
-            id: 300,
-            tipo: "titulo_subseccion",
-            texto: "3.1 Volumen y características"
-        },
-        {
-            id: 20,
-            orden: 19,
-            texto: "Indique el volumen aproximado del acervo fotográfico que resguardan",
+            id: 22, orden: 22,
+            texto: "Indique el volumen aproximado del acervo fotográfico en resguardo de su archivo/institución.",
             tipo: "catalogo_unico",
-            obligatorio: true, 
-            graficar: true, 
+            obligatorio: true,
             opciones: [
                 { id: 1, texto: "Hasta 500 ítems" },
-                { id: 2, texto: "Hasta 5000 ítems" },
+                { id: 2, texto: "Hasta 5,000 ítems" },
                 { id: 3, texto: "Hasta 50,000 ítems" },
                 { id: 4, texto: "Más de 50,000 ítems" }
             ]
         },
         {
-            id: 21, 
-            orden: 20,
-            texto: "Si tu archivo esta estructurado por fondos/subfondos y/o colecciones, indica los 3 más representativos:",
-            tipo: "lista_inputs", 
+            id: 23, orden: 23,
+            texto: "Si el acervo está estructurado por fondos/subfondos o colecciones, menciona los tres más representativos.",
+            tipo: "lista_inputs",
             obligatorio: false,
-            // 🔥 PROPIEDAD NUEVA:
             texto_ninguno: "No está organizado por fondos o colecciones",
             opciones: [
-                { id: 1, texto: "Fondo / Colección 1" },
-                { id: 2, texto: "Fondo / Colección 2" },
-                { id: 3, texto: "Fondo / Colección 3" },
+                { id: 1, texto: "Fondo / Colección 1:" },
+                { id: 2, texto: "Fondo / Colección 2:" },
+                { id: 3, texto: "Fondo / Colección 3:" }
             ]
         },
         {
-            id: 22,
-            orden: 21,
-            texto: "Tipos de materiales (marcar todos los que correspondan):",
+            id: 24, orden: 24,
+            texto: "Menciona los tipos de materiales que conforman el acervo de tu archivo/institución (marcar todos los que correspondan).",
             tipo: "catalogo_multiple",
-            obligatorio: true, 
-            graficar: true,
+            obligatorio: true,
             opciones: [
                 { id: 1, texto: "Positivos en papel" },
                 { id: 2, texto: "Positivos en película (diapositivas)" },
@@ -57,109 +47,168 @@ const CONFIG_SECCION = {
                 { id: 8, texto: "Otro", especificar: true }
             ]
         },
-
-        // --- SUBSECCIÓN 3.2 ---
         {
-            id: 301,
-            tipo: "titulo_subseccion",
-            texto: "3.2 Perfil del contenido"
+            id: 25, orden: 25,
+            texto: "El acervo cuenta con materiales originales o reproducciones.",
+            tipo: "catalogo_unico",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "Originales" },
+                { id: 2, texto: "Reproducciones" },
+                { id: 3, texto: "Principalmente reproducciones y algunos originales" },
+                { id: 4, texto: "Principalmente originales y algunas reproducciones" }
+            ]
         },
         {
-            id: 23,
-            orden: 22,
-            texto: "Período temporal aproximado que abarca el acervo",
-            ayuda: "Indique el año inicial y final. Mes y día son opcionales.",
-            tipo: "rango_fechas_flexibles", 
+            id: 26, orden: 26,
+            texto: "Identifique si existen soportes en riesgo químico por su naturaleza (marcar todas las que apliquen).",
+            tipo: "catalogo_multiple",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "Negativos de nitrato de celulosa" },
+                { id: 2, texto: "Negativos de acetato de celulosa (síndrome de vinagre)" },
+                { id: 3, texto: "Impresiones térmicas o instantáneas" },
+                { id: 99, texto: "Ninguno" }
+            ]
+        },
+        {
+            id: 27, orden: 27,
+            texto: "¿En qué estado de conservación física se encuentra el acervo de forma general?",
+            tipo: "catalogo_unico",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "Malo", ayuda: "Deterioro activo (hongos, oxidación severa) en más del 50%" },
+                { id: 2, texto: "Regular", ayuda: "Deterioro estable, pero requiere intervención de limpieza o estabilización" },
+                { id: 3, texto: "Bueno", ayuda: "Material estable, sin deterioros químicos o biológicos evidentes" }
+            ]
+        },
+        {
+            id: 28, orden: 28,
+            texto: "Indique el período temporal aproximado que abarca el acervo.",
+            ayuda: "El año inicial y final son obligatorios, mes y día son opcionales.",
+            tipo: "rango_fechas_flexibles",
             obligatorio: true
         },
-        
-        // --- 🟢 AQUÍ ESTABA EL ERROR DE LA GRÁFICA ---
         {
-            id: 24, 
-            orden: 23,
-            texto: "¿Cuenta con un registro o control de autoridades?",
-            ayuda: "Se considera registro o control de autoridades cualquier sistema que permita identificar de forma consistente a las personas...",
-            tipo: "booleano",
+            id: 29, orden: 29,
+            texto: "Indique el porcentaje del acervo inventariado.",
+            tipo: "catalogo_unico",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "1 a 20%" },
+                { id: 2, texto: "21 a 40%" },
+                { id: 3, texto: "41 a 60%" },
+                { id: 4, texto: "61 a 80%" },
+                { id: 5, texto: "81 a 100%" }
+            ]
+        },
+        {
+            id: 30, orden: 30,
+            texto: "Indique qué porcentaje del acervo está catalogado.",
+            tipo: "catalogo_unico",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "1 a 20%" },
+                { id: 2, texto: "21 a 40%" },
+                { id: 3, texto: "41 a 60%" },
+                { id: 4, texto: "61 a 80%" },
+                { id: 5, texto: "81 a 100%" }
+            ]
+        },
+        {
+            id: 31, orden: 31,
+            texto: "Mencione las reglas, lineamientos o estándares empleadas en la catalogación del acervo.",
+            tipo: "catalogo_multiple",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "MARC21" },
+                { id: 2, texto: "ISAD-G" },
+                { id: 3, texto: "ISBD" },
+                { id: 4, texto: "Norma Mexicana NMX-R-069-SCFI-2016" },
+                { id: 5, texto: "RDA" },
+                { id: 6, texto: "CCO" },
+                { id: 7, texto: "ObjectID" },
+                { id: 8, texto: "VRA" },
+                { id: 9, texto: "Otra", especificar: true },
+                { id: 99, texto: "Ninguna" }
+            ]
+        },
+        {
+            id: 32, orden: 32,
+            texto: "¿Qué nivel de dominio tiene el personal responsable de la catalogación con relación a las reglas, lineamientos o estándares de catalogación?",
+            tipo: "catalogo_unico",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "Inexperto", ayuda: "El personal desconoce o comprende superficialmente las reglas. Requiere guía constante, puede cometer errores frecuentes y no es capaz de aplicarlas de manera autónoma." },
+                { id: 2, texto: "Básico", ayuda: "El personal conoce las reglas fundamentales y puede aplicarlas en situaciones simples. Aún requiere supervisión o apoyo en casos no rutinarios; comprende la estructura general y evita errores básicos." },
+                { id: 3, texto: "Intermedio", ayuda: "El personal aplica las reglas con autonomía en situaciones complejas, anticipa errores, toma decisiones fundamentadas y brinda apoyo técnico a otros para mejorar procesos." },
+                { id: 4, texto: "Avanzado", ayuda: "El personal domina la mayoría de las reglas y puede aplicarlas con autonomía en situaciones comunes y complejas. Resuelve problemas habituales, identifica errores y orienta a personal menos experimentado." },
+                { id: 5, texto: "Experto", ayuda: "El personal conoce profundamente las reglas, incluyendo excepciones y escenarios complejos. Puede interpretarlas, adaptarlas cuando es necesario, proponer mejoras a los procesos, brindar capacitación y servir como referencia técnica para los demás." }
+            ]
+        },
+        {
+            id: 33, orden: 33,
+            texto: "Indique el tipo de unidad de descripción usada.",
+            tipo: "catalogo_unico",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "Por fotografía (UDS)" },
+                { id: 2, texto: "Por Unidad documental compuesta (UDC)" },
+                { id: 3, texto: "Ambas" },
+                { id: 99, texto: "Ninguna de las anteriores" }
+            ]
+        },
+        {
+            id: 34, orden: 34,
+            texto: "Indique el porcentaje del acervo digitalizado.",
+            tipo: "catalogo_unico",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "1 a 20%" },
+                { id: 2, texto: "21 a 40%" },
+                { id: 3, texto: "41 a 60%" },
+                { id: 4, texto: "61 a 80%" },
+                { id: 5, texto: "81 a 100%" }
+            ]
+        },
+        {
+            id: 35, orden: 35,
+            texto: "Indique cómo se realizan los procesos de digitalización (marcar los que aplique).",
+            tipo: "catalogo_multiple",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "Digitalización por escaneo" },
+                { id: 2, texto: "Digitalización por registro fotográfico (reprografía)" },
+                { id: 3, texto: "Plan de digitalización escrito" },
+                { id: 4, texto: "Plan de digitalización para conservación" },
+                { id: 5, texto: "Digitalización bajo demanda" }
+            ]
+        },
+        {
+            id: 36, orden: 36,
+            texto: "Indique la calidad de la digitalización empleada en su archivo/institución (marcar los que aplique).",
+            tipo: "catalogo_multiple",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "No se digitaliza" },
+                { id: 2, texto: "Sin estándar", ayuda: "Formatos no estables, resolución variada" },
+                { id: 3, texto: "Estándar básico", ayuda: "JPEG, 300 dpi aproximadamente, uso para consulta" },
+                { id: 4, texto: "Estándar intermedio", ayuda: "TIFF/JPEG de alta calidad, 300-600 dpi, color controlado" },
+                { id: 5, texto: "Estándar de preservación", ayuda: "TIFF/RAW sin compresión, 600+ dpi, control de color, metadatos técnicos" }
+            ]
+        },
+        {
+            id: 37, orden: 37,
+            texto: "Tomando en cuenta las características descritas de su acervo, ¿cómo evalúa la organización y gestión de su acervo?",
+            tipo: "catalogo_unico",
             obligatorio: true,
             graficar: true,
-            valor: 1,
             opciones: [
-                { id: 1, texto: "Sí" },
-                { id: 0, texto: "No" } // <--- CAMBIO CLAVE: ID 0 para coincidir con encuesta.js
-            ]
-        },
-        // ---------------------------------------------
-
-        // --- SUBSECCIÓN 3.3 ---
-        {
-            id: 302,
-            tipo: "titulo_subseccion",
-            texto: "3.3 Infraestructura del acervo"
-        },
-        {
-            id: 25,
-            orden: 24,
-            texto: "¿Qué nivel de adecuación tiene el establecimiento (espacios y distribución)?",
-            tipo: "catalogo_unico", 
-            obligatorio: true, 
-            graficar: true,
-            puntaje_regla: "escala_directa", 
-            opciones: [
-                { id: 1, ayuda: "Espacio insuficiente o no acondicionado; distribución improvisada.", texto: "Inadecuado" },
-                { id: 2, ayuda: "Espacio limitado; existe cierta organización, pero no cumple condiciones mínimas.", texto: "Básico" },
-                { id: 3, ayuda: "Espacio suficiente y organizado; cumple parcialmente requisitos de resguardo.", texto: "Adecuado"},
-                { id: 4, ayuda: "Buena distribución; áreas definidas; condiciones controladas.", texto: "Bueno" },
-                { id: 5, ayuda: "Distribución profesional; espacios diferenciados y diseñados para conservación.", texto: "Óptimo" }
-            ]
-        },
-        {
-            id: 26,
-            orden: 25,
-            texto: "¿Cuál es el nivel de equipamiento disponible para la organización, conservación y prestación de servicios relacionados con el acervo?",
-            tipo: "catalogo_unico", 
-            obligatorio: true, 
-            graficar: true,
-            puntaje_regla: "escala_directa",
-            opciones: [
-                { id: 1, texto: "Inadecuado", ayuda: "No se cuenta con equipamiento adecuado; solo herramientas básicas, insuficientes o improvisadas. No permite realizar correctamente tareas de organización, conservación o servicios." },
-                { id: 2, texto: "Básico", ayuda: "Se cuenta con algunos elementos mínimos o parciales, pero no cubren las necesidades del acervo. El equipamiento permite realizar solo actividades muy esenciales." },
-                { id: 3, texto: "Adecuado", ayuda: "El equipamiento es suficiente para realizar las tareas esenciales de organización, conservación y operación del acervo. Puede haber áreas por mejorar, pero las funciones principales están cubiertas." },
-                { id: 4, texto: "Bueno", ayuda: "Equipamiento completo, funcional y en buenas condiciones. Permite realizar procesos especializados y ofrecer servicios de manera eficiente y estable." },
-                { id: 5, texto: "Óptimo", ayuda: "Equipamiento profesional, actualizado y especializado. Cumple estándares técnicos para conservación, operación, digitalización y servicios. Permite un funcionamiento de alto nivel." }
-            ]
-        },
-        {
-            id: 27,
-            orden: 26,
-            texto: "¿Con qué espacios de almacenamiento acondicionados cuenta la institución?",
-            ayuda: "Espacio especialmente preparado para conservar el acervo, con control de temperatura, humedad, iluminación, mobiliario adecuado y protección contra riesgos.",
-            tipo: "catalogo_multiple",
-            obligatorio: true, 
-            graficar: true,
-            puntaje_regla: "acumulativo_max5", 
-            opciones: [
-                { id: 1, texto: "Control de temperatura" },
-                { id: 2, texto: "Control de humedad" },
-                { id: 3, texto: "Iluminación adecuada" },
-                { id: 4, texto: "Mobiliario adecuado" },
-                { id: 5, texto: "Protección contra riesgos" },
-                { id: 6, texto: "Todas las anteriores" } 
-            ]
-        },
-        {
-            id: 28,
-            orden: 27,
-            texto: "¿Qué instalaciones fotográficas tiene la institución?",
-            tipo: "catalogo_multiple",
-            obligatorio: false, 
-            graficar: true,
-            puntaje_regla: "acumulativo_max5",
-            opciones: [
-                { id: 1, texto: "Laboratorio fotográfico" },
-                { id: 2, texto: "Estudio fotográfico" },
-                { id: 3, texto: "Área de reproducción documental" },
-                { id: 4, texto: "Estación de digitalización" },
-                { id: 99, texto: "Ninguna de las anteriores" } 
+                { id: 1, texto: "Incipiente", ayuda: "El acervo no tiene organización por fondos/subfondos. No se tiene precisión de su cobertura temporal. Los materiales que conforman el acervo son principalmente positivos y predominan las reproducciones. No existe un inventario. La catalogación no supera el 20% del acervo y no se aplican reglas o estándares de catalogación por desconocimiento. La digitalización se hace siguiendo necesidades muy puntuales más que siguiendo un plan que contribuya a la preservación tanto física como digital del acervo." },
+                { id: 2, texto: "Básico estructural", ayuda: "Existen algunos fondos/subfondos. Se tiene identificada la cobertura temporal del acervo, aunque poco está poco documentada. Los materiales que conforman el acervo son principalmente positivos y predominan las reproducciones. No existe un inventario o está en proceso de integración. La catalogación apenas supera el 20% del acervo y no se aplican reglas o estándares de catalogación por falta de capacitación. La digitalización del acervo no se hace conforme a un plan sino con base a necesidades específicas y coyunturales, aunque se tiene un orden y organización que facilitan la localización de materiales digitales." },
+                { id: 3, texto: "Intermedio", ayuda: "El acervo está organizado por fondos/subfondos desde su origen y otros se han formado de manera posterior. Hay una diversidad de materiales, aunque predominan los positivos y un porcentaje considerable del acervo son materiales originales (alrededor del 50%). Existe un inventario parcial pero consistente (alrededor del 50%) que constantemente se actualiza. Más de la mitad del acervo está catalogado con base normas o estándares, pero hace falta capacitación para una aplicación sistemática. La digitalización no sigue un plan orientado a la preservación sino a necesidades de investigación/difusión y es cercana al 50% y no se siguen estándares de preservación." },
+                { id: 4, texto: "Consolidado", ayuda: "El acervo está organizado por fondos/subfondos desde su origen y otros se han formado de manera posterior. Hay una amplia diversidad de materiales y predominan los materiales originales. Existe un inventario que abarca la mayor parte del acervo (del 70% en adelante), incluyendo documentos y objetos asociados, considerando la descripción por unidad documental simple y compuesta. Alrededor de dos terceras partes del acervo está catalogado con base una aplicación consistente de normas o estándares. Existe un plan de digitalización con metas cuantitativas, por lo que se cuenta formatos adecuados para preservación." },
+                { id: 5, texto: "Avanzado", ayuda: "El acervo está organizado por fondos/sufondos desde su origen y otros se han formado de manera posterior. Hay mucha diversidad de materiales, incluyendo positivos en papel, diapositivas, negativos, fotografías digitales, documentos asociados y dispositivos fotográficos, predominando materiales originales. Existe un inventario superior al 90% del acervo. Más de dos terceras partes del acervo están catalogadas y se aplican normas o estándares de forma sistemática debido al conocimiento del personal." }
             ]
         }
     ]
