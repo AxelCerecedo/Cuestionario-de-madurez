@@ -14,28 +14,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* Estilos específicos para acomodar la gráfica en la tarjeta izquierda */
+        /* Estilos ajustados para la gráfica en la columna derecha */
         .chart-container {
-            background: rgba(255,255,255,0.95); /* Fondo casi blanco para contraste */
-            padding: 15px; 
+            background: #ffffff; 
+            padding: 20px; 
             border-radius: 12px; 
-            border: 1px solid rgba(255,255,255,0.2); 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            margin-top: 20px;
+            border: 1px solid #eaeaea; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            margin-top: 30px;
             width: 100%;
             box-sizing: border-box;
             position: relative;
         }
         
         .chart-title {
-            font-size: 0.85rem; 
+            font-size: 1rem; 
             font-weight: 700; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
             display: block; 
-            margin-bottom: 10px; 
-            color: #333; /* Texto oscuro sobre fondo claro */
+            margin-bottom: 15px; 
+            color: #333; 
             text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
         }
     </style>
 </head>
@@ -55,29 +57,19 @@
             <div class="dashboard-left">
                 
                 <div id="cardPuntaje" class="card-puntaje">
-    
                     <div class="icon-container">
                         <i class="fas fa-clipboard-check"></i>
                     </div>
 
                     <h2 class="titulo-estado">Diagnóstico Finalizado</h2>
-                    
                     <div class="linea-decorativa"></div>
                     
                     <div class="mensaje-final" style="text-align: left;">
                         <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: #fff;">¡Gracias por participar!</h3>
                         <p style="font-size: 0.85rem; opacity: 0.9; margin: 10px 0 0 0; line-height: 1.3; color: #fff;">
-                            A continuación encontrará el nivel de madurez alcanzado por su institución en cada una de las áreas evaluadas.
+                            Has concluido el Diagnóstico Institucional. En la sección de la derecha encontrarás el desglose del nivel de madurez alcanzado en cada una de las áreas evaluadas, así como un gráfico radial que ilustra tus resultados.
                         </p>
-                        
-                        <div class="chart-container">
-                            <span class="chart-title">Mapa de Madurez Institucional</span>
-                            <div style="position: relative; height: 250px; width: 100%;">
-                                <canvas id="radarChart"></canvas>
-                            </div>
-                        </div>
                     </div>
-
                 </div>
 
                 <div class="actions-panel">
@@ -95,6 +87,7 @@
 
             <div class="dashboard-right">
                 <h3 class="titulo-seccion">Desglose por secciones y nivel alcanzado</h3>
+                
                 <div class="tabla-container">
                     <table class="tabla-desglosada">
                         <thead>
@@ -106,6 +99,14 @@
                         <tbody id="tablaBody"></tbody>
                     </table>
                 </div>
+
+                <div class="chart-container">
+                    <span class="chart-title">Mapa de Madurez Institucional</span>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
             </div>
         </div> 
     </div>
@@ -113,7 +114,6 @@
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
-        // NUEVOS NOMBRES DE LAS 5 SECCIONES
         const NOMBRES_SECCIONES = {
             1: "Gestión Institucional", 
             2: "Recursos Humanos", 
@@ -122,7 +122,6 @@
             5: "Servicios al Público"
         };
         
-        // LOS 5 NIVELES DE LA RÚBRICA
         const NOMBRES_NIVELES = {
             1: "Incipiente",
             2: "Básico estructural",
@@ -148,7 +147,6 @@
             if (!idUsuario) { window.location.href = 'login.html'; return; }
 
             try {
-                // 1. Pedimos los datos iniciales al servidor
                 let response = await fetch(`${API_URL}/resumen/${idUsuario}`);
                 let data = await response.json();
 
@@ -158,37 +156,31 @@
                 }
 
                 // --- FONDO DE LA TARJETA IZQUIERDA ---
-                const colorBaseHex = data.color || '#7c1225'; // Usamos rojo institucional por defecto
+                const colorBaseHex = data.color || '#7c1225'; 
                 const colorInicio = hexToRgba(colorBaseHex, 0.95);
                 const colorFin = hexToRgba(colorBaseHex, 0.40);
                 document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
 
-                // --- PREPARAR DATOS PARA GRÁFICA Y TABLA ---
+                // --- PREPARAR DATOS ---
                 const labelsRadar = [];
                 const dataRadar = [];
                 const tbody = document.getElementById('tablaBody');
                 tbody.innerHTML = '';
                 
-                // Iteramos por las 5 secciones (del 1 al 5)
                 for (let numSec = 1; numSec <= 5; numSec++) {
                     const secIdStr = String(numSec);
-                    
-                    // Aseguramos que si no hay datos, el puntaje sea 0
                     const puntajeObtenido = data.secciones[secIdStr] || 0; 
                     
-                    // Llenar arreglos para la Gráfica Radial
                     labelsRadar.push(`Sección ${numSec}`);
                     dataRadar.push(puntajeObtenido);
 
-                    // --- LÓGICA DE COLORES PARA LA TABLA ---
-                    let colorCuadrito = '#dc3545'; // Rojo por defecto
-                    if (puntajeObtenido >= 4) colorCuadrito = '#28a745'; // Verde (Consolidado/Avanzado)
-                    else if (puntajeObtenido >= 3) colorCuadrito = '#ffc107'; // Amarillo (Intermedio)
-                    else if (puntajeObtenido >= 2) colorCuadrito = '#fd7e14'; // Naranja (Básico)
+                    let colorCuadrito = '#dc3545'; 
+                    if (puntajeObtenido >= 4) colorCuadrito = '#28a745'; 
+                    else if (puntajeObtenido >= 3) colorCuadrito = '#ffc107'; 
+                    else if (puntajeObtenido >= 2) colorCuadrito = '#fd7e14'; 
 
                     const nombreNivelObtenido = NOMBRES_NIVELES[puntajeObtenido] || "Sin evaluar";
 
-                    // Generar texto genérico para la tabla basado en el nivel
                     let recomendacionTexto = "";
                     if (puntajeObtenido >= 4) {
                         recomendacionTexto = `✅ <b>Nivel ${nombreNivelObtenido}:</b> La institución cumple de manera sólida con los estándares esperados en esta área, demostrando planeación y control.`;
@@ -200,7 +192,6 @@
                         recomendacionTexto = "No se encontraron datos de evaluación para esta sección.";
                     }
 
-                    // Fila Principal del Acordeón
                     const trPrincipal = document.createElement('tr');
                     trPrincipal.className = 'fila-seccion';
                     trPrincipal.onclick = () => toggleDetalle(secIdStr);
@@ -219,13 +210,12 @@
                         </td>
                     `;
 
-                    // Fila de Contenido Expandible
                     const trDetalle = document.createElement('tr');
                     trDetalle.id = `detalle-${secIdStr}`;
                     trDetalle.className = 'fila-detalle';
                     trDetalle.innerHTML = `
                         <td colspan="2" style="padding: 0; border: none;">
-                            <div class="contenido-detalle" style="padding: 15px; font-size: 0.9rem; line-height: 1.4; color: #444; background: #fff; text-align: justify; border-left: 3px solid ${colorCuadrito};">
+                            <div class="contenido-detalle" style="padding: 15px; font-size: 0.9rem; line-height: 1.4; color: #444; background: #fafafa; text-align: justify; border-left: 3px solid ${colorCuadrito};">
                                 ${recomendacionTexto}
                             </div>
                         </td>
@@ -235,7 +225,7 @@
                     tbody.appendChild(trDetalle);
                 }
 
-                // --- DIBUJAR GRÁFICA RADIAL ---
+                // --- DIBUJAR GRÁFICA ---
                 dibujarGraficaRadar(labelsRadar, dataRadar, colorBaseHex);
 
             } catch (error) { 
@@ -244,27 +234,21 @@
             }
         }
 
-        // ==========================================
-        // FUNCIÓN PARA CREAR EL GRÁFICO DE RADAR
-        // ==========================================
         function dibujarGraficaRadar(labels, datos, colorPrimarioHex) {
             const ctx = document.getElementById('radarChart').getContext('2d');
             
-            // Destruir instancia previa si existe para evitar superposiciones
-            if (radarChartInstance) {
-                radarChartInstance.destroy();
-            }
+            if (radarChartInstance) radarChartInstance.destroy();
 
-            const colorPrincipalRgba = hexToRgba(colorPrimarioHex || '#7c1225', 0.6);
+            const colorPrincipalRgba = hexToRgba(colorPrimarioHex || '#7c1225', 0.5);
             const colorBorde = colorPrimarioHex || '#7c1225';
 
             radarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: labels, // ["Sección 1", "Sección 2", ...]
+                    labels: labels,
                     datasets: [{
-                        label: 'Nivel de Madurez (1-5)',
-                        data: datos, // [3, 4, 2, 5, 1]
+                        label: 'Nivel de Madurez',
+                        data: datos, 
                         backgroundColor: colorPrincipalRgba,
                         borderColor: colorBorde,
                         pointBackgroundColor: colorBorde,
@@ -280,31 +264,22 @@
                     maintainAspectRatio: false,
                     scales: {
                         r: {
-                            angleLines: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            },
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
                             pointLabels: {
-                                font: {
-                                    size: 11,
-                                    family: "'Inter', sans-serif"
-                                },
-                                color: '#555'
+                                font: { size: 12, family: "'Inter', sans-serif", weight: 'bold' },
+                                color: '#444'
                             },
                             ticks: {
                                 min: 0,
-                                max: 5,        // El máximo siempre es 5
-                                stepSize: 1,   // Saltos de 1 en 1
-                                display: false // Oculta los numeritos en el eje Y del radar para un look más limpio
+                                max: 5,        
+                                stepSize: 1,   
+                                display: false 
                             }
                         }
                     },
                     plugins: {
-                        legend: {
-                            display: false // Oculta la leyenda superior
-                        },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -319,9 +294,6 @@
             });
         }
 
-        // ==========================================
-        // CONTROL DEL ACORDEÓN
-        // ==========================================
         function toggleDetalle(id) {
             const filaDetalle = document.getElementById(`detalle-${id}`);
             const btn = document.getElementById(`btn-${id}`);
@@ -343,9 +315,6 @@
             }
         }
 
-        // ==========================================
-        // ENVÍO DE CORREO
-        // ==========================================
         async function enviarCorreo() {
             const idUsuario = localStorage.getItem('idUsuario');
             const btn = document.getElementById('btnEnviarCorreo');
