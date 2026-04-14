@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sección 5: Gestión de información y software</title>
+    <title>Sección 5: Servicios al Público</title>
     
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
     
@@ -125,7 +125,7 @@
         
         /* Estilo Completado (Verde) */
         .step-item.completed .step-number { background: #28a745; color: white; }
-        .step-item.completed { color: #28a745; }
+        .step-item.completed { color: #28a745; font-weight: 600; }
 
         /* --- NAVEGACIÓN INFERIOR --- */
         .footer-navegacion {
@@ -138,11 +138,12 @@
         }
 
         .btn-guardar {
-            background: var(--primary); color: white; border: none; padding: 12px 35px;
+            /* Como es la última sección, el botón se verá más destacado (Verde éxito) */
+            background: #28a745; color: white; border: none; padding: 15px 35px;
             font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: 600;
-            box-shadow: 0 4px 6px rgba(124, 18, 37, 0.2); transition: transform 0.2s;
+            box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2); transition: transform 0.2s;
         }
-        .btn-guardar:hover { transform: translateY(-2px); opacity: 0.95; }
+        .btn-guardar:hover { transform: translateY(-2px); background: #218838; }
 
         /* RESPONSIVIDAD */
         @media (max-width: 1000px) {
@@ -167,8 +168,8 @@
             <img src="Imagenes/logo.png" alt="Logo" class="header-logo">
         </div>
         <div class="header-title-box">
-            <h1 class="header-main-title">Sección 5</h1>
-            <p class="header-subtitle">Gestión de información y software</p>
+            <h1 class="header-main-title">Sección Final</h1>
+            <p class="header-subtitle">Servicios al Público</p>
         </div>
         <div>
             <button type="button" id="btnCerrarSesion" class="btn-logout">
@@ -181,22 +182,19 @@
 
         <div class="container">
             <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.6em;">
-                5. Gestión de información y software
+                V. Servicios al Público
             </h2>
             
             <div id="mensajeBienvenida" class="bienvenida-box" style="display: none;"></div>
 
             <form id="formularioDinamico">
-                <div id="contenedorPreguntas">
-                    <p style="text-align:center; color:#666; padding: 40px;">
-                        <i class="fas fa-spinner fa-spin"></i> Cargando preguntas...
-                    </p>
-                </div>
+                <div id="contenedorPreguntas"></div>
 
                 <div class="footer-navegacion">
-                    <div id="areaBotonRegresar"></div> <div>
+                    <div id="areaBotonRegresar"></div> 
+                    <div>
                         <button type="submit" class="btn-guardar">
-                            Guardar y Continuar <i class="fas fa-arrow-right"></i>
+                            Finalizar y Ver Resumen <i class="fas fa-flag-checkered"></i>
                         </button>
                     </div>
                 </div>
@@ -208,34 +206,29 @@
             <ul class="step-list">
                 <li class="step-item completed">
                     <span class="step-number"><i class="fas fa-check"></i></span>
-                    <span>Identificación</span>
-                </li>
-                <li class="step-item completed">
-                    <span class="step-number"><i class="fas fa-check"></i></span>
                     <span>Gestión Institucional</span>
                 </li>
                 <li class="step-item completed">
                     <span class="step-number"><i class="fas fa-check"></i></span>
-                    <span>Caracterización</span>
+                    <span>Recursos Humanos</span>
                 </li>
                 <li class="step-item completed">
                     <span class="step-number"><i class="fas fa-check"></i></span>
-                    <span>Documentación</span>
+                    <span>Características del Acervo</span>
+                </li>
+                <li class="step-item completed">
+                    <span class="step-number"><i class="fas fa-check"></i></span>
+                    <span>Infra. y Tecnología</span>
                 </li>
                 
                 <li class="step-item active">
                     <span class="step-number">5</span>
-                    <span>Info. y Software</span>
+                    <span>Servicios al Público</span>
                 </li>
-
-                <li class="step-item"><span class="step-number">6</span><span>Recursos Humanos</span></li>
-                <li class="step-item"><span class="step-number">7</span><span>Tecnología</span></li>
-                <li class="step-item"><span class="step-number">8</span><span>Normatividad</span></li>
-                <li class="step-item"><span class="step-number">9</span><span>Servicios</span></li>
             </ul>
             
             <div style="margin-top: 20px; font-size: 0.8em; color: #888; text-align: center;">
-                <i class="fas fa-info-circle"></i> Tu avance se guarda automáticamente.
+                <i class="fas fa-info-circle"></i> Última etapa del diagnóstico.
             </div>
         </aside>
 
@@ -243,7 +236,13 @@
 
     <script src="js/seccion5.js"></script> 
     <script>
-        window.NOMBRE_SECCION = "5. Gestión de información y software";
+        window.NOMBRE_SECCION = "V. Servicios al Público";
+        
+        // INDICAMOS A ENCUESTA.JS QUE ESTA ES LA ÚLTIMA PANTALLA PARA ACTIVAR EL CANDADO
+        if (typeof CONFIG_SECCION !== 'undefined') {
+            CONFIG_SECCION.es_final = true;
+            CONFIG_SECCION.siguiente = "resumen.html"; // O como se llame tu página final
+        }
     </script>
     <script src="js/encuesta.js"></script>
 
