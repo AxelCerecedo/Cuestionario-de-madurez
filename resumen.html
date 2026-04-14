@@ -15,56 +15,92 @@
     
     <style>
         /* =========================================
-           NUEVOS ESTILOS PARA DIVIDIR LA PANTALLA
+           SISTEMA DE PESTAÑAS (TABS)
            ========================================= */
-        .resultados-split {
-            display: flex;
-            gap: 30px;
-            align-items: flex-start;
-        }
-        
-        .resultados-col-tabla {
-            flex: 1.2; /* Le da un poquito más de ancho a la tabla para que el texto respire */
-            min-width: 0;
-        }
-        
-        .resultados-col-grafica {
-            flex: 1; /* Toma el resto del espacio */
-            min-width: 0;
+        .tabs-container {
+            width: 100%;
+            margin-bottom: 20px;
         }
 
+        .tabs-nav {
+            display: flex;
+            border-bottom: 2px solid #eaeaea;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #333;
+            background: rgba(0,0,0,0.02);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab-btn.active {
+            color: var(--primary, #7c1225); /* Color institucional */
+        }
+
+        /* La línea indicadora de la pestaña activa */
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; /* Se superpone al borde del contenedor */
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary, #7c1225);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-content {
+            display: none; /* Oculto por defecto */
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block; /* Visible si está activo */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilos de la gráfica adaptados al nuevo contenedor */
         .chart-container {
             background: #ffffff; 
-            padding: 20px; 
-            border-radius: 12px; 
+            padding: 30px 20px; 
+            border-radius: 0 0 12px 12px; 
             border: 1px solid #eaeaea; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            border-top: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
             width: 100%;
             box-sizing: border-box;
-            position: relative;
         }
         
-        .chart-title {
-            font-size: 1rem; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            display: block; 
-            margin-bottom: 15px; 
-            color: #333; 
-            text-align: center;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 10px;
+        .tabla-container {
+            /* Ligero ajuste para que coincida visualmente con el contenedor de la gráfica */
+            border-radius: 0 0 12px 12px; 
+            border-top: none;
         }
 
-        /* En pantallas más pequeñas, volvemos a poner la gráfica abajo */
-        @media (max-width: 1200px) {
-            .resultados-split {
-                flex-direction: column;
-            }
-            .chart-container {
-                margin-top: 30px;
-            }
+        /* Ajuste de márgenes para que se vea limpio */
+        .dashboard-right h3.titulo-seccion {
+            display: none; /* Ocultamos el título viejo porque ahora usamos las pestañas */
         }
     </style>
 </head>
@@ -94,7 +130,7 @@
                     <div class="mensaje-final" style="text-align: left;">
                         <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: #fff;">¡Gracias por participar!</h3>
                         <p style="font-size: 0.85rem; opacity: 0.9; margin: 10px 0 0 0; line-height: 1.3; color: #fff;">
-                            Has concluido el Diagnóstico Institucional. En la sección de la derecha encontrarás el desglose del nivel de madurez alcanzado en cada una de las áreas evaluadas, así como un gráfico radial que ilustra tus resultados.
+                            Has concluido el Diagnóstico Institucional. En la sección de la derecha puedes navegar entre el desglose detallado por áreas y el mapa de madurez visual.
                         </p>
                     </div>
                 </div>
@@ -114,11 +150,17 @@
 
             <div class="dashboard-right">
                 
-                <div class="resultados-split">
-                    
-                    <div class="resultados-col-tabla">
-                        <h3 class="titulo-seccion" style="margin-top: 0;">Desglose por secciones y nivel</h3>
-                        
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" onclick="cambiarPestaña('tab-tabla', this)">
+                            <i class="fas fa-list-ul"></i> Desglose Detallado
+                        </button>
+                        <button class="tab-btn" onclick="cambiarPestaña('tab-grafica', this)">
+                            <i class="fas fa-chart-radar"></i> Mapa de Madurez
+                        </button>
+                    </div>
+
+                    <div id="tab-tabla" class="tab-content active">
                         <div class="tabla-container">
                             <table class="tabla-desglosada">
                                 <thead>
@@ -132,15 +174,13 @@
                         </div>
                     </div>
 
-                    <div class="resultados-col-grafica">
+                    <div id="tab-grafica" class="tab-content">
                         <div class="chart-container">
-                            <span class="chart-title">Mapa de Madurez</span>
-                            <div style="position: relative; height: 300px; width: 100%;">
+                            <div style="position: relative; height: 400px; width: 100%; margin: 0 auto;">
                                 <canvas id="radarChart"></canvas>
                             </div>
                         </div>
                     </div>
-
                 </div>
 
             </div>
@@ -176,6 +216,28 @@
 
         let radarChartInstance = null;
 
+        // ==========================================
+        // LÓGICA DE LAS PESTAÑAS (TABS)
+        // ==========================================
+        function cambiarPestaña(idTab, botonClickeado) {
+            // 1. Quitar clase 'active' a todos los contenidos
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 2. Quitar clase 'active' a todos los botones
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 3. Agregar clase 'active' al contenido y botón seleccionados
+            document.getElementById(idTab).classList.add('active');
+            botonClickeado.classList.add('active');
+        }
+
+        // ==========================================
+        // FUNCIONES AUXILIARES
+        // ==========================================
         function hexToRgba(hex, alpha) {
             if (!hex || !hex.startsWith('#')) return 'rgba(108, 117, 125, 0.85)';
             hex = hex.replace('#', '');
@@ -200,7 +262,8 @@
                 }
 
                 // --- FONDO DE LA TARJETA IZQUIERDA ---
-                const colorBaseHex = data.color || '#7c1225'; 
+                // Si tienes definido --primary en el root de CSS, tratará de usar ese color o el que venga del API
+                const colorBaseHex = data.color || getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#7c1225'; 
                 const colorInicio = hexToRgba(colorBaseHex, 0.95);
                 const colorFin = hexToRgba(colorBaseHex, 0.40);
                 document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
@@ -311,7 +374,7 @@
                             angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
                             grid: { color: 'rgba(0, 0, 0, 0.1)' },
                             pointLabels: {
-                                font: { size: 10, family: "'Inter', sans-serif", weight: '600' },
+                                font: { size: 12, family: "'Inter', sans-serif", weight: '600' },
                                 color: '#444'
                             },
                             ticks: {
