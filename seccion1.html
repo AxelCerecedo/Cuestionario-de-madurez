@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sección 1: Identificación</title>
+    <title>Sección 1: Gestión Institucional</title>
     
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
     
@@ -20,7 +20,7 @@
             --primary-light: #a83246;
             --bg-body: #f4f6f9;
             --text-main: #333;
-            --header-height: 70px; /* Definimos altura para cálculos */
+            --header-height: 70px;
         }
 
         body {
@@ -29,7 +29,6 @@
             background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;
-            /* Padding igual a la altura del header */
             padding-top: var(--header-height); 
             box-sizing: border-box;
         }
@@ -60,12 +59,12 @@
         }
         .btn-logout:hover { background: rgba(255,255,255,0.3); }
 
-        /* --- 2. LAYOUT MAESTRO (PARA QUE NO SE AMONTONEN) --- */
+        /* --- 2. LAYOUT MAESTRO --- */
         .layout-wrapper {
             display: flex;
-            justify-content: center; /* Centra el grupo entero */
-            align-items: flex-start; /* Importante para que sticky funcione */
-            gap: 30px; /* Espacio entre tarjeta y sidebar */
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
             max-width: 1200px;
             margin: 0 auto;
             padding: 40px 20px;
@@ -75,23 +74,20 @@
 
         /* --- 3. CONTENIDO PRINCIPAL --- */
         .container {
-            flex: 1; /* Toma el espacio disponible */
-            max-width: 800px; /* Ancho máximo de la tarjeta */
+            flex: 1;
+            max-width: 800px;
             background: white;
             border-radius: 16px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.05);
             padding: 40px;
-            /* Ya no usamos margin auto aquí, lo controla el layout-wrapper */
         }
 
         /* --- 4. SIDEBAR DE PROGRESO (STICKY) --- */
         .sidebar-progress {
             width: 260px;
-            /* Cambiamos Fixed por Sticky para que ocupe su propio espacio */
             position: -webkit-sticky;
             position: sticky; 
-            top: 100px; /* Se pega 100px abajo del borde superior (Header 70 + 30 aire) */
-            
+            top: 100px; 
             background: white;
             border-radius: 12px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
@@ -99,7 +95,7 @@
             z-index: 900;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
-            flex-shrink: 0; /* Evita que se aplaste si falta espacio */
+            flex-shrink: 0;
         }
 
         .progress-title {
@@ -121,30 +117,18 @@
             font-weight: bold; font-size: 0.9em;
         }
 
-        /* Activo */
         .step-item.active {
             background: #fff0f3; color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary);
         }
         .step-item.active .step-number { background: var(--primary); color: white; }
-        
-        /* Completado */
         .step-item.completed .step-number { background: #28a745; color: white; }
 
-        /* RESPONSIVIDAD: En móviles, la columna lateral pasa abajo o desaparece */
         @media (max-width: 1000px) {
-            .layout-wrapper {
-                flex-direction: column; /* Uno debajo del otro */
-                align-items: center;
-            }
+            .layout-wrapper { flex-direction: column; align-items: center; }
             .sidebar-progress {
-                width: 100%; max-width: 800px; /* Se vuelve ancha como la tarjeta */
-                position: static; /* Ya no flota */
-                margin-bottom: 20px;
-                order: -1; /* Ponerla arriba del cuestionario en móviles */
+                width: 100%; max-width: 800px; position: static; margin-bottom: 20px; order: -1;
             }
-            .step-list {
-                display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; /* Scroll horizontal */
-            }
+            .step-list { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; }
             .step-item { min-width: 140px; border: 1px solid #eee; }
         }
 
@@ -154,7 +138,6 @@
             box-shadow: 0 4px 6px rgba(124, 18, 37, 0.2); transition: transform 0.2s;
         }
         .btn-guardar:hover { transform: translateY(-2px); opacity: 0.95; }
-        .ubicacion-feedback { font-size: 0.85em; margin-top: 5px; display: block; min-height: 20px; }
     </style>
 </head>
 <body>
@@ -165,7 +148,7 @@
         </div>
         <div class="header-title-box">
             <h1 class="header-main-title">Sección 1</h1>
-            <p class="header-subtitle">Identificación de la Institución</p>
+            <p class="header-subtitle">Gestión Institucional y del Acervo</p>
         </div>
         <div>
             <button type="button" id="btnCerrarSesion" class="btn-logout">
@@ -179,16 +162,12 @@
         <div class="container">
             <div id="areaBotonRegresar" style="margin-bottom: 20px;"></div>
             <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.6em;">
-                Identificación de la Institución / Archivo
+                Gestión Institucional y Gestión del Acervo
             </h2>
             <div id="mensajeBienvenida" class="bienvenida-box" style="display: none;"></div>
             
             <form id="formularioDinamico">
-                <div id="contenedorPreguntas">
-                    <p style="text-align:center; color:#666; padding: 40px;">
-                        <i class="fas fa-spinner fa-spin"></i> Cargando cuestionario...
-                    </p>
-                </div>
+                <div id="contenedorPreguntas"></div>
                 <div class="botones-accion" style="margin-top:40px; text-align:center;">
                     <button type="submit" class="btn-guardar">
                         Guardar y Continuar <i class="fas fa-arrow-right"></i>
@@ -205,7 +184,7 @@
                 </li>
                 <li class="step-item"><span class="step-number">2</span><span>Recursos Humanos</span></li>
                 <li class="step-item"><span class="step-number">3</span><span>Características del Acervo</span></li>
-                <li class="step-item"><span class="step-number">4</span><span>Infraestructura Física y Tecnológica</span></li>
+                <li class="step-item"><span class="step-number">4</span><span>Infra. y Tecnología</span></li>
                 <li class="step-item"><span class="step-number">5</span><span>Servicios al Público</span></li>
             </ul>
             <div style="margin-top: 20px; font-size: 0.8em; color: #888; text-align: center;">
@@ -216,59 +195,8 @@
     </div>
 
     <script src="js/seccion1.js"></script> 
-    <script>window.NOMBRE_SECCION = "1. Identificación de la Institución / Archivo";</script>
+    <script>window.NOMBRE_SECCION = "I. Gestión Institucional y Gestión del Acervo";</script>
     <script src="js/encuesta.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ... (Tu código de geolocalización se queda igual) ...
-            const intervalo = setInterval(() => {
-                const inputDireccion = document.querySelector('input[data-id-pregunta="4"]');
-                if (inputDireccion) {
-                    clearInterval(intervalo);
-                    console.log("✅ Input de dirección encontrado.");
-
-                    const statusMsg = document.createElement('small');
-                    statusMsg.className = 'ubicacion-feedback';
-                    inputDireccion.parentNode.appendChild(statusMsg);
-
-                    inputDireccion.addEventListener('blur', function() {
-                        const query = this.value.trim();
-                        if (query.length < 4) return;
-                        statusMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
-                        statusMsg.style.color = 'blue';
-
-                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`)
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data && data.length > 0) {
-                                    const lugar = data[0];
-                                    let texto = lugar.display_name;
-                                    statusMsg.innerHTML = `<i class="fas fa-check-circle"></i> Localizado`;
-                                    statusMsg.style.color = 'green';
-                                    
-                                    const id = localStorage.getItem('idUsuario');
-                                    if(id) guardarCoordenadasEnBD(id, lugar.lat, lugar.lon, texto);
-                                } else {
-                                    statusMsg.innerHTML = 'Ubicación no exacta.';
-                                    statusMsg.style.color = 'orange';
-                                }
-                            });
-                    });
-                }
-            }, 500);
-        });
-
-        async function guardarCoordenadasEnBD(idUsuario, lat, lon, texto) {
-            try {
-                const API_URL = 'https://api-cuestionario.onrender.com';
-                await fetch(`${API_URL}/api/actualizar-ubicacion`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_usuario: idUsuario, latitud: lat, longitud: lon, ubicacion_texto: texto })
-                });
-            } catch (e) { console.error(e); }
-        }
-    </script>
-</body>
+    </body>
 </html>
