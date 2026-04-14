@@ -51,14 +51,13 @@
         }
 
         .tab-btn.active {
-            color: var(--primary, #7c1225); /* Color institucional */
+            color: var(--primary, #7c1225);
         }
 
-        /* La línea indicadora de la pestaña activa */
         .tab-btn.active::after {
             content: '';
             position: absolute;
-            bottom: -2px; /* Se superpone al borde del contenedor */
+            bottom: -2px;
             left: 0;
             width: 100%;
             height: 3px;
@@ -67,12 +66,12 @@
         }
 
         .tab-content {
-            display: none; /* Oculto por defecto */
+            display: none; 
             animation: fadeIn 0.4s ease-in-out;
         }
 
         .tab-content.active {
-            display: block; /* Visible si está activo */
+            display: block; 
         }
 
         @keyframes fadeIn {
@@ -80,7 +79,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Estilos de la gráfica adaptados al nuevo contenedor */
         .chart-container {
             background: #ffffff; 
             padding: 30px 20px; 
@@ -93,14 +91,12 @@
         }
         
         .tabla-container {
-            /* Ligero ajuste para que coincida visualmente con el contenedor de la gráfica */
             border-radius: 0 0 12px 12px; 
             border-top: none;
         }
 
-        /* Ajuste de márgenes para que se vea limpio */
         .dashboard-right h3.titulo-seccion {
-            display: none; /* Ocultamos el título viejo porque ahora usamos las pestañas */
+            display: none; 
         }
     </style>
 </head>
@@ -198,12 +194,13 @@
             5: "Servicios al Público"
         };
 
+        // --- CORRECCIÓN AQUÍ: Se agregaron los números a la gráfica ---
         const ETIQUETAS_RADAR = {
-            1: ["Gestión", "Institucional"],
-            2: ["Recursos", "Humanos"],
-            3: ["Características", "del Acervo"],
-            4: ["Infraestructura", "y Tecnología"],
-            5: ["Servicios", "al Público"]
+            1: ["1. Gestión", "Institucional"],
+            2: ["2. Recursos", "Humanos"],
+            3: ["3. Características", "del Acervo"],
+            4: ["4. Infraestructura", "y Tecnología"],
+            5: ["5. Servicios", "al Público"]
         };
         
         const NOMBRES_NIVELES = {
@@ -220,17 +217,13 @@
         // LÓGICA DE LAS PESTAÑAS (TABS)
         // ==========================================
         function cambiarPestaña(idTab, botonClickeado) {
-            // 1. Quitar clase 'active' a todos los contenidos
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            
-            // 2. Quitar clase 'active' a todos los botones
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
 
-            // 3. Agregar clase 'active' al contenido y botón seleccionados
             document.getElementById(idTab).classList.add('active');
             botonClickeado.classList.add('active');
         }
@@ -261,14 +254,11 @@
                     return; 
                 }
 
-                // --- FONDO DE LA TARJETA IZQUIERDA ---
-                // Si tienes definido --primary en el root de CSS, tratará de usar ese color o el que venga del API
                 const colorBaseHex = data.color || getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#7c1225'; 
                 const colorInicio = hexToRgba(colorBaseHex, 0.95);
                 const colorFin = hexToRgba(colorBaseHex, 0.40);
                 document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
 
-                // --- PREPARAR DATOS ---
                 const labelsRadar = [];
                 const dataRadar = [];
                 const tbody = document.getElementById('tablaBody');
@@ -332,7 +322,7 @@
                     tbody.appendChild(trDetalle);
                 }
 
-                // --- DIBUJAR GRÁFICA ---
+                // DIBUJAR GRÁFICA
                 dibujarGraficaRadar(labelsRadar, dataRadar, colorBaseHex);
 
             } catch (error) { 
