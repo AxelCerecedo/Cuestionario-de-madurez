@@ -8,8 +8,36 @@
     <link rel="stylesheet" href="css/resumen.css"> 
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <link rel="icon" href="Imagenes/logo.jpg" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* Estilos específicos para acomodar la gráfica en la tarjeta izquierda */
+        .chart-container {
+            background: rgba(255,255,255,0.95); /* Fondo casi blanco para contraste */
+            padding: 15px; 
+            border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            margin-top: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .chart-title {
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            display: block; 
+            margin-bottom: 10px; 
+            color: #333; /* Texto oscuro sobre fondo claro */
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
 
@@ -18,7 +46,7 @@
             <img src="Imagenes/logo.png" alt="Logo" class="logo" />
             <div style="margin-left: 230px;"> 
                 <h1>📊 Resultados del Diagnóstico</h1>
-                <p class="intro">Informe ejecutivo de evaluación.</p>
+                <p class="intro">Informe ejecutivo de evaluación y madurez.</p>
             </div>
         </div>
 
@@ -36,13 +64,19 @@
                     
                     <div class="linea-decorativa"></div>
                     
-                    <p class="mensaje-final">
-                        <span class="texto-grande">¡Gracias por su tiempo!</span>
-                        <br>
-                        La información ha sido procesada correctamente.
-                        <br><br>
-                        A continuación encontrará un <strong> diagnóstico </strong> para cada sección.
-                    </p>
+                    <div class="mensaje-final" style="text-align: left;">
+                        <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: #fff;">¡Gracias por participar!</h3>
+                        <p style="font-size: 0.85rem; opacity: 0.9; margin: 10px 0 0 0; line-height: 1.3; color: #fff;">
+                            A continuación encontrará el nivel de madurez alcanzado por su institución en cada una de las áreas evaluadas.
+                        </p>
+                        
+                        <div class="chart-container">
+                            <span class="chart-title">Mapa de Madurez Institucional</span>
+                            <div style="position: relative; height: 250px; width: 100%;">
+                                <canvas id="radarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
 
@@ -60,12 +94,12 @@
             </div>
 
             <div class="dashboard-right">
-                <h3 class="titulo-seccion">Desglose por secciones y recomendaciones</h3>
+                <h3 class="titulo-seccion">Desglose por secciones y nivel alcanzado</h3>
                 <div class="tabla-container">
                     <table class="tabla-desglosada">
                         <thead>
                             <tr>
-                                <th>Sección evaluada</th>
+                                <th>Área evaluada</th>
                                 <th style="text-align: right; width: 50px;">Ver</th>
                             </tr>
                         </thead>
@@ -79,21 +113,25 @@
     <script>
         const API_URL = 'https://api-cuestionario.onrender.com';
 
-        const MAXIMOS_POR_SECCION = {
-            1: 0, 2: 5, 3: 21, 4: 34, 5: 81, 6: 40, 7: 5, 8: 7, 9: 4
+        // NUEVOS NOMBRES DE LAS 5 SECCIONES
+        const NOMBRES_SECCIONES = {
+            1: "Gestión Institucional", 
+            2: "Recursos Humanos", 
+            3: "Características del Acervo",
+            4: "Infra. Física y Tecnológica", 
+            5: "Servicios al Público"
+        };
+        
+        // LOS 5 NIVELES DE LA RÚBRICA
+        const NOMBRES_NIVELES = {
+            1: "Incipiente",
+            2: "Básico estructural",
+            3: "Intermedio",
+            4: "Consolidado",
+            5: "Avanzado"
         };
 
-        const NOMBRES_SECCIONES = {
-            1: "Identificación de la Institución", 
-            2: "Gestión Institucional", 
-            3: "Caracterización del Acervo",
-            4: "Inventario y Catalogación", 
-            5: "Gestión de información", 
-            6: "Recursos Humanos",
-            7: "Infraestructura Tecnológica", 
-            8: "Normatividad y Procesos", 
-            9: "Servicios"
-        };
+        let radarChartInstance = null;
 
         function hexToRgba(hex, alpha) {
             if (!hex || !hex.startsWith('#')) return 'rgba(108, 117, 125, 0.85)';
@@ -106,168 +144,184 @@
         }
 
         async function cargarResumen() {
-    const idUsuario = localStorage.getItem('idUsuario');
-    if (!idUsuario) { window.location.href = 'login.html'; return; }
-
-    try {
-        // 1. Pedimos los datos iniciales al servidor
-        let response = await fetch(`${API_URL}/resumen/${idUsuario}`);
-        let data = await response.json();
-
-        if (data.error) { 
-            Swal.fire("Error", data.error, "error"); 
-            return; 
-        }
-
-        // =========================================================
-        // 🤖 GENERACIÓN IA (Si no existe análisis previo)
-        // =========================================================
-        if (!data.analisis_ia) {
-            Swal.fire({
-                title: '🤖 Generando informe...',
-                html: 'La IA está analizando tus respuestas, espere un momento.<br><br><b>Esto tomará unos segundos...</b>',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
+            const idUsuario = localStorage.getItem('idUsuario');
+            if (!idUsuario) { window.location.href = 'login.html'; return; }
 
             try {
-                // Usamos la URL base del servidor para el endpoint de IA
-                const baseURL = typeof API_URL !== 'undefined' ? API_URL : 'https://api-cuestionario.onrender.com';
-                
-                const resIA = await fetch(`${baseURL}/api/generar-analisis-ia`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_usuario: idUsuario })
-                });
+                // 1. Pedimos los datos iniciales al servidor
+                let response = await fetch(`${API_URL}/resumen/${idUsuario}`);
+                let data = await response.json();
 
-                if (resIA.ok) {
-                    // Si tuvo éxito, recargamos los datos para obtener el nuevo JSON
-                    response = await fetch(`${API_URL}/resumen/${idUsuario}`);
-                    data = await response.json();
+                if (data.error) { 
+                    Swal.fire("Error", data.error, "error"); 
+                    return; 
                 }
-            } catch (errIA) {
-                console.error("Error al generar IA al vuelo:", errIA);
-            } finally {
-                Swal.close();
-            }
-        }
 
-        // --- PARSEAR DATOS DE LA IA ---
-        let analisis = null;
-        if (data.analisis_ia) {
-            try {
-                analisis = typeof data.analisis_ia === 'string' ? JSON.parse(data.analisis_ia) : data.analisis_ia;
-            } catch (e) {
-                console.error("Error leyendo JSON de IA:", e);
-            }
-        }
+                // --- FONDO DE LA TARJETA IZQUIERDA ---
+                const colorBaseHex = data.color || '#7c1225'; // Usamos rojo institucional por defecto
+                const colorInicio = hexToRgba(colorBaseHex, 0.95);
+                const colorFin = hexToRgba(colorBaseHex, 0.40);
+                document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
 
-        // --- 1. TARJETA IZQUIERDA (DISEÑO CON AGRADECIMIENTO) ---
-        const colorInicio = hexToRgba(data.color, 0.95);
-        const colorFin = hexToRgba(data.color, 0.40);
-        document.getElementById('cardPuntaje').style.background = `linear-gradient(135deg, ${colorInicio} 0%, ${colorFin} 100%)`;
-
-        const contenedorMensaje = document.querySelector('.mensaje-final');
-        
-        // Estructura visual: Agradecimiento + Bloque IA
-        contenedorMensaje.innerHTML = `
-            <div style="text-align: left;">
-                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: #fff;">¡Gracias por participar!</h3>
-                <p style="font-size: 0.85rem; opacity: 0.9; margin: 10px 0 20px 0; line-height: 1.3; color: #fff;">
-                    Has concluido el Diagnóstico Institucional. Este análisis te ayudará a identificar áreas de oportunidad en tu gestión digital.
-                </p>
+                // --- PREPARAR DATOS PARA GRÁFICA Y TABLA ---
+                const labelsRadar = [];
+                const dataRadar = [];
+                const tbody = document.getElementById('tablaBody');
+                tbody.innerHTML = '';
                 
-                <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); box-shadow: inset 0 0 10px rgba(0,0,0,0.05); color: #fff;">
-                    <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-                         Analisis general:
-                    </span>
-                    <p style="font-size: 0.92rem; line-height: 1.4; margin: 0; font-style: italic; text-align: justify;">
-                        "${analisis ? analisis.resumen_general : 'Agradecemos su tiempo y colaboración. La información ha sido procesada exitosamente.'}"
-                    </p>
-                </div>
-            </div>
-        `;
+                // Iteramos por las 5 secciones (del 1 al 5)
+                for (let numSec = 1; numSec <= 5; numSec++) {
+                    const secIdStr = String(numSec);
+                    
+                    // Aseguramos que si no hay datos, el puntaje sea 0
+                    const puntajeObtenido = data.secciones[secIdStr] || 0; 
+                    
+                    // Llenar arreglos para la Gráfica Radial
+                    labelsRadar.push(`Sección ${numSec}`);
+                    dataRadar.push(puntajeObtenido);
 
-        // --- 2. TABLA DERECHA (ACORDEÓN) ---
-        const tbody = document.getElementById('tablaBody');
-        tbody.innerHTML = '';
-        
-        Object.keys(data.secciones).sort((a,b) => a-b).forEach(sec => {
-            const numSec = parseInt(sec);
-            if(isNaN(numSec)) return; 
+                    // --- LÓGICA DE COLORES PARA LA TABLA ---
+                    let colorCuadrito = '#dc3545'; // Rojo por defecto
+                    if (puntajeObtenido >= 4) colorCuadrito = '#28a745'; // Verde (Consolidado/Avanzado)
+                    else if (puntajeObtenido >= 3) colorCuadrito = '#ffc107'; // Amarillo (Intermedio)
+                    else if (puntajeObtenido >= 2) colorCuadrito = '#fd7e14'; // Naranja (Básico)
 
-            const puntajeObtenido = data.secciones[sec];
-            const puntajeMaximo = MAXIMOS_POR_SECCION[sec] || 1; 
-            const porcentaje = (puntajeObtenido / puntajeMaximo) * 100;
+                    const nombreNivelObtenido = NOMBRES_NIVELES[puntajeObtenido] || "Sin evaluar";
+
+                    // Generar texto genérico para la tabla basado en el nivel
+                    let recomendacionTexto = "";
+                    if (puntajeObtenido >= 4) {
+                        recomendacionTexto = `✅ <b>Nivel ${nombreNivelObtenido}:</b> La institución cumple de manera sólida con los estándares esperados en esta área, demostrando planeación y control.`;
+                    } else if (puntajeObtenido === 3) {
+                        recomendacionTexto = `⚠️ <b>Nivel ${nombreNivelObtenido}:</b> La institución muestra avances y controles básicos, pero requiere mayor formalización y recursos para alcanzar sus objetivos.`;
+                    } else if (puntajeObtenido > 0) {
+                        recomendacionTexto = `🛑 <b>Nivel ${nombreNivelObtenido}:</b> Se han identificado carencias estructurales. Se recomienda implementar un plan de acción prioritario para establecer procesos formales.`;
+                    } else {
+                        recomendacionTexto = "No se encontraron datos de evaluación para esta sección.";
+                    }
+
+                    // Fila Principal del Acordeón
+                    const trPrincipal = document.createElement('tr');
+                    trPrincipal.className = 'fila-seccion';
+                    trPrincipal.onclick = () => toggleDetalle(secIdStr);
+                    trPrincipal.innerHTML = `
+                        <td>
+                            <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
+                            <span class="texto-seccion">${numSec}. ${NOMBRES_SECCIONES[numSec]}</span>
+                            <span style="display:block; font-size:0.8em; color:#666; margin-left: 22px;">
+                                Nivel: <b>${nombreNivelObtenido}</b>
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-toggle" id="btn-${secIdStr}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </td>
+                    `;
+
+                    // Fila de Contenido Expandible
+                    const trDetalle = document.createElement('tr');
+                    trDetalle.id = `detalle-${secIdStr}`;
+                    trDetalle.className = 'fila-detalle';
+                    trDetalle.innerHTML = `
+                        <td colspan="2" style="padding: 0; border: none;">
+                            <div class="contenido-detalle" style="padding: 15px; font-size: 0.9rem; line-height: 1.4; color: #444; background: #fff; text-align: justify; border-left: 3px solid ${colorCuadrito};">
+                                ${recomendacionTexto}
+                            </div>
+                        </td>
+                    `;
+
+                    tbody.appendChild(trPrincipal);
+                    tbody.appendChild(trDetalle);
+                }
+
+                // --- DIBUJAR GRÁFICA RADIAL ---
+                dibujarGraficaRadar(labelsRadar, dataRadar, colorBaseHex);
+
+            } catch (error) { 
+                console.error(error);
+                Swal.fire("Error", "No se pudo conectar con el servidor para cargar el resumen.", "error");
+            }
+        }
+
+        // ==========================================
+        // FUNCIÓN PARA CREAR EL GRÁFICO DE RADAR
+        // ==========================================
+        function dibujarGraficaRadar(labels, datos, colorPrimarioHex) {
+            const ctx = document.getElementById('radarChart').getContext('2d');
             
-            let colorCuadrito = '#6c757d'; 
-            let recomendacionTexto = "";
-
-            // Lógica del Semáforo para el color
-            if (numSec === 1) {
-                colorCuadrito = '#28a745'; // Color informativo para Sección 1
-            } else {
-                if (porcentaje >= 80) colorCuadrito = '#28a745'; 
-                else if (porcentaje >= 50) colorCuadrito = '#ffc107'; 
-                else colorCuadrito = '#dc3545'; 
+            // Destruir instancia previa si existe para evitar superposiciones
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
             }
 
-            // Prioridad a Gemini, respaldo a tus textos originales
-            if (analisis && analisis.secciones && analisis.secciones[sec]) {
-                recomendacionTexto = analisis.secciones[sec];
-            } else {
-                if (numSec === 1) {
-                    recomendacionTexto = "ℹ️ <b>Información General:</b> Datos de contacto y ubicación.";
-                } else {
-                    if (porcentaje >= 80) {
-                        recomendacionTexto = "✅ <b>Nivel consolidado:</b> La institución cumple satisfactoriamente con los estándares.";
-                    } else if (porcentaje >= 50) {
-                        recomendacionTexto = "⚠️ <b>Nivel en desarrollo:</b> La institución muestra avances, pero aún hay áreas que requieren atención.";
-                    } else {
-                        recomendacionTexto = "🛑 <b>Nivel mínimo:</b> Se han identificado carencias. Se recomienda implementar un plan de acción urgente.";
+            const colorPrincipalRgba = hexToRgba(colorPrimarioHex || '#7c1225', 0.6);
+            const colorBorde = colorPrimarioHex || '#7c1225';
+
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels, // ["Sección 1", "Sección 2", ...]
+                    datasets: [{
+                        label: 'Nivel de Madurez (1-5)',
+                        data: datos, // [3, 4, 2, 5, 1]
+                        backgroundColor: colorPrincipalRgba,
+                        borderColor: colorBorde,
+                        pointBackgroundColor: colorBorde,
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: colorBorde,
+                        borderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 11,
+                                    family: "'Inter', sans-serif"
+                                },
+                                color: '#555'
+                            },
+                            ticks: {
+                                min: 0,
+                                max: 5,        // El máximo siempre es 5
+                                stepSize: 1,   // Saltos de 1 en 1
+                                display: false // Oculta los numeritos en el eje Y del radar para un look más limpio
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // Oculta la leyenda superior
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const valor = context.raw;
+                                    const nombreNivel = NOMBRES_NIVELES[valor] || "Sin datos";
+                                    return ` Puntaje: ${valor} - ${nombreNivel}`;
+                                }
+                            }
+                        }
                     }
                 }
-            }
+            });
+        }
 
-            // Fila Principal del Acordeón
-            const trPrincipal = document.createElement('tr');
-            trPrincipal.className = 'fila-seccion';
-            trPrincipal.onclick = () => toggleDetalle(sec);
-            trPrincipal.innerHTML = `
-                <td>
-                    <span class="indicador-color" style="background-color: ${colorCuadrito};"></span>
-                    <span class="texto-seccion">${sec}. ${NOMBRES_SECCIONES[sec] || 'General'}</span>
-                </td>
-                <td>
-                    <button class="btn-toggle" id="btn-${sec}">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                </td>
-            `;
-
-            // Fila de Contenido Expandible
-            const trDetalle = document.createElement('tr');
-            trDetalle.id = `detalle-${sec}`;
-            trDetalle.className = 'fila-detalle';
-            trDetalle.innerHTML = `
-                <td colspan="2" style="padding: 0; border: none;">
-                    <div class="contenido-detalle" style="padding: 15px; font-size: 0.9rem; line-height: 1.4; color: #444; background: #fff; text-align: justify;">
-                        ${recomendacionTexto}
-                    </div>
-                </td>
-            `;
-
-            tbody.appendChild(trPrincipal);
-            tbody.appendChild(trDetalle);
-        });
-
-    } catch (error) { 
-        console.error(error);
-        Swal.fire("Error", "No se pudo conectar con el servidor para cargar el resumen.", "error");
-    }
-}
-
+        // ==========================================
+        // CONTROL DEL ACORDEÓN
+        // ==========================================
         function toggleDetalle(id) {
             const filaDetalle = document.getElementById(`detalle-${id}`);
             const btn = document.getElementById(`btn-${id}`);
@@ -289,11 +343,13 @@
             }
         }
 
+        // ==========================================
+        // ENVÍO DE CORREO
+        // ==========================================
         async function enviarCorreo() {
             const idUsuario = localStorage.getItem('idUsuario');
             const btn = document.getElementById('btnEnviarCorreo');
             
-            // Estado de carga
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
@@ -307,17 +363,13 @@
                 const resultado = await response.json();
 
                 if (response.ok) {
-                    // Intentamos recuperar el correo de la respuesta del servidor
-                    // Si el backend no lo devuelve, decimos "tu correo registrado"
                     const correoDestino = resultado.email || resultado.correo || "tu dirección de correo registrada";
-
                     Swal.fire({
                         title: '¡Correo Enviado!',
                         html: `El reporte ha sido enviado exitosamente a:<br><strong>${correoDestino}</strong><br><br><small>Por favor, revisa tu bandeja de entrada y la carpeta de spam.</small>`,
                         icon: 'success',
                         confirmButtonColor: '#7c1225'
                     });
-                    
                     btn.innerHTML = '<i class="fas fa-check"></i> Enviado';
                 } else {
                     throw new Error(resultado.error || 'Error desconocido');
@@ -325,8 +377,6 @@
             } catch (error) {
                 console.error(error);
                 Swal.fire('Error', 'No se pudo enviar el correo en este momento.', 'error');
-                
-                // Restaurar botón
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-envelope"></i> Enviar a mi correo';
             }
