@@ -3,6 +3,7 @@
 // =========================================================
 const CONFIG_SECCION = {
     seccion: "V. Servicios al Público",
+    es_final: true,
     siguiente: "admin.html", // O la página de "Gracias/Cierre" que tengas configurada
     anterior: "seccion4.html", 
 
