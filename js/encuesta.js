@@ -1960,16 +1960,16 @@ async function enviarFormulario(e) {
         if(response.ok) {
             
             // =========================================================
-            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN CON GEMINI IA + CANDADO
+            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN Y CANDADO (SIN IA)
             // =========================================================
             
             if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
                 // CASO: SECCIÓN FINAL (SERVICIOS)
                 
-                // 1. Mostrar pantalla de carga de Inteligencia Artificial (Reemplaza al Swal de "¡Encuesta Finalizada!")
+                // 1. Mostrar pantalla de carga general (Ya no menciona a la IA)
                 Swal.fire({
-                    title: '🤖 Analizando respuestas...',
-                    html: 'La Inteligencia Artificial está generando tu reporte personalizado.<br><br><b>Esto tomará de 5 a 10 segundos, no cierres la ventana.</b>',
+                    title: '¡Cuestionario Completado!',
+                    html: 'Procesando tus respuestas y generando el reporte final...<br><br><b>Por favor, no cierres la ventana.</b>',
                     allowOutsideClick: false,
                     showConfirmButton: false,
                     didOpen: () => {
@@ -1978,21 +1978,10 @@ async function enviarFormulario(e) {
                 });
 
                 try {
-                    // 2. Llamar a GEMINI para generar el análisis JSON
                     const baseURL = typeof API_URL !== 'undefined' ? API_URL : API_URL_SAVE.replace('/api', '');
                     
-                    const resIA = await fetch(`${baseURL}/api/generar-analisis-ia`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id_usuario: idUsuario })
-                    });
-                    
-                    if (!resIA.ok) {
-                        console.warn("⚠️ La IA no pudo generar el reporte, pero el cuestionario se guardó.");
-                    }
-
                     // ---------------------------------------------------------
-                    // 🔒 3. AQUÍ ESTÁ TU CANDADO (Llamada a la API para cerrar)
+                    // 🔒 2. CANDADO EN SERVIDOR (Llamada a la API para cerrar)
                     // ---------------------------------------------------------
                     await fetch(`${baseURL}/finalizar-cuestionario`, {
                         method: 'POST',
@@ -2000,19 +1989,24 @@ async function enviarFormulario(e) {
                         body: JSON.stringify({ id_usuario: idUsuario })
                     });
                     
-                    // 🔒 4. AQUÍ ESTÁ TU BLOQUEO LOCAL
+                    // ---------------------------------------------------------
+                    // 🔒 3. CANDADO LOCAL INFALIBLE
+                    // ---------------------------------------------------------
                     localStorage.setItem('encuestaFinalizada', '1');
 
-                    // 5. Redirigir al resumen
+                    // 4. Redirigir al resumen inmediatamente
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
 
                 } catch (errFin) {
-                    console.error("Error en el proceso final:", errFin);
+                    console.error("Error en el proceso final (Red):", errFin);
+                    
+                    // AUNQUE FALLE LA RED, PONEMOS EL CANDADO LOCAL POR SEGURIDAD
+                    localStorage.setItem('encuestaFinalizada', '1');
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
                 }
 
             } else {
-                // CASO: SECCIÓN NORMAL (De la 1 a la 8)
+                // CASO: SECCIÓN NORMAL (De la 1 a la 4)
                 await Swal.fire({
                     icon: 'success',
                     title: '¡Guardado!',
@@ -2029,104 +2023,92 @@ async function enviarFormulario(e) {
             }
 
         } else {
-            Swal.fire('Error', result.error, 'error');
+            // Error devuelto por el servidor al intentar guardar
+            Swal.fire('Error', result.error || 'No se pudo guardar la información.', 'error');
         }
     } catch (error) {
+        // Error de conexión (Fetch falló)
         console.error(error);
         Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
     }
+
 }
 
 // =========================================================
-// FUNCIÓN: ACTIVAR MODO SOLO LECTURA (ADAPTADO A NUEVO DISEÑO)
+// FUNCIÓN: ACTIVAR MODO SOLO LECTURA (CANDADO TOTAL)
 // =========================================================
 function activarModoSoloLectura() {
-    console.log("🔒 Activando modo solo lectura...");
+    console.log("🔒 Activando modo solo lectura permanente...");
 
-    // 1. BLOQUEAR TODOS LOS INPUTS
+    // 1. BLOQUEAR TODOS LOS INPUTS, SELECTS Y TEXTAREAS
+    // Seleccionamos específicamente los que están dentro del formulario
     const inputs = document.querySelectorAll('#formularioDinamico input, #formularioDinamico select, #formularioDinamico textarea');
+    
     inputs.forEach(input => {
-        input.disabled = true;
-        input.style.backgroundColor = "#f9f9f9"; // Un gris más suave
-        input.style.cursor = "not-allowed";
-        input.style.opacity = "0.8";
-        input.style.borderColor = "#ddd";
+        // En lugar de disabled, usamos pointer-events none para radios/checkbox para que no se vean tan grises pero no se puedan clickear
+        if(input.type === 'radio' || input.type === 'checkbox') {
+            input.parentElement.style.pointerEvents = 'none';
+            input.parentElement.style.opacity = '0.7';
+        } else {
+            input.disabled = true;
+            input.style.backgroundColor = "#f9f9f9"; 
+            input.style.cursor = "not-allowed";
+            input.style.opacity = "0.8";
+            input.style.borderColor = "#ddd";
+        }
     });
 
-    // 2. OCULTAR BOTONES DE EDICIÓN
-    const botonesEdicion = document.querySelectorAll('.btn-agregar, .btn-eliminar');
+    // 2. OCULTAR BOTONES DE EDICIÓN Y AVISOS DE SCROLL
+    const botonesEdicion = document.querySelectorAll('.btn-agregar, .btn-eliminar, .aviso-scroll');
     botonesEdicion.forEach(btn => btn.style.display = 'none');
 
-    // 3. TRANSFORMAR EL BOTÓN PRINCIPAL (GUARDAR -> SIGUIENTE)
+    // 3. TRANSFORMAR EL BOTÓN PRINCIPAL (GUARDAR -> SIGUIENTE/RESUMEN)
     const btnPrincipal = document.querySelector('.btn-guardar');
     
     if (btnPrincipal) {
-        if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
-            
-            const nuevoBoton = btnPrincipal.cloneNode(true);
-            if(btnPrincipal.parentNode) {
-                btnPrincipal.parentNode.replaceChild(nuevoBoton, btnPrincipal);
-            }
-            
-            nuevoBoton.type = 'button';
-            nuevoBoton.style.display = 'inline-flex'; 
-            nuevoBoton.style.alignItems = 'center';
-            nuevoBoton.style.justifyContent = 'center';
-            nuevoBoton.style.gap = '8px';
-            nuevoBoton.style.cursor = 'pointer';
-            nuevoBoton.style.width = 'auto';       
-            nuevoBoton.style.minWidth = '140px';   
-            nuevoBoton.style.padding = '12px 25px'; 
-
-            // CASO ESPECIAL: Última sección
-            if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
-                nuevoBoton.innerHTML = 'Ver Resumen Final <i class="fas fa-chart-pie"></i>'; 
-                nuevoBoton.className = 'btn-guardar'; 
-                nuevoBoton.style.backgroundColor = "#17a2b8"; // Azul informativo
-            } else {
-                nuevoBoton.innerHTML = 'Siguiente Sección <i class="fas fa-arrow-right"></i>';
-                nuevoBoton.style.backgroundColor = "#6c757d"; // Gris neutro
-            }
-
-            // Evento click para navegar
-            nuevoBoton.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.location.href = CONFIG_SECCION.siguiente;
-            });
-
+        const contenedorPadre = btnPrincipal.parentNode;
+        
+        // Creamos un nuevo botón limpio
+        const nuevoBoton = document.createElement('button');
+        nuevoBoton.type = 'button';
+        nuevoBoton.className = 'btn-guardar'; // Mantiene la clase para los estilos CSS
+        nuevoBoton.style.display = 'inline-flex'; 
+        nuevoBoton.style.alignItems = 'center';
+        nuevoBoton.style.justifyContent = 'center';
+        nuevoBoton.style.gap = '8px';
+        nuevoBoton.style.cursor = 'pointer';
+        
+        // Lógica de navegación del candado
+        if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
+            nuevoBoton.innerHTML = 'Ver Resumen Final <i class="fas fa-chart-pie"></i>'; 
+            nuevoBoton.style.backgroundColor = "#17a2b8"; 
+            nuevoBoton.addEventListener('click', () => { window.location.href = 'resumen.html'; });
+        } else if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
+            nuevoBoton.innerHTML = 'Siguiente Sección <i class="fas fa-arrow-right"></i>';
+            nuevoBoton.style.backgroundColor = "#6c757d"; 
+            nuevoBoton.addEventListener('click', () => { window.location.href = CONFIG_SECCION.siguiente; });
         } else {
-            btnPrincipal.style.display = 'none';
+            nuevoBoton.style.display = 'none';
         }
+
+        // Reemplazamos el botón viejo (que hace 'submit') por el nuevo (que solo navega)
+        contenedorPadre.replaceChild(nuevoBoton, btnPrincipal);
     }
 
     // 4. AVISO VISUAL (EL CANDADITO)
-    // FIX: Ahora buscamos .container porque .card-body ya no existe en el nuevo HTML
     const contenedor = document.querySelector('.container');
-    const tituloSeccion = contenedor.querySelector('h2'); // Buscamos el título h2
+    const tituloSeccion = contenedor.querySelector('h2'); 
 
     if (contenedor && !document.getElementById('bannerSoloLectura')) {
         const banner = document.createElement('div');
         banner.id = 'bannerSoloLectura';
         banner.innerHTML = `
             <div style="
-                background: #fff3cd; 
-                color: #856404; 
-                border: 1px solid #ffeeba; 
-                padding: 15px 20px; 
-                margin-bottom: 30px; 
-                border-radius: 10px; 
-                display: flex; 
-                align-items: center; 
-                gap: 15px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                background: #fff3cd; color: #856404; border: 1px solid #ffeeba; 
+                padding: 15px 20px; margin-bottom: 30px; border-radius: 10px; 
+                display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             ">
-                <div style="
-                    background: rgba(255,255,255,0.6); 
-                    width: 45px; height: 45px; 
-                    border-radius: 50%; 
-                    display: flex; align-items: center; justify-content: center;
-                    flex-shrink: 0;
-                ">
+                <div style="background: rgba(255,255,255,0.6); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                     <i class="fas fa-lock" style="font-size: 1.4em; color: #856404;"></i>
                 </div>
                 <div>
@@ -2136,9 +2118,8 @@ function activarModoSoloLectura() {
             </div>
         `;
         
-        // Insertamos el banner ANTES del título de la sección
         if (tituloSeccion) {
-            contenedor.insertBefore(banner, tituloSeccion);
+            contenedor.insertBefore(banner, tituloSeccion.nextSibling); // Lo ponemos DEBAJO del título
         } else {
             contenedor.insertBefore(banner, contenedor.firstChild);
         }
