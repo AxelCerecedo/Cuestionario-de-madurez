@@ -12,8 +12,7 @@ body {
     font-family: 'Segoe UI', Roboto, sans-serif;
     color: var(--text-color);
     padding: 20px;
-    /* Mantenemos tu imagen de fondo original */
-    background-image: url('../Imagenes/f2.avif'); 
+    background-image: url('../Imagenes/luxury.jpg'); 
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
