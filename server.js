@@ -853,19 +853,26 @@ app.get('/admin/detalle-graficas/:idInstitucion', async (req, res) => {
 });
 
 // =========================================================
-// RUTA: FINALIZAR CUESTIONARIO (CANDADO)
+// RUTA PARA FINALIZAR EL CUESTIONARIO (CANDADO)
 // =========================================================
 app.post('/finalizar-cuestionario', async (req, res) => {
-    const { id_usuario } = req.body;
-    console.log(`🔒 [FINALIZAR] Cerrando cuestionario para usuario ID: ${id_usuario}`);
-
     try {
-        const sql = 'UPDATE instituciones SET finalizado = 1 WHERE id_usuario = ?';
-        await db.query(sql, [id_usuario]);
-        res.json({ mensaje: 'Cuestionario finalizado correctamente' });
+        const { id_usuario } = req.body;
+
+        if (!id_usuario) {
+            return res.status(400).json({ error: "Falta el ID del usuario" });
+        }
+
+        // Actualizamos la columna 'finalizado' a 1
+        // OJO: Si tu llave primaria se llama 'id_usuario', cambia "WHERE id =" por "WHERE id_usuario ="
+        await db.query('UPDATE usuarios_registrados SET finalizado = 1 WHERE id = ?', [id_usuario]);
+
+        console.log(`🔒 [CANDADO] El usuario ID: ${id_usuario} ha finalizado su cuestionario.`);
+        res.json({ message: "Cuestionario bloqueado exitosamente" });
+
     } catch (error) {
-        console.error("❌ [ERROR FINALIZAR]:", error);
-        res.status(500).json({ error: 'Error al finalizar el cuestionario' });
+        console.error("Error al finalizar cuestionario:", error);
+        res.status(500).json({ error: "Error interno al aplicar candado" });
     }
 });
 
