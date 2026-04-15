@@ -19,32 +19,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Cargar configuraciones (Rápido)
     await cargarConfiguracionesDeSecciones();
     
-    // 2. Cargar datos del servidor (Puede tardar)
-    // Usamos Promise.all para cargar globales y lista al mismo tiempo
-    // Además, agregamos un "sleep" artificial de 1.5 segundos para que la 
-    // pantalla de bienvenida se luzca y no sea un parpadeo molesto si el server es muy rápido.
-    
+    // 2. Cargar datos del servidor
     const promesaTiempoMinimo = new Promise(resolve => setTimeout(resolve, 1500));
     
     await Promise.all([
         cargarGlobales(),
         cargarListaUsuarios(),
-        promesaTiempoMinimo // Esperamos al menos 1.5 seg
+        promesaTiempoMinimo 
     ]);
     
     // 3. Configurar UI
     configurarBuscador();
     mostrarVistaGlobal();
 
-    // 4. OCULTAR PANTALLA DE BIENVENIDA (TRANSICIÓN)
+    // 4. OCULTAR PANTALLA DE BIENVENIDA
     const splash = document.getElementById('splashScreen');
     if(splash) {
         splash.classList.add('hidden');
-        
-        // Opcional: Eliminar del DOM después de que termine la animación CSS (0.8s)
-        setTimeout(() => {
-            splash.remove();
-        }, 1000);
+        setTimeout(() => { splash.remove(); }, 1000);
     }
 });
 
@@ -69,7 +61,8 @@ function volverADashboardInst() {
 // 2. CARGA DE CONFIG Y GLOBALES
 // =========================================================
 async function cargarConfiguracionesDeSecciones() {
-    for (let i = 1; i <= 9; i++) {
+    // 🔥 ACTUALIZADO: Solo cargamos del 1 al 5
+    for (let i = 1; i <= 5; i++) {
         try {
             const res = await fetch(`js/seccion${i}.js`);
             if (res.ok) {
@@ -99,10 +92,12 @@ function renderizarVistaGlobal() {
 
     document.getElementById('g_totalInst').innerText = globalData.totalInstituciones;
     let suma = Object.values(globalData.promedios).reduce((a,b)=>a+parseFloat(b),0);
-    document.getElementById('g_promedio').innerText = Math.round(suma);
+    // Para el nuevo modelo, sacamos un promedio general real (dividido entre 5 secciones)
+    let promGlobal = (suma / 5).toFixed(1);
+    document.getElementById('g_promedio').innerText = promGlobal;
     
     const levels = globalData.niveles;
-    const top = Object.keys(levels).reduce((a, b) => levels[a] > levels[b] ? a : b);
+    const top = Object.keys(levels).length > 0 ? Object.keys(levels).reduce((a, b) => levels[a] > levels[b] ? a : b) : '--';
     document.getElementById('g_nivelTop').innerText = top;
 
     // PASTEL
@@ -121,23 +116,38 @@ function renderizarVistaGlobal() {
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
     });
 
-    // BARRAS PROMEDIO GLOBAL
+    // BARRAS / RADAR PROMEDIO GLOBAL
     const ctxBar = document.getElementById('chartBarGlobal').getContext('2d');
     if(chartGlobalBar) chartGlobalBar.destroy();
     
+    // Transformamos las claves del backend (ej "1", "2") a los arrays de datos en orden
+    const promediosOrdenados = [];
+    for(let i=1; i<=5; i++) {
+        promediosOrdenados.push(globalData.promedios[i] || 0);
+    }
+    
+    // 🔥 ACTUALIZADO: Etiquetas para 5 secciones
+    const labelsCortos = ["1. Gestión", "2. RRHH", "3. Acervo", "4. Infraestructura", "5. Servicios"];
+
     chartGlobalBar = new Chart(ctxBar, {
-        type: 'bar',
+        type: 'radar', // Cambiado a radar para que coincida con el reporte de la institución
         data: {
-            labels: ["1.Iden", "2.Gest", "3.Acer", "4.Cons", "5.Info", "6.RRHH", "7.Tec", "8.Norm", "9.Serv"],
+            labels: labelsCortos,
             datasets: [{
-                label: 'Promedio Global',
-                data: Object.values(globalData.promedios),
-                backgroundColor: COLOR_BG_LIGHT,
-                hoverBackgroundColor: COLOR_PRIMARY,
-                borderRadius: 4
+                label: 'Madurez Promedio Nacional',
+                data: promediosOrdenados,
+                backgroundColor: COLOR_PRIMARY_ALPHA,
+                borderColor: COLOR_PRIMARY,
+                borderWidth: 2,
+                pointBackgroundColor: COLOR_PRIMARY,
+                pointRadius: 4
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        options: { 
+            responsive: true, maintainAspectRatio: false, 
+            scales: { r: { min: 0, max: 5, ticks: { stepSize: 1, display: false } } },
+            plugins: { legend: { display: false } }
+        }
     });
 }
 
@@ -157,11 +167,15 @@ async function cargarListaUsuarios() {
             const li = document.createElement('li');
             li.className = 'user-item';
             const iniciales = inst.nombre_usuario.substring(0,2).toUpperCase();
+            
+            // Calculamos promedio si usamos 5 secciones
+            const promInst = (inst.puntaje_total / 5).toFixed(1);
+
             li.innerHTML = `
                 <div class="avatar-circle">${iniciales}</div>
                 <div class="user-info">
                     <span class="user-name">${inst.nombre_usuario}</span>
-                    <span class="user-score">${inst.puntaje_total} pts</span>
+                    <span class="user-score">${promInst} / 5 pts</span>
                 </div>
             `;
             li.onclick = () => abrirDashboardInstitucion(inst, li);
@@ -186,27 +200,73 @@ async function abrirDashboardInstitucion(inst, liElement) {
 
 function renderizarDashboardInstitucion(inst, datosSecciones) {
     document.getElementById('instTitulo').innerText = inst.nombre_usuario;
-    document.getElementById('instPuntaje').innerText = inst.puntaje_total;
     
-    let nivel = "Inicial";
-    if(inst.puntaje_total >= 140) nivel = "Avanzado";
-    else if(inst.puntaje_total >= 90) nivel = "Intermedio";
-    else if(inst.puntaje_total >= 45) nivel = "Básico";
-    document.getElementById('instNivel').innerText = nivel;
+    // Calcular promedio real para la UI
+    const prom = (inst.puntaje_total / 5).toFixed(1);
+    document.getElementById('instPuntaje').innerText = prom;
+    
+    // Nombres de niveles actualizados a la nueva rúbrica
+    let nivel = "Sin Evaluar";
+    let colorTag = "#6c757d";
+
+    if(prom >= 4) { nivel = "Consolidado / Avanzado"; colorTag = "#28a745"; }
+    else if(prom >= 3) { nivel = "Intermedio"; colorTag = "#ffc107"; }
+    else if(prom >= 2) { nivel = "Básico"; colorTag = "#fd7e14"; }
+    else if(prom > 0) { nivel = "Incipiente"; colorTag = "#dc3545"; }
+    
+    const tagNivel = document.getElementById('instNivel');
+    tagNivel.innerText = nivel;
+    tagNivel.style.backgroundColor = colorTag;
 
     const ctx = document.getElementById('chartComparativoInst').getContext('2d');
     if(chartInstComp) chartInstComp.destroy();
 
+    const promediosGlobalesArr = [];
+    const promediosInstArr = [];
+    for(let i=1; i<=5; i++) {
+        promediosGlobalesArr.push(globalData.promedios[i] || 0);
+        promediosInstArr.push(datosSecciones[i] || 0);
+    }
+
+    const labelsCortos = [
+        ["1. Gestión", "Institucional"],
+        ["2. Recursos", "Humanos"],
+        ["3. Características", "del Acervo"],
+        ["4. Infraestructura", "y Tecnología"],
+        ["5. Servicios", "al Público"]
+    ];
+
     chartInstComp = new Chart(ctx, {
-        type: 'bar',
+        type: 'radar',
         data: {
-            labels: ["1.Iden", "2.Gest", "3.Acer", "4.Cons", "5.Info", "6.RRHH", "7.Tec", "8.Norm", "9.Serv"],
+            labels: labelsCortos,
             datasets: [
-                { label: 'Promedio Global', data: Object.values(globalData.promedios), backgroundColor: COLOR_BG_LIGHT, order: 2 },
-                { label: 'Esta Institución', data: Object.values(datosSecciones), backgroundColor: COLOR_PRIMARY, order: 1, borderRadius: 4 }
+                { 
+                    label: 'Esta Institución', 
+                    data: promediosInstArr, 
+                    backgroundColor: COLOR_PRIMARY_ALPHA, 
+                    borderColor: COLOR_PRIMARY,
+                    borderWidth: 2,
+                    pointBackgroundColor: COLOR_PRIMARY,
+                    pointRadius: 5
+                },
+                { 
+                    label: 'Promedio Nacional', 
+                    data: promediosGlobalesArr, 
+                    backgroundColor: 'rgba(108, 117, 125, 0.2)', 
+                    borderColor: '#6c757d',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: '#6c757d',
+                    pointRadius: 3
+                }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        options: { 
+            responsive: true, maintainAspectRatio: false, 
+            scales: { r: { min: 0, max: 5, ticks: { stepSize: 1, display: false } } },
+            plugins: { legend: { position: 'top' } }
+        }
     });
 
     const grid = document.getElementById('gridSecciones');
@@ -226,7 +286,6 @@ function renderizarDashboardInstitucion(inst, datosSecciones) {
             </div>
             <div class="section-arrow">➔</div>
         `;
-        // LOG EXTRA AL HACER CLICK EN TARJETA
         card.onclick = () => {
             console.log(`>>> Click en Sección ${num}: ${sec.seccion}`);
             abrirDetalleSeccion(sec, num);
@@ -236,7 +295,7 @@ function renderizarDashboardInstitucion(inst, datosSecciones) {
 }
 
 // =========================================================
-// 5. DETALLE SECCIÓN (AQUÍ ESTÁ EL DEBUGGING FUERTE)
+// 5. DETALLE SECCIÓN (AUDITORÍA)
 // =========================================================
 async function abrirDetalleSeccion(configSeccion, numSeccion) {
     if(!institucionActual) return;
@@ -251,51 +310,14 @@ async function abrirDetalleSeccion(configSeccion, numSeccion) {
         const res = await fetch(`${API_URL}/admin/detalle-graficas/${institucionActual.id_institucion}`);
         const data = await res.json();
         
-        console.log("--- DATOS RECIBIDOS DEL SERVIDOR ---");
-        console.log("Usuario Respuestas:", data.usuario);
-        console.log("Globales:", data.globales);
-        
         contenedor.innerHTML = ''; // Limpiar loading
 
-        // === LÓGICA ESPECIAL POR SECCIÓN ===
+        // Como solo hay 5 secciones ahora y movimos contactos al registro,
+        // convertiremos todas las secciones en Tablas de Auditoría Visual (Semáforo)
+        // Ya que graficar pregunta por pregunta (barras) pierde sentido en un modelo madurez de 5 pasos
         
-        if (numSeccion === 1) {
-            console.log("Renderizando Sección 1 (Ficha Técnica)");
-            renderizarFichaTecnica(configSeccion, data.usuario, contenedor);
-            return;
-        } 
-        
-        if (numSeccion === 2) {
-            console.log("Renderizando Sección 2 (Auditoría)");
-            renderizarTablaAuditoria(configSeccion, data.usuario, contenedor);
-            return;
-        }
-
-        // === CASO 3: GRÁFICAS NORMALES (Secciones 3 a 9) ===
-        chartsDetalle.forEach(c => c.destroy());
-        chartsDetalle = [];
-        let count = 0;
-
-        configSeccion.preguntas.forEach(p => {
-            if(p.graficar) {
-                crearGraficaDetalle(p, data.usuario, data.globales, contenedor, numSeccion);
-                count++;
-            }
-            if(p.opciones) {
-                p.opciones.forEach(op => {
-                    if(op.graficar && op.sub_opciones) {
-                        const fakeP = { id: p.id, texto: `Detalle: ${op.texto}`, opciones: op.sub_opciones };
-                        crearGraficaDetalle(fakeP, data.usuario, data.globales, contenedor, numSeccion);
-                        count++;
-                    }
-                });
-            }
-        });
-
-        if(count === 0) {
-            console.warn("No se encontraron preguntas configuradas con 'graficar: true' para esta sección.");
-            contenedor.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">No hay datos gráficos disponibles para esta sección.</div>';
-        }
+        console.log(`Renderizando Sección ${numSeccion} (Auditoría visual)`);
+        renderizarTablaAuditoria(configSeccion, data.usuario, contenedor);
 
     } catch (e) { 
         console.error("Error abriendo detalle sección:", e); 
@@ -304,125 +326,7 @@ async function abrirDetalleSeccion(configSeccion, numSeccion) {
 }
 
 // ---------------------------------------------------------
-// CORRECCIÓN: RENDERIZAR FICHA TÉCNICA (SECCIÓN 1)
-// ---------------------------------------------------------
-function renderizarFichaTecnica(config, respuestas, contenedor) {
-    const grid = document.createElement('div');
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(350px, 1fr))';
-    grid.style.gap = '20px';
-
-    config.preguntas.forEach(p => {
-        let contenidoHtml = '<span style="color:#ccc; font-style:italic;">Sin información registrada</span>';
-        
-        const respuestasP = respuestas.filter(r => r.id_pregunta == p.id);
-
-        // --- CASO ESPECIAL: TABLA DE CONTACTOS ---
-        if (p.tipo === 'tabla_contactos') {
-            if (respuestasP.length > 0 && respuestasP[0].respuesta_texto) {
-                try {
-                    const contactos = JSON.parse(respuestasP[0].respuesta_texto);
-
-                    if (Array.isArray(contactos) && contactos.length > 0) {
-                        contenidoHtml = `
-                            <table style="width:100%; font-size:0.85em; border-collapse:collapse; margin-top:5px;">
-                                <thead style="background:#f1f1f1;">
-                                    <tr>
-                                        <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Nombre</th>
-                                        <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Cargo</th>
-                                        <th style="padding:6px; text-align:left; border-bottom:2px solid #ddd;">Email/Telefono</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                        `;
-                        contactos.forEach(c => {
-                            // 1. Obtenemos datos individuales con seguridad (probando mayúsculas/minúsculas)
-                            const nombre = c.nombre || c.Nombre || '-';
-                            const cargo = c.cargo || c.Cargo || '-';
-                            
-                            // 2. CORRECCIÓN AQUÍ: Obtenemos AMBOS valores por separado
-                            // Probamos 'email' y 'correo' por si acaso
-                            const email = c.email || c.Email || c.correo || c.Correo || '';
-                            const telefono = c.telefono || c.Telefono || c.celular || '';
-
-                            // 3. Construimos el HTML combinando ambos
-                            let infoContacto = '';
-                            
-                            if (email) {
-                                infoContacto += `<div style="margin-bottom:2px;">📧 ${email}</div>`;
-                            }
-                            if (telefono) {
-                                infoContacto += `<div>📞 ${telefono}</div>`;
-                            }
-                            
-                            // Si no hay nada, ponemos un guión
-                            if (!infoContacto) infoContacto = '-';
-                            
-                            contenidoHtml += `
-                                <tr style="border-bottom:1px solid #eee;">
-                                    <td style="padding:6px; vertical-align:top;"><strong>${nombre}</strong></td>
-                                    <td style="padding:6px; vertical-align:top;">${cargo}</td>
-                                    <td style="padding:6px; vertical-align:top;">${infoContacto}</td>
-                                </tr>
-                            `;
-                        });
-                        contenidoHtml += `</tbody></table>`;
-                    }
-                } catch (e) {
-                    console.error("Error parseando contactos:", e);
-                    contenidoHtml = `<span style="color:red;">Error en formato de datos de contactos.</span>`;
-                }
-            } else {
-                contenidoHtml = '<span style="color:#999; font-size:0.9em;">No se agregaron contactos adicionales.</span>';
-            }
-        } 
-        // --- CASO NORMAL: TEXTO O LISTAS ---
-        else if (respuestasP.length > 0) {
-            const textos = respuestasP.map(r => {
-                if (r.respuesta_texto && r.respuesta_texto.trim() !== "") return r.respuesta_texto;
-                if (r.id_opcion && p.opciones) {
-                    const op = p.opciones.find(o => o.id == r.id_opcion);
-                    return op ? op.texto : null;
-                }
-                return null;
-            }).filter(t => t !== null && t !== "");
-
-            if (textos.length === 1) {
-                contenidoHtml = `<span style="color:#333; font-weight:500;">${textos[0]}</span>`;
-            } else if (textos.length > 1) {
-                contenidoHtml = `<ul style="margin:0; padding-left:20px; color:#333;">`;
-                textos.forEach(t => contenidoHtml += `<li style="margin-bottom:4px;">${t}</li>`);
-                contenidoHtml += `</ul>`;
-            }
-        }
-
-        const card = document.createElement('div');
-        card.style.background = 'white';
-        card.style.padding = '20px';
-        card.style.borderRadius = '12px';
-        card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-        card.style.borderLeft = `4px solid #7c1225`; // Usé tu color rojo institucional
-        
-        if (p.tipo === 'tabla_contactos') {
-            card.style.gridColumn = '1 / -1'; 
-        }
-
-        card.innerHTML = `
-            <div style="font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 10px; font-weight:700;">
-                ${p.texto}
-            </div>
-            <div style="font-size: 1em; line-height: 1.5; word-wrap: break-word;">
-                ${contenidoHtml}
-            </div>
-        `;
-        grid.appendChild(card);
-    });
-
-    contenedor.appendChild(grid);
-}
-
-// ---------------------------------------------------------
-// CORRECCIÓN: TABLA DE AUDITORÍA (SECCIÓN 2)
+// TABLA DE AUDITORÍA INTELIGENTE
 // ---------------------------------------------------------
 function renderizarTablaAuditoria(config, respuestas, contenedor) {
     const table = document.createElement('table');
@@ -436,7 +340,7 @@ function renderizarTablaAuditoria(config, respuestas, contenedor) {
     table.innerHTML = `
         <thead style="background: #f8f9fa; border-bottom: 2px solid #e9ecef;">
             <tr>
-                <th style="padding: 15px 20px; text-align: left; color: #555; width: 60%;">Pregunta de Gestión</th>
+                <th style="padding: 15px 20px; text-align: left; color: #555; width: 60%;">Concepto Evaluado</th>
                 <th style="padding: 15px 20px; text-align: left; color: #555;">Estado / Respuesta</th>
             </tr>
         </thead>
@@ -446,7 +350,6 @@ function renderizarTablaAuditoria(config, respuestas, contenedor) {
     const tbody = table.querySelector('tbody');
 
     config.preguntas.forEach(p => {
-        // Filtrar respuestas para esta pregunta
         const respuestasP = respuestas.filter(r => r.id_pregunta == p.id);
         
         let htmlCelda = '<span style="color:#ccc;">-- Sin dato --</span>';
@@ -454,48 +357,37 @@ function renderizarTablaAuditoria(config, respuestas, contenedor) {
 
         if (respuestasP.length > 0) {
             
-            // Recolectar textos
             const opcionesTexto = respuestasP.map(r => {
-                // Prioridad 1: Buscar texto en Configuración (seccion2.js)
                 if (r.id_opcion && p.opciones) {
                     const op = p.opciones.find(o => o.id == r.id_opcion);
                     if (op) return op.texto;
-                    
-                    // DEBUG VISUAL: Si hay ID en base de datos pero no en config
-                    console.warn(`Pregunta ${p.id}: ID ${r.id_opcion} no encontrado en seccion2.js`);
                     return `(ID: ${r.id_opcion})`; 
                 }
-                // Prioridad 2: Texto abierto
                 return r.respuesta_texto;
             }).filter(Boolean);
 
-            // --- LÓGICA SEMÁFORO INTELIGENTE ---
             const primerTexto = opcionesTexto[0] ? opcionesTexto[0].toLowerCase() : '';
             
-            // Solo aplicamos semáforo si detectamos palabras clave explícitas
             const esSi = primerTexto.includes('sí') || primerTexto.includes('si ') || primerTexto === 'si' || primerTexto.includes('totalmente');
-            const esNo = primerTexto.includes('no') || primerTexto.includes('nunca');
-            const esParcial = primerTexto.includes('parcial') || primerTexto.includes('proceso');
+            const esNo = primerTexto.includes('no') || primerTexto.includes('nunca') || primerTexto.includes('ninguno');
+            const esParcial = primerTexto.includes('parcial') || primerTexto.includes('proceso') || primerTexto.includes('basico');
 
-            // Si es una lista larga (financiamiento), NO aplicamos semáforo
             if (opcionesTexto.length > 1) {
                 htmlCelda = `<ul style="margin:0; padding-left:20px; color:#333; font-size:0.9em;">`;
                 opcionesTexto.forEach(t => htmlCelda += `<li style="margin-bottom:3px;">${t}</li>`);
                 htmlCelda += `</ul>`;
             } 
-            // Si es respuesta única
             else if (opcionesTexto.length === 1) {
                 const textoMostrar = opcionesTexto[0];
                 
                 if (esSi) {
                     htmlCelda = `<span style="background:#d1e7dd; color:#0f5132; padding:6px 14px; border-radius:20px; font-size:0.85em; font-weight:700;">✅ CUMPLE</span>`;
                 } else if (esNo) {
-                    htmlCelda = `<span style="background:#f8d7da; color:#842029; padding:6px 14px; border-radius:20px; font-size:0.85em; font-weight:700;">❌ NO CUMPLE</span>`;
+                    htmlCelda = `<span style="background:#f8d7da; color:#842029; padding:6px 14px; border-radius:20px; font-size:0.85em; font-weight:700;">❌ NO CUMPLE / CARENCIA</span>`;
                     rowColor = '#fff5f5';
                 } else if (esParcial) {
-                    htmlCelda = `<span style="background:#fff3cd; color:#664d03; padding:6px 14px; border-radius:20px; font-size:0.85em; font-weight:700;">⚠️ PARCIAL</span>`;
+                    htmlCelda = `<span style="background:#fff3cd; color:#664d03; padding:6px 14px; border-radius:20px; font-size:0.85em; font-weight:700;">⚠️ EN PROCESO / PARCIAL</span>`;
                 } else {
-                    // Si no es ni Si ni No (ej. "ID: 5" o "Recursos Propios"), mostramos el texto tal cual
                     htmlCelda = `<span style="color:#333; font-weight:500;">${textoMostrar}</span>`;
                 }
             }
@@ -514,97 +406,6 @@ function renderizarTablaAuditoria(config, respuestas, contenedor) {
     contenedor.appendChild(table);
 }
 
-// ---------------------------------------------------------
-// GRÁFICAS GENERALES
-// ---------------------------------------------------------
-function crearGraficaDetalle(pregunta, respuestasUsuario, datosGlobales, contenedor, numSeccion) {
-    const card = document.createElement('div');
-    card.className = 'chart-card';
-    card.innerHTML = `
-        <div class="chart-title-sm">${pregunta.texto}</div>
-        <div style="height:300px; position: relative;">
-            <canvas></canvas>
-        </div>
-    `;
-    contenedor.appendChild(card);
-    const canvas = card.querySelector('canvas');
-
-    let labels = [];
-    let ids = [];
-    
-    if (pregunta.opciones) {
-        pregunta.opciones.forEach(o => { labels.push(o.texto); ids.push(o.id); });
-    } else if (pregunta.columnas) { 
-        pregunta.columnas.forEach(c => { labels.push(c.texto); ids.push(c.id); });
-    }
-
-    // DEBUG DE DATOS DE GRÁFICA
-    // console.log(`[Gráfica] Prep datos para pregunta ${pregunta.id}`);
-    
-    const dataGlob = ids.map(id => {
-        const f = datosGlobales.find(g => g.id_pregunta == pregunta.id && g.id_opcion == id);
-        return f ? f.cantidad : 0;
-    });
-
-    const bgColors = ids.map(id => {
-        const r = respuestasUsuario.find(u => u.id_pregunta == pregunta.id && u.id_opcion == id);
-        return r ? COLOR_PRIMARY : '#d1d1d1';
-    });
-    
-    // Configuración de Gráfica (Igual que antes)
-    let chartConfig = {};
-
-    if (numSeccion >= 7) {
-        chartConfig = {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Instituciones',
-                    data: dataGlob,
-                    backgroundColor: bgColors,
-                    borderRadius: 3,
-                    barPercentage: 0.6
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                    y: { display: true, ticks: { autoSkip: false, font: {size: 11} } }
-                }
-            }
-        };
-    } else {
-        chartConfig = {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: dataGlob,
-                    backgroundColor: bgColors,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { display: true, ticks: { autoSkip: false, maxRotation: 45 } },
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                }
-            }
-        };
-    }
-
-    const ch = new Chart(canvas, chartConfig);
-    chartsDetalle.push(ch);
-}
-
 
 // =========================================================
 // FUNCIÓN: CONFIGURAR BUSCADOR
@@ -615,16 +416,14 @@ function configurarBuscador() {
 
     input.addEventListener('input', function(e) {
         const texto = e.target.value.toLowerCase();
-        const items = document.querySelectorAll('.user-item'); // Los <li> de la lista
+        const items = document.querySelectorAll('.user-item'); 
 
         items.forEach(item => {
-            // Buscamos el nombre dentro del span con clase .user-name
             const nombre = item.querySelector('.user-name').innerText.toLowerCase();
-            
             if (nombre.includes(texto)) {
-                item.style.display = 'flex'; // Mostrar si coincide
+                item.style.display = 'flex'; 
             } else {
-                item.style.display = 'none'; // Ocultar si no coincide
+                item.style.display = 'none'; 
             }
         });
     });
@@ -636,7 +435,6 @@ function configurarBuscador() {
 async function descargarCSVInstitucion() {
     if (!institucionActual) return;
 
-    // Pantalla de carga
     Swal.fire({ 
         title: 'Generando archivo Excel...', 
         text: 'Traduciendo respuestas...',
@@ -645,29 +443,22 @@ async function descargarCSVInstitucion() {
     });
 
     try {
-        // 1. Pedir todas las respuestas de esta institución al servidor
         const res = await fetch(`${API_URL}/admin/detalle-graficas/${institucionActual.id_institucion}`);
         const data = await res.json();
         const respuestasUsuario = data.usuario;
 
-        // 2. Preparar el CSV (Añadimos \uFEFF para que Excel lea bien los acentos - UTF8)
         let csvContent = "\uFEFFSección,ID Pregunta,Pregunta,Respuesta\n";
 
-        // 3. Recorrer la configuración oficial (TODAS_LAS_SECCIONES) para tener el orden correcto
         TODAS_LAS_SECCIONES.forEach(sec => {
-            const nombreSeccion = sec.seccion.replace(/"/g, '""'); // Escapar comillas dobles
+            const nombreSeccion = sec.seccion.replace(/"/g, '""'); 
 
             sec.preguntas.forEach(p => {
                 const preguntaTexto = p.texto ? p.texto.replace(/"/g, '""') : `Pregunta ${p.id}`;
-                
-                // Buscar si el usuario respondió esta pregunta
                 const respuestasP = respuestasUsuario.filter(r => r.id_pregunta == p.id);
                 
                 let textoRespuestaFinal = "Sin respuesta";
 
                 if (respuestasP.length > 0) {
-                    
-                    // CASO A: Es la tabla de contactos (JSON)
                     if (p.tipo === 'tabla_contactos' && respuestasP[0].respuesta_texto) {
                         try {
                             const contactos = JSON.parse(respuestasP[0].respuesta_texto);
@@ -682,19 +473,14 @@ async function descargarCSVInstitucion() {
                             }
                         } catch(e) {}
                     } 
-                    
-                    // CASO B: Respuestas normales, catálogos, matrices, múltiples
                     else {
                         const textosObtenidos = respuestasP.map(r => {
-                            // 1. ¿Es texto libre?
                             if (r.respuesta_texto) return r.respuesta_texto;
 
-                            // 2. ¿Es ID? Buscar en opciones normales
                             if (r.id_opcion && p.opciones) {
                                 const op = p.opciones.find(o => o.id == r.id_opcion);
                                 if (op) return op.texto;
                                 
-                                // Búsqueda profunda para sub_opciones (Sección 7, 8, 9)
                                 for (let opPrincipal of p.opciones) {
                                     if (opPrincipal.sub_opciones) {
                                         const sub = opPrincipal.sub_opciones.find(s => s.id == r.id_opcion);
@@ -703,38 +489,32 @@ async function descargarCSVInstitucion() {
                                 }
                             }
 
-                            // 3. Buscar en columnas (Para la Matriz de la Q38/39)
                             if (r.id_opcion && p.columnas) {
                                 const col = p.columnas.find(c => c.id == r.id_opcion);
                                 if (col) return col.texto;
                             }
 
-                            // 4. Fallback (Si no encuentra texto, pone el ID)
                             return `Opción seleccionada (ID: ${r.id_opcion})`;
                         });
 
-                        // Unir las respuestas si son múltiples (separadas por " | ")
                         textoRespuestaFinal = textosObtenidos.filter(Boolean).join(" | ");
                     }
                 }
 
-                // Limpieza final para CSV: Envolver en comillas "" para evitar que las comas rompan las celdas
                 const celdaSeccion = `"${nombreSeccion}"`;
                 const celdaID = `"${p.id}"`;
                 const celdaPregunta = `"${preguntaTexto}"`;
-                const celdaRespuesta = `"${textoRespuestaFinal.replace(/"/g, '""')}"`; // Escapar comillas internas
+                const celdaRespuesta = `"${textoRespuestaFinal.replace(/"/g, '""')}"`; 
 
                 csvContent += `${celdaSeccion},${celdaID},${celdaPregunta},${celdaRespuesta}\n`;
             });
         });
 
-        // 4. Generar y descargar el archivo
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        // Formatear el nombre del archivo con el nombre de la institución
         const nombreArchivo = `Respuestas_${institucionActual.nombre_usuario.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`;
         link.setAttribute("download", nombreArchivo);
         
