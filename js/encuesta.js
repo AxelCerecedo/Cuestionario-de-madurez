@@ -1995,7 +1995,7 @@ async function enviarFormulario(e) {
         if(response.ok) {
             
             // =========================================================
-            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN Y CANDADO
+            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN Y CANDADO (SIN IA)
             // =========================================================
             
             if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
@@ -2003,31 +2003,39 @@ async function enviarFormulario(e) {
                 
                 Swal.fire({
                     title: '¡Cuestionario Completado!',
-                    text: 'Procesando tus respuestas...',
+                    html: 'Procesando tus respuestas y generando el reporte final...<br><br><b>Por favor, no cierres la ventana.</b>',
                     allowOutsideClick: false,
                     showConfirmButton: false,
-                    didOpen: () => { Swal.showLoading(); }
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
                 });
 
                 try {
                     const baseURL = typeof API_URL !== 'undefined' ? API_URL : API_URL_SAVE.replace('/api', '');
                     
-                    // 🔒 1. AQUÍ ESTÁ TU CANDADO EN BD (Llamada a la API para cerrar)
+                    // ---------------------------------------------------------
+                    // 🔒 2. CANDADO EN SERVIDOR (Llamada a la API para cerrar)
+                    // Nota: Aquí ya NO declaramos 'const response =', solo ejecutamos el fetch
+                    // ---------------------------------------------------------
                     await fetch(`${baseURL}/finalizar-cuestionario`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id_usuario: idUsuario })
                     });
                     
-                    // 🔒 2. AQUÍ ESTÁ TU BLOQUEO LOCAL (El que lee el navegador)
+                    // ---------------------------------------------------------
+                    // 🔒 3. CANDADO LOCAL INFALIBLE
+                    // ---------------------------------------------------------
                     localStorage.setItem('encuestaFinalizada', '1');
 
-                    // 3. Redirigir al resumen inmediatamente
+                    // 4. Redirigir al resumen inmediatamente
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
 
                 } catch (errFin) {
-                    console.error("Error en el proceso final:", errFin);
-                    // Incluso si falla la red, ponemos el candado local por seguridad
+                    console.error("Error en el proceso final (Red):", errFin);
+                    
+                    // AUNQUE FALLE LA RED, PONEMOS EL CANDADO LOCAL POR SEGURIDAD
                     localStorage.setItem('encuestaFinalizada', '1');
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
                 }
@@ -2035,11 +2043,17 @@ async function enviarFormulario(e) {
             } else {
                 // CASO: SECCIÓN NORMAL (De la 1 a la 4)
                 await Swal.fire({
-                    icon: 'success', title: '¡Guardado!', timer: 1000, showConfirmButton: false
+                    icon: 'success',
+                    title: '¡Guardado!',
+                    timer: 1000,
+                    showConfirmButton: false
                 });
 
+                // --- REDIRECCIÓN NORMAL ---
                 if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
                     window.location.href = CONFIG_SECCION.siguiente;
+                } else {
+                    Swal.fire('¡Listo!', 'Proceso completado.', 'success');
                 }
             }
 
@@ -2048,8 +2062,8 @@ async function enviarFormulario(e) {
             Swal.fire('Error', result.error || 'No se pudo guardar la información.', 'error');
         }
     } catch (error) {
-        // Error de conexión (Fetch falló)
-        console.error(error);
+        // Error de conexión (Fetch principal falló)
+        console.error("Error enviando formulario:", error);
         Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
     }
 
