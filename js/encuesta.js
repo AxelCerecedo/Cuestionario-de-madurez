@@ -1401,6 +1401,12 @@ async function cargarRespuestasPrevias(idUsuario) {
 
         if (data.vacio) return; 
 
+        // 🔥 NUEVO REFUERZO: Si el servidor dice que ya acabó, activamos candado a la fuerza
+        if (data.finalizado === 1 || data.finalizado === true) {
+            localStorage.setItem('encuestaFinalizada', '1');
+            activarModoSoloLectura();
+        }
+
         console.log("Cargando datos previos...", data);
         localStorage.setItem('datosCargados', 'true'); 
 
@@ -2026,45 +2032,53 @@ async function enviarFormulario(e) {
 function activarModoSoloLectura() {
     console.log("🔒 Activando modo solo lectura permanente...");
 
-    // 1. BLOQUEAR TODOS LOS INPUTS, SELECTS Y TEXTAREAS
-    // Seleccionamos específicamente los que están dentro del formulario
-    const inputs = document.querySelectorAll('#formularioDinamico input, #formularioDinamico select, #formularioDinamico textarea');
-    
-    inputs.forEach(input => {
-        // En lugar de disabled, usamos pointer-events none para radios/checkbox para que no se vean tan grises pero no se puedan clickear
-        if(input.type === 'radio' || input.type === 'checkbox') {
-            input.parentElement.style.pointerEvents = 'none';
-            input.parentElement.style.opacity = '0.7';
-        } else {
-            input.disabled = true;
-            input.style.backgroundColor = "#f9f9f9"; 
-            input.style.cursor = "not-allowed";
-            input.style.opacity = "0.8";
-            input.style.borderColor = "#ddd";
-        }
-    });
+    // 1. Sub-función que bloquea inputs (la llamaremos varias veces)
+    const aplicarBloqueoInputs = () => {
+        const inputs = document.querySelectorAll('#formularioDinamico input, #formularioDinamico select, #formularioDinamico textarea');
+        
+        inputs.forEach(input => {
+            if(input.type === 'radio' || input.type === 'checkbox') {
+                if (input.parentElement) {
+                    input.parentElement.style.pointerEvents = 'none';
+                    input.parentElement.style.opacity = '0.7';
+                }
+            } else {
+                input.disabled = true;
+                input.style.backgroundColor = "#f9f9f9"; 
+                input.style.cursor = "not-allowed";
+                input.style.color = "#555";
+                input.style.borderColor = "#ddd";
+            }
+        });
 
-    // 2. OCULTAR BOTONES DE EDICIÓN Y AVISOS DE SCROLL
-    const botonesEdicion = document.querySelectorAll('.btn-agregar, .btn-eliminar, .aviso-scroll');
-    botonesEdicion.forEach(btn => btn.style.display = 'none');
+        // Ocultar botones de agregar/eliminar en tablas
+        const botonesEdicion = document.querySelectorAll('.btn-agregar, .btn-eliminar-fila, .aviso-scroll');
+        botonesEdicion.forEach(btn => btn.style.display = 'none');
+    };
 
-    // 3. TRANSFORMAR EL BOTÓN PRINCIPAL (GUARDAR -> SIGUIENTE/RESUMEN)
+    // Aplicar inmediatamente
+    aplicarBloqueoInputs();
+
+    // Aplicar de nuevo después de 1 y 2 segundos (Para atrapar las tablas y matrices que tardan en cargar)
+    setTimeout(aplicarBloqueoInputs, 1000);
+    setTimeout(aplicarBloqueoInputs, 2000); 
+
+    // 2. CAMBIAR EL BOTÓN PRINCIPAL (Transforma el Submit en un Link)
     const btnPrincipal = document.querySelector('.btn-guardar');
     
-    if (btnPrincipal) {
+    // Verificamos que sea el botón original (tipo submit) para no duplicarlo
+    if (btnPrincipal && btnPrincipal.type === 'submit') {
         const contenedorPadre = btnPrincipal.parentNode;
         
-        // Creamos un nuevo botón limpio
         const nuevoBoton = document.createElement('button');
-        nuevoBoton.type = 'button';
-        nuevoBoton.className = 'btn-guardar'; // Mantiene la clase para los estilos CSS
+        nuevoBoton.type = 'button'; // Ya no envía el formulario
+        nuevoBoton.className = 'btn-guardar'; 
         nuevoBoton.style.display = 'inline-flex'; 
         nuevoBoton.style.alignItems = 'center';
         nuevoBoton.style.justifyContent = 'center';
         nuevoBoton.style.gap = '8px';
         nuevoBoton.style.cursor = 'pointer';
         
-        // Lógica de navegación del candado
         if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
             nuevoBoton.innerHTML = 'Ver Resumen Final <i class="fas fa-chart-pie"></i>'; 
             nuevoBoton.style.backgroundColor = "#17a2b8"; 
@@ -2077,11 +2091,10 @@ function activarModoSoloLectura() {
             nuevoBoton.style.display = 'none';
         }
 
-        // Reemplazamos el botón viejo (que hace 'submit') por el nuevo (que solo navega)
         contenedorPadre.replaceChild(nuevoBoton, btnPrincipal);
     }
 
-    // 4. AVISO VISUAL (EL CANDADITO)
+    // 3. AVISO VISUAL (EL CANDADITO AMARILLO)
     const contenedor = document.querySelector('.container');
     const tituloSeccion = contenedor.querySelector('h2'); 
 
@@ -2105,7 +2118,7 @@ function activarModoSoloLectura() {
         `;
         
         if (tituloSeccion) {
-            contenedor.insertBefore(banner, tituloSeccion.nextSibling); // Lo ponemos DEBAJO del título
+            contenedor.insertBefore(banner, tituloSeccion.nextSibling); 
         } else {
             contenedor.insertBefore(banner, contenedor.firstChild);
         }
