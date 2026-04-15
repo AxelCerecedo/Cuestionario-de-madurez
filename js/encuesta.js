@@ -1956,21 +1956,24 @@ async function enviarFormulario(e) {
                 });
 
                 try {
-                    const baseURL = typeof API_URL !== 'undefined' ? API_URL : API_URL_SAVE.replace('/api', '');
+                    // Quitamos el replace peligroso y usamos la URL directa y segura
+                    const baseURL = 'https://api-cuestionario.onrender.com';
                     
-                    // 🔒 CANDADO EN SERVIDOR (Llamada limpia)
+                    // 🔒 2. CANDADO EN SERVIDOR 
                     await fetch(`${baseURL}/finalizar-cuestionario`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id_usuario: idUsuario })
                     });
                     
-                    // 🔒 CANDADO LOCAL INFALIBLE
+                    // 🔒 3. CANDADO LOCAL INFALIBLE
                     localStorage.setItem('encuestaFinalizada', '1');
+
+                    // 4. Redirigir al resumen
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
 
                 } catch (errFin) {
-                    console.error("Error cerrando cuestionario (Red):", errFin);
+                    console.error("Error en el proceso final (Red):", errFin);
                     localStorage.setItem('encuestaFinalizada', '1');
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
                 }
