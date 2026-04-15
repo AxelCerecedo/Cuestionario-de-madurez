@@ -13,8 +13,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     
     <style>
         /* Estilos específicos del Dashboard */
@@ -26,7 +24,7 @@
             margin-top: 25px;
             width: 100%;
             box-sizing: border-box;
-            border-left: 4px solid #7c1225; /* Detalle estético extra */
+            border-left: 4px solid #7c1225;
         }
 
         .mapa-titulo {
@@ -40,13 +38,23 @@
             gap: 10px;
         }
         
-        /* Definimos la altura aquí para no depender de JS */
         #mapaUsuarios { 
             height: 500px; 
             width: 100%; 
             border-radius: 8px; 
             z-index: 1; 
-            background-color: #f4f4f4; /* Fondo mientras carga */
+            background-color: #f4f4f4;
+        }
+
+        /* Ajustes para el KPI de nivel en el dashboard */
+        .kpi-nivel-tag {
+            font-size: 0.85em;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            color: white;
+            display: inline-block;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -56,7 +64,7 @@
         <div class="splash-content">
             <img src="Imagenes/logo.png" alt="Logo" class="splash-logo">
             <h2 class="splash-title">Panel de Administración</h2>
-            <p>Cargando sistema de auditoría...</p>
+            <p>Cargando sistema de auditoría institucional...</p>
             <div class="splash-loader"></div>
         </div>
     </div>
@@ -68,7 +76,7 @@
 
         <div class="header-center">
             <h1 class="header-title">Panel de Auditoría y Resultados</h1> 
-            <p class="header-subtitle">Evaluación de madurez en gestión de acervos</p>
+            <p class="header-subtitle">Modelo de evaluación de madurez en gestión de acervos (5 Secciones)</p>
         </div>
 
         <div class="header-right">
@@ -108,19 +116,19 @@
                 <div class="dashboard-header">
                     <div>
                         <span class="global-badge">Reporte Agregado</span>
-                        <h1 class="dashboard-title">Panorama General</h1>
-                        <p class="dashboard-subtitle">Métricas consolidadas de todas las instituciones evaluadas.</p>
+                        <h1 class="dashboard-title">Panorama General de Madurez</h1>
+                        <p class="dashboard-subtitle">Métricas consolidadas de las 5 áreas clave de todas las instituciones.</p>
                     </div>
                 </div>
 
                 <div class="kpi-grid">
                     <div class="kpi-card">
                         <span class="kpi-val" id="g_totalInst">0</span>
-                        <span class="kpi-label">Instituciones</span>
+                        <span class="kpi-label">Instituciones Evaluadas</span>
                     </div>
                     <div class="kpi-card">
-                        <span class="kpi-val" id="g_promedio">0</span>
-                        <span class="kpi-label">Promedio General (Pts)</span>
+                        <span class="kpi-val" id="g_promedio">0.0</span>
+                        <span class="kpi-label">Madurez Promedio (Escala 1-5)</span>
                     </div>
                     <div class="kpi-card">
                         <span class="kpi-val" id="g_nivelTop">--</span>
@@ -134,14 +142,15 @@
                         <div style="height: 300px;"><canvas id="chartPieGlobal"></canvas></div>
                     </div>
                     <div class="chart-card">
-                        <div class="chart-title-sm">Promedio por Sección (Global)</div>
+                        <div class="chart-title-sm">Madurez Promedio por Área (Global)</div>
                         <div style="height: 300px;"><canvas id="chartBarGlobal"></canvas></div>
                     </div>
                 </div>
 
                 <div class="mapa-dashboard-card">
-                    <h2 class="mapa-titulo">🌍 Ubicación Geográfica</h2>
-                    <div id="mapaUsuarios"></div> </div>
+                    <h2 class="mapa-titulo">🌍 Densidad Geográfica Institucional</h2>
+                    <div id="mapaUsuarios"></div> 
+                </div>
             </div>
 
            <div id="vistaInstitucion" class="view-section">
@@ -150,7 +159,7 @@
                     <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 15px;">
                         <div>
                             <h1 class="dashboard-title" id="instTitulo" style="margin-bottom: 5px;">Nombre Institución</h1>
-                            <p class="dashboard-subtitle" style="margin-top: 0;">Seleccione una sección para auditar sus respuestas.</p>
+                            <p class="dashboard-subtitle" style="margin-top: 0;">Análisis de las 5 secciones de la rúbrica.</p>
                         </div>
                         
                         <button onclick="descargarCSVInstitucion()" style="background-color: #198754; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; transition: background 0.2s;">
@@ -158,33 +167,35 @@
                                 <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                                 <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
                             </svg>
-                            Exportar (CSV)
+                            Exportar Datos (CSV)
                         </button>
                     </div>
                     
-                    <div style="text-align: right;">
-                        <span class="kpi-val" id="instPuntaje" style="color: var(--primary);">0</span>
-                        <span id="instNivel" style="font-weight: bold; padding: 5px 10px; background: #eee; border-radius: 10px;">--</span>
+                    <div style="text-align: right; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eaeaea;">
+                        <span style="font-size: 0.8em; color: #666; font-weight: bold; text-transform: uppercase;">Promedio General</span><br>
+                        <span class="kpi-val" id="instPuntaje" style="color: var(--primary); font-size: 2em;">0.0</span> <span style="font-size: 0.9em; color:#999;">/ 5</span><br>
+                        <span id="instNivel" class="kpi-nivel-tag" style="background-color: #6c757d;">--</span>
                     </div>
                 </div>
 
                 <div class="chart-card" style="margin-bottom: 30px;">
-                    <div class="chart-title-sm">Comparativa: Esta Institución vs Promedio Global </div>
-                    <div style="height: 250px;"><canvas id="chartComparativoInst"></canvas></div>
+                    <div class="chart-title-sm">Mapa de Madurez: Institución vs Promedio Nacional</div>
+                    <div style="height: 350px;"><canvas id="chartComparativoInst"></canvas></div>
                 </div>
 
-                <h3 style="color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">Auditar por Sección</h3>
-                <div id="gridSecciones" class="sections-nav-grid"></div>
+                <h3 style="color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">Auditar Respuestas por Área</h3>
+                <div id="gridSecciones" class="sections-nav-grid">
+                    </div>
             </div>
 
             <div id="vistaDetalleSeccion" class="view-section">
                 <div class="dashboard-header">
                     <div>
                         <button class="btn-back" onclick="volverADashboardInst()">
-                            ⬅ Volver al Resumen
+                            ⬅ Volver al Perfil de la Institución
                         </button>
-                        <h1 class="dashboard-title" id="secTitulo" style="margin-top: 15px;">Sección X</h1>
-                        <p class="dashboard-subtitle">Detalle de respuestas gráficas.</p>
+                        <h1 class="dashboard-title" id="secTitulo" style="margin-top: 15px;">Área X</h1>
+                        <p class="dashboard-subtitle">Visualización de respuestas registradas.</p>
                     </div>
                 </div>
 
@@ -195,8 +206,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-
     <script src="js/admin.js"></script> 
 
 <script>
@@ -226,26 +235,25 @@
                         .trim();
         }
 
-        // ALIAS ESTRICTOS
         const aliasEstados = {
             "distrito federal": ["ciudad de mexico", "cdmx", "df", "capital", "delegacion"],
-            "ciudad de mexico": ["distrito federal", "cdmx", "df"], // Por si el GeoJSON es moderno
-            "mexico": ["estado de mexico", "edo mex", "edomex", "toluca", "naucalpan", "tlalnepantla", "ecatepec"], // Solo municipios o "estado de"
+            "ciudad de mexico": ["distrito federal", "cdmx", "df"],
+            "mexico": ["estado de mexico", "edo mex", "edomex", "toluca", "naucalpan", "tlalnepantla", "ecatepec"], 
             "veracruz": ["veracruz de ignacio de la llave"],
             "michoacan": ["michoacan de ocampo"],
             "coahuila": ["coahuila de zaragoza"]
         };
 
         // =========================================================
-        // LÓGICA DE COLORES TIPO SEMÁFORO (KPIs)
+        // LÓGICA DE COLORES TIPO SEMÁFORO (KPIs MAPA)
         // =========================================================
         function obtenerColor(d) {
-            return d > 10 ? '#198754' :  // VERDE FUERTE (Excelente - Más de 20)
-                   d > 7 ? '#20c997' :  // VERDE AGUA (Bueno - 11 a 20)
-                   d > 5  ? '#ffc107' :  // AMARILLO (Regular - 6 a 10)
-                   d > 2  ? '#fd7e14' :  // NARANJA (Bajo - 3 a 5)
-                   d > 0  ? '#dc3545' :  // ROJO (Crítico - 1 a 2 usuarios)
-                            'transparent'; // SIN DATOS (Se queda gris)
+            return d > 10 ? '#198754' :  
+                   d > 7 ? '#20c997' :  
+                   d > 5  ? '#ffc107' :  
+                   d > 2  ? '#fd7e14' :  
+                   d > 0  ? '#dc3545' :  
+                            'transparent'; 
         }
 
         function estiloEstado(feature) {
@@ -261,48 +269,28 @@
         try {
             const API_URL = 'https://api-cuestionario.onrender.com';
             
-            // A. Cargar Usuarios
             const resUsers = await fetch(`${API_URL}/api/ubicaciones`);
             const usuarios = await resUsers.json();
-
-            console.log("📍 [MAPA] Datos recibidos del API:", usuarios);
             
-            // B. Cargar Mapa
             const resGeo = await fetch('https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json');
             const datosMexico = await resGeo.json();
 
-            console.group("🗺️ DIAGNÓSTICO FINAL");
-
-            // C. Procesar
             datosMexico.features.forEach(estado => {
                 const nombreMapOriginal = estado.properties.name; 
                 const nombreMapLimpio = limpiar(nombreMapOriginal);
-                
                 let contador = 0;
 
                 usuarios.forEach(u => {
-                    // Detectar campo correcto (tus logs decían que es 'ubicacion')
                     const textoRaw = u.ubicacion || u.ubicacion_texto || u.direccion || "";
                     const ubicacionUser = limpiar(textoRaw);
-
                     let esMatch = false;
 
-                    // --- REGLA ESPECIAL PARA "MÉXICO" (EDOMEX) ---
-                    // Si el estado es "México", PROHIBIMOS la coincidencia directa
-                    // para evitar confundirlo con "Ciudad de México" o el país.
                     if (nombreMapLimpio === "mexico") {
-                        // Solo permitimos match si coincide con los ALIAS específicos (estado de mexico, edo mex, etc)
-                        // NO hacemos: if (ubicacionUser.includes("mexico"))
                         esMatch = false; 
-                    } 
-                    else {
-                        // Para el resto de estados (Puebla, Sonora, etc.) coincidencia normal
-                        if (ubicacionUser.includes(nombreMapLimpio)) {
-                            esMatch = true;
-                        }
+                    } else {
+                        if (ubicacionUser.includes(nombreMapLimpio)) esMatch = true;
                     }
 
-                    // --- REVISIÓN DE ALIAS (Aquí es donde entra el Edomex real) ---
                     if (!esMatch && aliasEstados[nombreMapLimpio]) {
                         const aliasLista = aliasEstados[nombreMapLimpio];
                         for (let alias of aliasLista) {
@@ -313,17 +301,12 @@
                         }
                     }
 
-                    if (esMatch) {
-                        contador++;
-                        // console.log(`✅ ${nombreMapOriginal} <== ${textoRaw}`);
-                    }
+                    if (esMatch) contador++;
                 });
 
                 estado.properties.cantidad_usuarios = contador;
             });
-            console.groupEnd();
 
-            // D. Dibujar
             const capaEstados = L.geoJson(datosMexico, {
                 style: estiloEstado,
                 onEachFeature: function(feature, layer) {
@@ -332,17 +315,13 @@
                     layer.bindPopup(`
                         <div style="text-align:center;">
                             <b style="color:#7c1225;">${feature.properties.name}</b><br>
-                            Usuarios: <b>${cant}</b>
+                            Instituciones evaluadas: <b>${cant}</b>
                         </div>
                     `);
 
                     layer.on({
-                        mouseover: function(e) {
-                            e.target.setStyle({ weight: 3, color: '#7c1225', fillOpacity: 0.9 });
-                        },
-                        mouseout: function(e) {
-                            capaEstados.resetStyle(e.target);
-                        }
+                        mouseover: function(e) { e.target.setStyle({ weight: 3, color: '#7c1225', fillOpacity: 0.9 }); },
+                        mouseout: function(e) { capaEstados.resetStyle(e.target); }
                     });
                 }
             }).addTo(map);
