@@ -1417,10 +1417,23 @@ async function cargarRespuestasPrevias(idUsuario) {
 
         if (data.vacio) return; 
 
-        // 🔥 NUEVO REFUERZO: Si el servidor dice que ya acabó, activamos candado a la fuerza
+        const response = await fetch(`${API_URL_SAVE}/respuestas-usuario/${idUsuario}`);
+        const data = await response.json();
+
+        console.log("📥 Datos recibidos del servidor:", data);
+
+        // 🔥 NUEVO: Guardamos el estado finalizado en una variable global para leerla arriba
         if (data.finalizado === 1 || data.finalizado === true) {
-            localStorage.setItem('encuestaFinalizada', '1');
-            activarModoSoloLectura();
+            console.warn("🚩 EL SERVIDOR INDICA QUE EL CUESTIONARIO YA FUE FINALIZADO.");
+            window.CUESTIONARIO_FINALIZADO_BD = true;
+            localStorage.setItem('encuestaFinalizada', '1'); // Forzamos sincronización local
+        } else {
+            window.CUESTIONARIO_FINALIZADO_BD = false;
+        }
+
+        if (data.vacio) {
+            console.log("ℹ️ El servidor indica que el usuario no tiene respuestas previas.");
+            return; 
         }
 
         console.log("Cargando datos previos...", data);
