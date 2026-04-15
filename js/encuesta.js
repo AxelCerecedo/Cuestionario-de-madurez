@@ -1665,14 +1665,13 @@ async function enviarFormulario(e) {
     }
 
     // =================================================================
-    // 🛑 0.5 VALIDACIÓN DE CAMPOS OBLIGATORIOS (BLOQUE FINAL CORREGIDO)
+    // 🛑 0.5 VALIDACIÓN DE CAMPOS OBLIGATORIOS
     // =================================================================
     
-    // A. LIMPIAR ERRORES PREVIOS VISUALES
     document.querySelectorAll('.error-borde').forEach(el => {
         el.classList.remove('error-borde');
         el.style.border = 'none'; 
-        el.style.padding = ''; // Restaurar padding original si es necesario
+        el.style.padding = ''; 
     });
 
     let erroresObligatorios = [];
@@ -1681,7 +1680,6 @@ async function enviarFormulario(e) {
     if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.preguntas) {
         CONFIG_SECCION.preguntas.forEach(p => {
             
-            // 1. ENCONTRAR CONTENEDOR
             let container = document.getElementById(`pregunta-container-${p.id}`);
             
             if (!container) {
@@ -1691,23 +1689,17 @@ async function enviarFormulario(e) {
                 }
             }
 
-            // 2. DESCARTAR SI NO EXISTE O ESTÁ OCULTO (display: none)
             if (!container || container.style.display === 'none' || getComputedStyle(container).display === 'none') {
                 return;
             }
 
-            // 🔥 🔥 🔥 NUEVO: ESCUDO ANTI-GRIS 🔥 🔥 🔥
-            // Si la pregunta tiene la clase de bloqueo visual, NO la validamos (aunque sea obligatoria)
             if (container.classList.contains('pregunta-deshabilitada')) {
-                return; // Salta esta pregunta y pasa a la siguiente
+                return; 
             }
-            // -----------------------------------------------------------
 
-            // 3. VALIDACIÓN DE OBLIGATORIEDAD
             if (p.obligatorio) {
                 let contestada = false;
 
-                // A. Checkbox / Radio / Catálogos / Booleanos
                 if (['catalogo_unico', 'catalogo_multiple', 'booleano', 'radio'].includes(p.tipo)) {
                     const hayInputs = container.querySelectorAll('input:checked').length > 0;
                     const select = container.querySelector('select');
@@ -1715,35 +1707,28 @@ async function enviarFormulario(e) {
 
                     if (hayInputs || haySelect) contestada = true;
                 }
-                // B. Matrices
                 else if (p.tipo && p.tipo.includes('matriz')) {
                     const radios = container.querySelectorAll('input[type="radio"]:checked');
                     const selects = Array.from(container.querySelectorAll('select.input-matriz-celda')).filter(s => s.value !== '');
                     
                     if (radios.length > 0 || selects.length > 0) contestada = true;
-                    // Si es tabla vacía dinámica, podría considerarse no contestada
                     if (!container.querySelector('table') && p.tipo === 'matriz_dinamica') contestada = false; 
                 }
-                // C. Catálogo Tabla
                 else if (p.tipo === 'catalogo_tabla') {
                      if (container.querySelectorAll('input:checked').length > 0) contestada = true;
                 }
-                // D. Liga Múltiple
                 else if (p.tipo === 'liga_multiple') {
                      const inputsTexto = Array.from(container.querySelectorAll('input[type="text"]')).filter(i => i.value.trim() !== '');
                      const ningunCheck = container.querySelector('.input-ninguno-manual:checked');
                      if (inputsTexto.length > 0 || ningunCheck) contestada = true;
                 }
-                // E. Texto / Fecha / Número / Textarea (INCLUYE PARCHE PARA FECHA FLEXIBLE)
                 else {
                     const inputs = container.querySelectorAll('input, textarea, select');
                     for (let inp of inputs) {
-                        // 1. Inputs normales con texto
                         if (inp.type !== 'hidden' && inp.value && inp.value.trim() !== '') {
                             contestada = true;
                             break;
                         }
-                        // 2. 🔥 EXCEPCIÓN: Input Hidden de Rango/Fecha Flexible (que sí tiene valor)
                         if (inp.type === 'hidden' && (inp.dataset.tipo === 'rango_flexible' || inp.dataset.tipo === 'fecha_flexible') && inp.value !== '') {
                             contestada = true;
                             break;
@@ -1751,10 +1736,8 @@ async function enviarFormulario(e) {
                     }
                 }
 
-                // SI NO SE CONTESTÓ, MARCAR ERROR
                 if (!contestada) {
                     erroresObligatorios.push(p.texto);
-                    
                     container.style.border = "2px solid #dc3545"; 
                     container.style.borderRadius = "8px";
                     container.style.padding = "15px"; 
@@ -1766,7 +1749,6 @@ async function enviarFormulario(e) {
         });
     }
 
-    // SI HAY ERRORES, DETENER Y AVISAR
     if (erroresObligatorios.length > 0) {
         Swal.fire({
             icon: 'warning',
@@ -1780,33 +1762,29 @@ async function enviarFormulario(e) {
         }
         return; 
     }
+
     // =================================================================
-    // 🛑 1. VALIDACIÓN DE INTEGRIDAD (PADRE -> HIJOS)
+    // 🛑 1. VALIDACIÓN DE INTEGRIDAD
     // =================================================================
     const filasTabla = document.querySelectorAll('table tbody tr');
     let errorValidacion = false;
 
     for (const tr of filasTabla) {
-        // A. Checkbox Padre
         const checkPadre = tr.querySelector('td:first-child input[type="checkbox"]');
 
         if (checkPadre && checkPadre.checked) {
-            // B. Celda de Opciones
             const celdaHijos = tr.querySelector('td:last-child');
             const existenHijos = celdaHijos.querySelector('input[type="checkbox"]');
             
             if (existenHijos) {
                 const hijosMarcados = celdaHijos.querySelectorAll('input[type="checkbox"]:checked');
                 
-                // SI FALTA SELECCIONAR HIJOS
                 if (hijosMarcados.length === 0) {
                     const labelPadre = tr.querySelector('td:first-child label');
                     const textoPadre = labelPadre ? labelPadre.innerText.trim() : "la categoría";
                     
                     Toast.fire({
-                        icon: 'warning',
-                        title: 'Faltan detalles:',
-                        text: `Selecciona una opción para: "${textoPadre}"`
+                        icon: 'warning', title: 'Faltan detalles:', text: `Selecciona una opción para: "${textoPadre}"`
                     });
                     
                     checkPadre.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1817,9 +1795,7 @@ async function enviarFormulario(e) {
                     contenedorVisual.style.borderRadius = "5px";
                     contenedorVisual.style.padding = "5px";
                     
-                    setTimeout(() => { 
-                        contenedorVisual.style.border = "1px solid #eee"; 
-                    }, 4000);
+                    setTimeout(() => { contenedorVisual.style.border = "1px solid #eee"; }, 4000);
 
                     errorValidacion = true;
                     break; 
@@ -1831,17 +1807,15 @@ async function enviarFormulario(e) {
     if (errorValidacion) return;
 
     // =================================================================
-    // 🟢 2. RECOLECCIÓN DE DATOS (CORREGIDO)
+    // 🟢 2. RECOLECCIÓN DE DATOS
     // =================================================================
 
     const respuestasSimples = [];
     const respuestasMultiples = [];
     const listaContactos = [];
     
-    // 🔥 SOLUCIÓN: Definimos la lista AQUÍ ARRIBA para que siempre exista
     const tiposDirectos = ['texto', 'red_social', 'texto_con_id', 'rango_flexible', 'fecha_flexible', 'texto_largo', 'numero', 'fecha', 'direccion', 'liga', 'correo'];
 
-    // --- Inputs Simples ---
     document.querySelectorAll('.input-respuesta').forEach(input => {
         if (!input.dataset.idPregunta) return; 
 
@@ -1852,11 +1826,9 @@ async function enviarFormulario(e) {
             const idPregunta = input.dataset.idPregunta;
             let valorFinal = input.value;
             
-            // Si es rango de fechas, tomamos el valor compuesto
             if (input.dataset.rangoValor) valorFinal = input.dataset.rangoValor;
 
             let textoExtra = null;
-            // Recuperar texto "Especifique" si es opción única
             if (input.dataset.tipo === 'opcion_unica' && input.value) {
                  const inputSpec = document.querySelector(`.input-especificar[data-id-pregunta="${idPregunta}"]`);
                  if (inputSpec && inputSpec.style.display !== 'none') textoExtra = inputSpec.value;
@@ -1869,7 +1841,6 @@ async function enviarFormulario(e) {
                 idOpcionParaEnviar = input.dataset.idOpcion; 
             }
 
-            // Aquí es donde te daba el error antes. Ahora ya funcionará porque 'tiposDirectos' está definida arriba.
             respuestasSimples.push({ 
                 id_pregunta: idPregunta, 
                 valor_texto: (tiposDirectos.includes(input.dataset.tipo)) ? valorFinal : textoExtra, 
@@ -1878,12 +1849,10 @@ async function enviarFormulario(e) {
         }
     });
 
-    // --- Ninguno Manual ---
     document.querySelectorAll('.input-ninguno-manual:checked').forEach(chk => {
         respuestasSimples.push({ id_pregunta: chk.dataset.idPregunta, valor_texto: "Ninguno", id_opcion: chk.dataset.idOpcion });
     });
 
-    // --- Múltiples ---
     document.querySelectorAll('.input-multiple:checked').forEach(chk => {
         const idPregunta = chk.dataset.idPregunta;
         let textoExtra = null;
@@ -1900,7 +1869,6 @@ async function enviarFormulario(e) {
         }
     });
 
-    // --- Limpieza Otros ---
     document.querySelectorAll('.input-especificar-multiple').forEach(inputSpec => {
         const parentDiv = inputSpec.closest('.opcion-item') || inputSpec.closest('div') || inputSpec.closest('td');
         if (parentDiv) {
@@ -1911,7 +1879,6 @@ async function enviarFormulario(e) {
         }
     });
 
-    // --- Matriz ---
     const respuestasMatriz = [];
     document.querySelectorAll('.input-matriz-celda').forEach(select => {
         if (select.value) respuestasMatriz.push({ id_pregunta: select.dataset.idPregunta, id_fila: select.dataset.idFila, id_columna: select.dataset.idColumna, valor: select.value });
@@ -1920,24 +1887,20 @@ async function enviarFormulario(e) {
         respuestasMatriz.push({ id_pregunta: radio.dataset.idPregunta, id_fila: radio.dataset.idFila, id_columna: radio.dataset.idColumna, valor: radio.value });
     });
 
-    // --- Contactos ---
     const filasContactos = document.querySelectorAll('#tablaContactos tbody tr');
     filasContactos.forEach(fila => {
         const nombre = fila.querySelector('.contacto-nombre').value;
-        // Solo guardamos si al menos puso el nombre
         if (nombre && nombre.trim() !== '') {
             listaContactos.push({
                 nombre: nombre,
                 cargo: fila.querySelector('.contacto-cargo').value,
                 correo: fila.querySelector('.contacto-correo').value,
-                // Guardamos los dos teléfonos con claves distintas
                 telefono_inst: fila.querySelector('.contacto-tel-inst').value,
                 telefono_otro: fila.querySelector('.contacto-tel-otro').value
             });
         }
     });
 
-    // --- IDs Activos ---
     const idsMatricesActivas = [];
     const idsMultiplesActivas = [];
     if (typeof CONFIG_SECCION !== 'undefined') {
@@ -1969,28 +1932,24 @@ async function enviarFormulario(e) {
             didOpen: () => Swal.showLoading()
         });
 
-        // Asegúrate que API_URL_SAVE está definida en tu encuesta.js o config global
-        // Si no, reemplaza por 'https://api-cuestionario.onrender.com/api'
-        const response = await fetch(`${API_URL_SAVE}/guardar-encuesta`, {
+        // =========================================================
+        // ⚠️ AQUÍ ESTABA EL ERROR: Solo declaramos response UNA VEZ
+        // =========================================================
+        const fetchResponse = await fetch(`${API_URL_SAVE}/guardar-encuesta`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(datos)
         });
         
-        const result = await response.json();
+        const result = await fetchResponse.json();
         
-        if(response.ok) {
-            
-            // =========================================================
-            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN Y CANDADO
-            // =========================================================
+        if(fetchResponse.ok) {
             
             if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
-                // CASO: SECCIÓN FINAL (SERVICIOS)
                 
                 Swal.fire({
                     title: '¡Cuestionario Completado!',
-                    text: 'Procesando tus respuestas...',
+                    html: 'Procesando tus respuestas y generando el reporte final...<br><br><b>Por favor, no cierres la ventana.</b>',
                     allowOutsideClick: false,
                     showConfirmButton: false,
                     didOpen: () => { Swal.showLoading(); }
@@ -1999,47 +1958,41 @@ async function enviarFormulario(e) {
                 try {
                     const baseURL = typeof API_URL !== 'undefined' ? API_URL : API_URL_SAVE.replace('/api', '');
                     
-                    // 🔒 1. AQUÍ ESTÁ TU CANDADO EN BD (Llamada a la API para cerrar)
+                    // 🔒 CANDADO EN SERVIDOR (Llamada limpia)
                     await fetch(`${baseURL}/finalizar-cuestionario`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id_usuario: idUsuario })
                     });
                     
-                    // 🔒 2. AQUÍ ESTÁ TU BLOQUEO LOCAL (El que lee el navegador)
+                    // 🔒 CANDADO LOCAL INFALIBLE
                     localStorage.setItem('encuestaFinalizada', '1');
-
-                    // 3. Redirigir al resumen inmediatamente
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
 
                 } catch (errFin) {
-                    console.error("Error en el proceso final:", errFin);
-                    // Incluso si falla la red, ponemos el candado local por seguridad
+                    console.error("Error cerrando cuestionario (Red):", errFin);
                     localStorage.setItem('encuestaFinalizada', '1');
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
                 }
 
             } else {
-                // CASO: SECCIÓN NORMAL (De la 1 a la 4)
-                await Swal.fire({
-                    icon: 'success', title: '¡Guardado!', timer: 1000, showConfirmButton: false
-                });
+                // CASO: SECCIÓN NORMAL
+                await Swal.fire({ icon: 'success', title: '¡Guardado!', timer: 1000, showConfirmButton: false });
 
                 if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
                     window.location.href = CONFIG_SECCION.siguiente;
+                } else {
+                    Swal.fire('¡Listo!', 'Proceso completado.', 'success');
                 }
             }
 
         } else {
-            // Error devuelto por el servidor al intentar guardar
             Swal.fire('Error', result.error || 'No se pudo guardar la información.', 'error');
         }
     } catch (error) {
-        // Error de conexión (Fetch falló)
-        console.error(error);
+        console.error("Error enviando formulario:", error);
         Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
     }
-
 }
 
 // =========================================================
