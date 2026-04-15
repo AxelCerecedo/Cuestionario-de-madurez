@@ -626,6 +626,11 @@ app.get('/respuestas-usuario/:id_usuario', async (req, res) => {
         
         const idInstitucion = inst[0].id_institucion;
 
+        // 🔥 NUEVO: Obtener el estatus de finalizado del usuario
+        // Asumiendo que tu tabla se llama usuarios_registrados y el id se llama id (ajusta si es diferente)
+        const [usuarioData] = await db.query('SELECT finalizado FROM usuarios_registrados WHERE id = ?', [id_usuario]);
+        const estatusFinalizado = usuarioData.length > 0 ? usuarioData[0].finalizado : 0;
+
         // 2. Traer respuestas simples
         const [simples] = await db.query('SELECT * FROM respuestas WHERE id_institucion = ?', [idInstitucion]);
 
@@ -642,8 +647,9 @@ app.get('/respuestas-usuario/:id_usuario', async (req, res) => {
             vacio: false,
             simples,
             multiples,
-            matriz,    // <--- Enviamos la matriz
-            contactos
+            matriz,    
+            contactos,
+            finalizado: estatusFinalizado // 🔥 ESTO ES LO QUE LE AVISA A ENCUESTA.JS QUE BLOQUEE TODO
         });
 
     } catch (error) {
