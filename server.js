@@ -627,38 +627,38 @@ app.get('/respuestas-usuario/:id_usuario', async (req, res) => {
         
         const idInstitucion = inst[0].id_institucion;
 
-        // 🔥 NUEVO: Bloque a prueba de fallos para buscar si ya finalizó
+        // =================================================================
+        // 🔥 EL ARREGLO ESTÁ AQUÍ: Buscar si el usuario ya finalizó
+        // =================================================================
         let estatusFinalizado = 0;
         try {
-            // OJO: Si tu columna llave primaria se llama 'id_usuario', cambia el 'WHERE id = ?' por 'WHERE id_usuario = ?'
+            // OJO: Asumimos que la columna de ID en usuarios_registrados es "id".
+            // Si en tu base de datos se llama "id_usuario", cambia el WHERE a "WHERE id_usuario = ?"
             const [usuarioData] = await db.query('SELECT finalizado FROM usuarios_registrados WHERE id = ?', [id_usuario]);
             if (usuarioData.length > 0) {
-                estatusFinalizado = usuarioData[0].finalizado;
+                estatusFinalizado = usuarioData[0].finalizado || 0;
             }
         } catch (errDB) {
             console.error("⚠️ Error SQL al buscar 'finalizado':", errDB.message);
-            // Si falla (por ejemplo, porque la columna no existe), no rompemos la app, solo asumimos que es 0
+            // No detenemos el servidor, solo mandamos 0
         }
 
-        // 2. Traer respuestas simples
+        // 2. Traer respuestas
         const [simples] = await db.query('SELECT * FROM respuestas WHERE id_institucion = ?', [idInstitucion]);
-
-        // 3. Traer respuestas múltiples
         const [multiples] = await db.query('SELECT * FROM respuestas_multiples WHERE id_institucion = ?', [idInstitucion]);
-
-        // 4. Traer respuestas de la matriz
         const [matriz] = await db.query('SELECT * FROM respuestas_matriz WHERE id_institucion = ?', [idInstitucion]);
-
-        // 5. Traer contactos
         const [contactos] = await db.query('SELECT * FROM contactos_institucion WHERE id_institucion = ?', [idInstitucion]);
 
+        // =================================================================
+        // 🔥 ENVIAR JSON COMPLETO AL FRONTEND
+        // =================================================================
         res.json({
             vacio: false,
             simples,
             multiples,
             matriz,    
             contactos,
-            finalizado: estatusFinalizado // Pasamos la variable segura
+            finalizado: estatusFinalizado // <-- ¡ESTO EVITARÁ QUE SE DESBLOQUEE AL INICIAR SESIÓN!
         });
 
     } catch (error) {
