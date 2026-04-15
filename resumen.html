@@ -209,7 +209,6 @@
             5: ["5. Servicios", "al Público"]
         };
         
-        // --- 1. ACTUALIZACIÓN: NOMBRES PRECISOS ---
         const NOMBRES_NIVELES = {
             1: "Incipiente",
             2: "Básico estructural",
@@ -218,7 +217,6 @@
             5: "Avanzado"
         };
 
-        // --- 2. NUEVO: DESCRIPCIONES DE LA RÚBRICA OFICIAL ---
         const DESCRIPCIONES_NIVELES = {
             1: "Operación reactiva, sin planeación ni procesos formales. Alta vulnerabilidad del acervo.",
             2: "Existen elementos declarativos y procesos mínimos, pero la aplicación es inconsistente.",
@@ -227,13 +225,12 @@
             5: "Mejora continua, estándares técnicos internacionales y estrategia integral de acceso abierto."
         };
 
-        // --- 3. ICONOS PARA DARLE VIDA AL REPORTE ---
         const ICONOS_NIVELES = {
-            1: "🛑", // Incipiente (Rojo)
-            2: "⚠️", // Básico (Naranja)
-            3: "🟡", // Intermedio (Amarillo)
-            4: "✅", // Consolidado (Verde Claro)
-            5: "🌟"  // Avanzado (Estrella/Verde Fuerte)
+            1: "🛑", 
+            2: "⚠️", 
+            3: "🟡", 
+            4: "✅", 
+            5: "🌟"  
         };
 
         let radarChartInstance = null;
@@ -291,25 +288,24 @@
                 
                 for (let numSec = 1; numSec <= 5; numSec++) {
                     const secIdStr = String(numSec);
-                    // Aseguramos que sea un número entero del 0 al 5
                     const puntajeObtenido = parseInt(data.secciones[secIdStr]) || 0; 
                     
                     labelsRadar.push(ETIQUETAS_RADAR[numSec]);
                     dataRadar.push(puntajeObtenido);
 
-                    let colorCuadrito = '#dc3545'; // Rojo por defecto
-                    if (puntajeObtenido === 5) colorCuadrito = '#198754'; // Verde Fuerte
-                    else if (puntajeObtenido === 4) colorCuadrito = '#28a745'; // Verde Claro
-                    else if (puntajeObtenido === 3) colorCuadrito = '#ffc107'; // Amarillo
-                    else if (puntajeObtenido === 2) colorCuadrito = '#fd7e14'; // Naranja
+                    let colorCuadrito = '#dc3545'; 
+                    if (puntajeObtenido === 5) colorCuadrito = '#198754'; 
+                    else if (puntajeObtenido === 4) colorCuadrito = '#28a745'; 
+                    else if (puntajeObtenido === 3) colorCuadrito = '#ffc107'; 
+                    else if (puntajeObtenido === 2) colorCuadrito = '#fd7e14'; 
 
                     const nombreNivelObtenido = NOMBRES_NIVELES[puntajeObtenido] || "Sin evaluar";
                     const descripcionObtenida = DESCRIPCIONES_NIVELES[puntajeObtenido] || "No se encontraron datos de evaluación para esta sección.";
                     const iconoObtenido = ICONOS_NIVELES[puntajeObtenido] || "❓";
 
-                    // Construimos el HTML combinando el Título Fuerte y la Descripción
+                    // 🔥 AQUÍ SE ELIMINÓ EL PUNTAJE: Solo muestra Nivel y Descripción
                     let recomendacionTexto = `
-                        ${iconoObtenido} <strong>Nivel: ${nombreNivelObtenido} (${puntajeObtenido} Pts)</strong>
+                        ${iconoObtenido} <strong>Nivel: ${nombreNivelObtenido}</strong>
                         ${descripcionObtenida}
                     `;
 
@@ -346,7 +342,6 @@
                     tbody.appendChild(trDetalle);
                 }
 
-                // DIBUJAR GRÁFICA
                 dibujarGraficaRadar(labelsRadar, dataRadar, colorBaseHex);
 
             } catch (error) { 
@@ -405,8 +400,9 @@
                             callbacks: {
                                 label: function(context) {
                                     const valor = context.raw;
-                                    const nombreNivel = NOMBRES_NIVELES[valor] || "Sin datos";
-                                    return ` Nivel ${valor}: ${nombreNivel}`;
+                                    const nombreNivel = NOMBRES_NIVELES[valor] || "Sin evaluar";
+                                    // 🔥 AQUÍ TAMBIÉN SE ELIMINÓ EL PUNTAJE DEL TOOLTIP
+                                    return ` Nivel: ${nombreNivel}`;
                                 }
                             }
                         }
