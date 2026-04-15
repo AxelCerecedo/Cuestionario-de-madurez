@@ -98,6 +98,13 @@
         .dashboard-right h3.titulo-seccion {
             display: none; 
         }
+        
+        /* Pequeño ajuste para el diseño del texto dentro del acordeón */
+        .contenido-detalle strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #222;
+        }
     </style>
 </head>
 <body>
@@ -194,7 +201,6 @@
             5: "Servicios al Público"
         };
 
-        // --- CORRECCIÓN AQUÍ: Se agregaron los números a la gráfica ---
         const ETIQUETAS_RADAR = {
             1: ["1. Gestión", "Institucional"],
             2: ["2. Recursos", "Humanos"],
@@ -203,12 +209,31 @@
             5: ["5. Servicios", "al Público"]
         };
         
+        // --- 1. ACTUALIZACIÓN: NOMBRES PRECISOS ---
         const NOMBRES_NIVELES = {
             1: "Incipiente",
             2: "Básico estructural",
             3: "Intermedio",
             4: "Consolidado",
             5: "Avanzado"
+        };
+
+        // --- 2. NUEVO: DESCRIPCIONES DE LA RÚBRICA OFICIAL ---
+        const DESCRIPCIONES_NIVELES = {
+            1: "Operación reactiva, sin planeación ni procesos formales. Alta vulnerabilidad del acervo.",
+            2: "Existen elementos declarativos y procesos mínimos, pero la aplicación es inconsistente.",
+            3: "Planeación funcional y personal con formación base. Financiamiento estable para operación básica.",
+            4: "Objetivos medibles, inventarios avanzados (70%+) y gestión activa de recursos.",
+            5: "Mejora continua, estándares técnicos internacionales y estrategia integral de acceso abierto."
+        };
+
+        // --- 3. ICONOS PARA DARLE VIDA AL REPORTE ---
+        const ICONOS_NIVELES = {
+            1: "🛑", // Incipiente (Rojo)
+            2: "⚠️", // Básico (Naranja)
+            3: "🟡", // Intermedio (Amarillo)
+            4: "✅", // Consolidado (Verde Claro)
+            5: "🌟"  // Avanzado (Estrella/Verde Fuerte)
         };
 
         let radarChartInstance = null;
@@ -266,28 +291,27 @@
                 
                 for (let numSec = 1; numSec <= 5; numSec++) {
                     const secIdStr = String(numSec);
-                    const puntajeObtenido = data.secciones[secIdStr] || 0; 
+                    // Aseguramos que sea un número entero del 0 al 5
+                    const puntajeObtenido = parseInt(data.secciones[secIdStr]) || 0; 
                     
                     labelsRadar.push(ETIQUETAS_RADAR[numSec]);
                     dataRadar.push(puntajeObtenido);
 
-                    let colorCuadrito = '#dc3545'; 
-                    if (puntajeObtenido >= 4) colorCuadrito = '#28a745'; 
-                    else if (puntajeObtenido >= 3) colorCuadrito = '#ffc107'; 
-                    else if (puntajeObtenido >= 2) colorCuadrito = '#fd7e14'; 
+                    let colorCuadrito = '#dc3545'; // Rojo por defecto
+                    if (puntajeObtenido === 5) colorCuadrito = '#198754'; // Verde Fuerte
+                    else if (puntajeObtenido === 4) colorCuadrito = '#28a745'; // Verde Claro
+                    else if (puntajeObtenido === 3) colorCuadrito = '#ffc107'; // Amarillo
+                    else if (puntajeObtenido === 2) colorCuadrito = '#fd7e14'; // Naranja
 
                     const nombreNivelObtenido = NOMBRES_NIVELES[puntajeObtenido] || "Sin evaluar";
+                    const descripcionObtenida = DESCRIPCIONES_NIVELES[puntajeObtenido] || "No se encontraron datos de evaluación para esta sección.";
+                    const iconoObtenido = ICONOS_NIVELES[puntajeObtenido] || "❓";
 
-                    let recomendacionTexto = "";
-                    if (puntajeObtenido >= 4) {
-                        recomendacionTexto = `✅ <b>Nivel ${nombreNivelObtenido}:</b> La institución cumple de manera sólida con los estándares esperados en esta área, demostrando planeación y control.`;
-                    } else if (puntajeObtenido === 3) {
-                        recomendacionTexto = `⚠️ <b>Nivel ${nombreNivelObtenido}:</b> La institución muestra avances y controles básicos, pero requiere mayor formalización y recursos para alcanzar sus objetivos.`;
-                    } else if (puntajeObtenido > 0) {
-                        recomendacionTexto = `🛑 <b>Nivel ${nombreNivelObtenido}:</b> Se han identificado carencias estructurales. Se recomienda implementar un plan de acción prioritario para establecer procesos formales.`;
-                    } else {
-                        recomendacionTexto = "No se encontraron datos de evaluación para esta sección.";
-                    }
+                    // Construimos el HTML combinando el Título Fuerte y la Descripción
+                    let recomendacionTexto = `
+                        ${iconoObtenido} <strong>Nivel: ${nombreNivelObtenido} (${puntajeObtenido} Pts)</strong>
+                        ${descripcionObtenida}
+                    `;
 
                     const trPrincipal = document.createElement('tr');
                     trPrincipal.className = 'fila-seccion';
@@ -312,7 +336,7 @@
                     trDetalle.className = 'fila-detalle';
                     trDetalle.innerHTML = `
                         <td colspan="2" style="padding: 0; border: none;">
-                            <div class="contenido-detalle" style="padding: 15px; font-size: 0.9rem; line-height: 1.4; color: #444; background: #fafafa; text-align: justify; border-left: 3px solid ${colorCuadrito};">
+                            <div class="contenido-detalle" style="padding: 15px; font-size: 0.9rem; line-height: 1.4; color: #444; background: #fafafa; text-align: justify; border-left: 4px solid ${colorCuadrito};">
                                 ${recomendacionTexto}
                             </div>
                         </td>
@@ -382,7 +406,7 @@
                                 label: function(context) {
                                     const valor = context.raw;
                                     const nombreNivel = NOMBRES_NIVELES[valor] || "Sin datos";
-                                    return ` Puntaje: ${valor} - ${nombreNivel}`;
+                                    return ` Nivel ${valor}: ${nombreNivel}`;
                                 }
                             }
                         }
