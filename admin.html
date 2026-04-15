@@ -46,7 +46,6 @@
             background-color: #f4f4f4;
         }
 
-        /* Ajustes para el KPI de nivel en el dashboard */
         .kpi-nivel-tag {
             font-size: 0.85em;
             padding: 5px 12px;
@@ -55,6 +54,58 @@
             color: white;
             display: inline-block;
             margin-top: 5px;
+        }
+
+        /* 🔥 NUEVO: Estilos para el botón de exportar y la cabecera de institución */
+        .btn-exportar {
+            background-color: #198754; 
+            color: white; 
+            border: none; 
+            padding: 10px 18px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-family: 'Inter', sans-serif; 
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(25, 135, 84, 0.2);
+        }
+        .btn-exportar:hover {
+            background-color: #157347;
+            transform: translateY(-2px);
+        }
+
+        .perfil-institucion-card {
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 25px; 
+            align-items: stretch; 
+            background: white; 
+            padding: 25px 30px; 
+            border-radius: 12px; 
+            border: 1px solid #eaeaea; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            margin-bottom: 25px;
+        }
+
+        .perfil-kpi-box {
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: #f8f9fa; 
+            padding: 20px 35px; 
+            border-radius: 12px; 
+            border: 1px solid #e9ecef; 
+            min-width: 180px; 
+            text-align: center; 
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            .perfil-institucion-card { flex-direction: column; }
+            .perfil-kpi-box { width: 100%; }
         }
     </style>
 </head>
@@ -76,7 +127,7 @@
 
         <div class="header-center">
             <h1 class="header-title">Panel de Auditoría y Resultados</h1> 
-            <p class="header-subtitle">Modelo de evaluación de madurez en gestión de acervos.</p>
+            <p class="header-subtitle">Modelo de evaluación de madurez en gestión de acervos (5 Secciones)</p>
         </div>
 
         <div class="header-right">
@@ -154,27 +205,33 @@
             </div>
 
            <div id="vistaInstitucion" class="view-section">
-                <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                
+                <div class="perfil-institucion-card">
                     
-                    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 15px;">
-                        <div>
-                            <h1 class="dashboard-title" id="instTitulo" style="margin-bottom: 5px;">Nombre Institución</h1>
-                            <p class="dashboard-subtitle" style="margin-top: 0;">Análisis de cada sección de la rúbrica.</p>
-                        </div>
+                    <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; justify-content: center;">
+                        <h1 class="dashboard-title" id="instTitulo" style="margin-bottom: 5px; font-size: 1.8em;">Nombre Institución</h1>
+                        <p class="dashboard-subtitle" style="margin-top: 0; margin-bottom: 20px;">Análisis detallado de madurez (5 secciones)</p>
                         
-                        <button onclick="descargarCSVInstitucion()" style="background-color: #198754; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; transition: background 0.2s;">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                            </svg>
-                            Exportar Datos (CSV)
-                        </button>
+                        <div>
+                            <button onclick="descargarCSVInstitucion()" class="btn-exportar">
+                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                </svg>
+                                Exportar Datos (CSV)
+                            </button>
+                        </div>
                     </div>
                     
-                    <div style="text-align: right; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eaeaea;">
-                        <span style="font-size: 0.8em; color: #666; font-weight: bold; text-transform: uppercase;">Promedio General</span><br>
-                        <span class="kpi-val" id="instPuntaje" style="color: var(--primary); font-size: 2em;">0.0</span> <span style="font-size: 0.9em; color:#999;">/ 5</span><br>
-                        <span id="instNivel" class="kpi-nivel-tag" style="background-color: #6c757d;">--</span>
+                    <div class="perfil-kpi-box">
+                        <span style="font-size: 0.8em; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Promedio General</span>
+                        
+                        <div style="display: flex; align-items: baseline; gap: 4px;">
+                            <span class="kpi-val" id="instPuntaje" style="color: var(--primary); font-size: 2.8em; line-height: 1;">0.0</span>
+                            <span style="font-size: 1.1em; color: #999; font-weight: 600;">/ 5</span>
+                        </div>
+                        
+                        <span id="instNivel" class="kpi-nivel-tag" style="background-color: #6c757d; margin-top: 8px; padding: 6px 14px; font-size: 0.85em;">--</span>
                     </div>
                 </div>
 
@@ -184,17 +241,16 @@
                 </div>
 
                 <h3 style="color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">Auditar Respuestas por Área</h3>
-                <div id="gridSecciones" class="sections-nav-grid">
-                    </div>
+                <div id="gridSecciones" class="sections-nav-grid"></div>
             </div>
 
             <div id="vistaDetalleSeccion" class="view-section">
                 <div class="dashboard-header">
                     <div>
-                        <button class="btn-back" onclick="volverADashboardInst()">
+                        <button class="btn-back" onclick="volverADashboardInst()" style="background:none; border:none; color:var(--primary); font-weight:600; font-size:1em; cursor:pointer; padding:0; margin-bottom:10px;">
                             ⬅ Volver al Perfil de la Institución
                         </button>
-                        <h1 class="dashboard-title" id="secTitulo" style="margin-top: 15px;">Área X</h1>
+                        <h1 class="dashboard-title" id="secTitulo" style="margin-top: 5px;">Área X</h1>
                         <p class="dashboard-subtitle">Visualización de respuestas registradas.</p>
                     </div>
                 </div>
@@ -210,7 +266,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
-        // 1. Configuración Básica
         const mapContainer = document.getElementById('mapaUsuarios');
         if(!mapContainer.style.height) mapContainer.style.height = "500px";
 
@@ -222,10 +277,6 @@
             maxZoom: 19
         }).addTo(map);
 
-        // =========================================================
-        // 2. HERRAMIENTAS DE LIMPIEZA
-        // =========================================================
-        
         function limpiar(texto) {
             if (!texto) return "";
             return texto.toLowerCase()
@@ -244,9 +295,6 @@
             "coahuila": ["coahuila de zaragoza"]
         };
 
-        // =========================================================
-        // LÓGICA DE COLORES TIPO SEMÁFORO (KPIs MAPA)
-        // =========================================================
         function obtenerColor(d) {
             return d > 10 ? '#198754' :  
                    d > 7 ? '#20c997' :  
@@ -263,9 +311,6 @@
             };
         }
 
-        // =========================================================
-        // 3. LÓGICA DE CRUCE (CON FILTRO ANTI-EDOMEX)
-        // =========================================================
         try {
             const API_URL = 'https://api-cuestionario.onrender.com';
             
