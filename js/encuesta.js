@@ -1,17 +1,23 @@
 // js/encuesta.js
 
+// js/encuesta.js
+
 const API_URL_SAVE = 'https://api-cuestionario.onrender.com'; 
 
 document.addEventListener('DOMContentLoaded', async function() { 
-    
+    console.group("🚀 INICIANDO CUESTIONARIO");
+    console.log("1. DOM Cargado. Verificando usuario...");
+
     // 1. VERIFICAR USUARIO
     const idUsuario = localStorage.getItem('idUsuario');
     const nombreUsuario = localStorage.getItem('nombreUsuario');
     
     if (!idUsuario) {
+        console.warn("❌ No hay usuario. Redirigiendo a login.");
         window.location.href = 'login.html';
         return;
     }
+    console.log(`👤 Usuario detectado: ${nombreUsuario} (ID: ${idUsuario})`);
 
     // 2. BIENVENIDA
     const divBienvenida = document.getElementById('mensajeBienvenida');
@@ -21,48 +27,58 @@ document.addEventListener('DOMContentLoaded', async function() {
         divBienvenida.style.display = 'block';
     }
 
-    // 3. CONFIGURAR UI (Botones atrás/cerrar sesión)
+    // 3. CONFIGURAR UI
     if (typeof configurarBotonesNavegacion === 'function') {
         configurarBotonesNavegacion();
     }
 
-    // 4. CARGAR ESTRUCTURA DE PREGUNTAS (Dibuja el HTML)
+    // 4. CARGAR ESTRUCTURA DE PREGUNTAS (Dibuja el HTML vacío)
+    console.log("2. Dibujando estructura HTML del cuestionario local...");
     cargarCuestionarioLocal();
 
-    // 5. RECUPERAR PROGRESO (Llena los inputs con datos)
+    // 5. RECUPERAR PROGRESO (Llena los inputs con datos de la BD)
+    console.log("3. Obteniendo respuestas previas de la BD...");
     await cargarRespuestasPrevias(idUsuario); 
 
-    // --- REFRESCAR MATRICES SI HAY DATOS PREVIOS ---
+    // --- REFRESCAR MATRICES ---
     const inputsOrigenActivados = document.querySelectorAll('.input-multiple:checked');
     if (inputsOrigenActivados.length > 0) {
         inputsOrigenActivados[0].dispatchEvent(new Event('change'));
     }
 
-    // 6. INICIALIZAR LÓGICA CONDICIONAL (SI/NO -> OCULTAR/MOSTRAR)
-    // Usamos un try-catch para que si esta función falla, NO detenga el resto del código
+    // 6. INICIALIZAR LÓGICA CONDICIONAL
     try {
         if (typeof inicializarLogicaCondicional === 'function') {
             inicializarLogicaCondicional();
-        } else {
-            console.warn("⚠️ La función 'inicializarLogicaCondicional' no está definida. Copia el código al final del archivo.");
         }
     } catch (e) {
         console.error("Error al iniciar lógica condicional:", e);
     }
 
-    // 7. VERIFICAR SI ESTÁ FINALIZADA (MODO LECTURA)
-    const estaFinalizada = localStorage.getItem('encuestaFinalizada');
-    if (estaFinalizada === '1') {
-        activarModoSoloLectura();
-    }
-    
-    // 8. EVENTO SUBMIT (ESTO ACTIVA LAS VALIDACIONES ROJAS)
+    // 7. EVENTO SUBMIT
     const form = document.getElementById('formularioDinamico');
     if (form) {
         form.addEventListener('submit', enviarFormulario);
-    } else {
-        console.error("❌ No se encontró el formulario #formularioDinamico");
     }
+
+    // =====================================================================
+    // 🔥 8. VERIFICAR CANDADO (CRÍTICO: SE EJECUTA HASTA EL FINAL)
+    // =====================================================================
+    console.log("4. Verificando estado del candado...");
+    const estaFinalizadaLocal = localStorage.getItem('encuestaFinalizada');
+    const estaFinalizadaGlobal = window.CUESTIONARIO_FINALIZADO_BD; // Variable que crearemos abajo
+    
+    console.log(`   -> Candado Local (localStorage): ${estaFinalizadaLocal}`);
+    console.log(`   -> Candado Servidor (BD): ${estaFinalizadaGlobal}`);
+
+    if (estaFinalizadaLocal === '1' || estaFinalizadaGlobal === true) {
+        console.warn("🔒 SE DETECTÓ CUESTIONARIO FINALIZADO. APLICANDO CANDADO.");
+        activarModoSoloLectura();
+    } else {
+        console.log("🔓 Cuestionario abierto para edición.");
+    }
+    
+    console.groupEnd();
 });
 
 // =========================================================
