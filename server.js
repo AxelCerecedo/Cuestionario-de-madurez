@@ -613,6 +613,7 @@ app.get('/preguntas/:seccion', async (req, res) => {
 // =========================================================
 // RUTA: RECUPERAR DATOS DEL USUARIO (GET)
 // =========================================================
+
 app.get('/respuestas-usuario/:id_usuario', async (req, res) => {
     try {
         const { id_usuario } = req.params;
@@ -626,10 +627,18 @@ app.get('/respuestas-usuario/:id_usuario', async (req, res) => {
         
         const idInstitucion = inst[0].id_institucion;
 
-        // 🔥 NUEVO: Obtener el estatus de finalizado del usuario
-        // Asumiendo que tu tabla se llama usuarios_registrados y el id se llama id (ajusta si es diferente)
-        const [usuarioData] = await db.query('SELECT finalizado FROM usuarios_registrados WHERE id = ?', [id_usuario]);
-        const estatusFinalizado = usuarioData.length > 0 ? usuarioData[0].finalizado : 0;
+        // 🔥 NUEVO: Bloque a prueba de fallos para buscar si ya finalizó
+        let estatusFinalizado = 0;
+        try {
+            // OJO: Si tu columna llave primaria se llama 'id_usuario', cambia el 'WHERE id = ?' por 'WHERE id_usuario = ?'
+            const [usuarioData] = await db.query('SELECT finalizado FROM usuarios_registrados WHERE id = ?', [id_usuario]);
+            if (usuarioData.length > 0) {
+                estatusFinalizado = usuarioData[0].finalizado;
+            }
+        } catch (errDB) {
+            console.error("⚠️ Error SQL al buscar 'finalizado':", errDB.message);
+            // Si falla (por ejemplo, porque la columna no existe), no rompemos la app, solo asumimos que es 0
+        }
 
         // 2. Traer respuestas simples
         const [simples] = await db.query('SELECT * FROM respuestas WHERE id_institucion = ?', [idInstitucion]);
@@ -637,7 +646,7 @@ app.get('/respuestas-usuario/:id_usuario', async (req, res) => {
         // 3. Traer respuestas múltiples
         const [multiples] = await db.query('SELECT * FROM respuestas_multiples WHERE id_institucion = ?', [idInstitucion]);
 
-        // 4. Traer respuestas de la matriz (NUEVO)
+        // 4. Traer respuestas de la matriz
         const [matriz] = await db.query('SELECT * FROM respuestas_matriz WHERE id_institucion = ?', [idInstitucion]);
 
         // 5. Traer contactos
@@ -649,7 +658,7 @@ app.get('/respuestas-usuario/:id_usuario', async (req, res) => {
             multiples,
             matriz,    
             contactos,
-            finalizado: estatusFinalizado // 🔥 ESTO ES LO QUE LE AVISA A ENCUESTA.JS QUE BLOQUEE TODO
+            finalizado: estatusFinalizado // Pasamos la variable segura
         });
 
     } catch (error) {
