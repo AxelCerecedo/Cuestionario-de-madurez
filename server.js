@@ -882,23 +882,27 @@ app.post('/finalizar-cuestionario', async (req, res) => {
 
 app.get('/api/ubicaciones', async (req, res) => {
     try {
-        const sql = `
+        // Ahora leemos directamente de la tabla donde guardas el registro inicial
+        // (Ajusta el nombre de la tabla y las columnas si en tu BD se llaman distinto)
+        const [ubicaciones] = await db.query(`
             SELECT 
-                u.nombre_completo AS nombre, 
-                u.ubicacion_texto AS ubicacion, 
-                u.latitud, 
+                u.id AS id_usuario,
+                u.nombre AS nombre_usuario,
+                u.ubicacion AS ubicacion_texto,
+                u.latitud,
                 u.longitud,
-                COALESCE(i.puntaje_total, 0) AS puntaje
+                u.institucion
             FROM usuarios_registrados u
-            LEFT JOIN instituciones i ON u.id = i.id_usuario
-            WHERE u.latitud IS NOT NULL AND u.latitud != ''
-        `;
-        
-        const [usuarios] = await db.query(sql);
-        res.json(usuarios);
+            WHERE u.ubicacion IS NOT NULL AND u.ubicacion != ''
+        `);
+
+        // Si tienes las coordenadas (latitud, longitud), el mapa las podrá usar directamente si quieres,
+        // o usar el "ubicacion_texto" para el cruce de estados como lo tienes actualmente.
+
+        res.json(ubicaciones);
     } catch (error) {
-        console.error("Error al obtener mapa:", error);
-        res.status(500).json({ error: 'Error interno' });
+        console.error("Error al obtener ubicaciones de registro:", error);
+        res.status(500).json({ error: "Error al cargar ubicaciones" });
     }
 });
 

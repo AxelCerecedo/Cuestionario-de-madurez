@@ -289,7 +289,7 @@
         const aliasEstados = {
             "distrito federal": ["ciudad de mexico", "cdmx", "df", "capital", "delegacion"],
             "ciudad de mexico": ["distrito federal", "cdmx", "df"],
-            "mexico": ["estado de mexico", "edo mex", "edomex", "toluca", "naucalpan", "tlalnepantla", "ecatepec"], 
+            "mexico": ["estado de mexico", "edo mex", "edomex", "toluca", "naucalpan", "tlalnepantla", "ecatepec", "texcoco", "chalco", "nezahualcoyotl"], 
             "veracruz": ["veracruz de ignacio de la llave"],
             "michoacan": ["michoacan de ocampo"],
             "coahuila": ["coahuila de zaragoza"]
@@ -314,28 +314,36 @@
         try {
             const API_URL = 'https://api-cuestionario.onrender.com';
             
+            // 1. OBTENEMOS LAS UBICACIONES (Ahora vienen del Registro de Usuarios)
             const resUsers = await fetch(`${API_URL}/api/ubicaciones`);
-            const usuarios = await resUsers.json();
+            const usuariosRegistrados = await resUsers.json();
             
+            // 2. OBTENEMOS EL MAPA GEOJSON
             const resGeo = await fetch('https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json');
             const datosMexico = await resGeo.json();
 
+            // 3. CRUZAR DATOS (Registro -> Mapa)
             datosMexico.features.forEach(estado => {
                 const nombreMapOriginal = estado.properties.name; 
                 const nombreMapLimpio = limpiar(nombreMapOriginal);
                 let contador = 0;
 
-                usuarios.forEach(u => {
-                    const textoRaw = u.ubicacion || u.ubicacion_texto || u.direccion || "";
+                usuariosRegistrados.forEach(u => {
+                    // Ahora usamos el campo "ubicacion_texto" que configuramos en server.js
+                    const textoRaw = u.ubicacion_texto || "";
                     const ubicacionUser = limpiar(textoRaw);
+                    
                     let esMatch = false;
 
+                    // Filtro especial anti-confusión para el Estado de México vs País México
                     if (nombreMapLimpio === "mexico") {
                         esMatch = false; 
                     } else {
+                        // Coincidencia directa con el nombre del estado (ej. "Puebla", "Sonora")
                         if (ubicacionUser.includes(nombreMapLimpio)) esMatch = true;
                     }
 
+                    // Búsqueda por alias (ej. CDMX, Edo Mex)
                     if (!esMatch && aliasEstados[nombreMapLimpio]) {
                         const aliasLista = aliasEstados[nombreMapLimpio];
                         for (let alias of aliasLista) {
@@ -346,33 +354,45 @@
                         }
                     }
 
+                    // Si encontró el estado en la dirección ingresada durante el registro, suma 1
                     if (esMatch) contador++;
                 });
 
                 estado.properties.cantidad_usuarios = contador;
             });
 
+            // 4. DIBUJAR MAPA Y ASIGNAR COLORES
             const capaEstados = L.geoJson(datosMexico, {
                 style: estiloEstado,
                 onEachFeature: function(feature, layer) {
                     const cant = feature.properties.cantidad_usuarios;
                     
-                    layer.bindPopup(`
-                        <div style="text-align:center;">
-                            <b style="color:#7c1225;">${feature.properties.name}</b><br>
-                            Instituciones evaluadas: <b>${cant}</b>
-                        </div>
-                    `);
+                    // Solo mostramos información si hay al menos 1 institución
+                    const infoHTML = cant > 0 
+                        ? `<b style="color:#7c1225;">${feature.properties.name}</b><br>Instituciones registradas: <b style="font-size:1.2em;">${cant}</b>`
+                        : `<b style="color:#666;">${feature.properties.name}</b><br><span style="color:#999; font-size:0.9em;">Sin registros aún</span>`;
+
+                    layer.bindPopup(`<div style="text-align:center; padding:5px;">${infoHTML}</div>`);
 
                     layer.on({
-                        mouseover: function(e) { e.target.setStyle({ weight: 3, color: '#7c1225', fillOpacity: 0.9 }); },
-                        mouseout: function(e) { capaEstados.resetStyle(e.target); }
+                        mouseover: function(e) { 
+                            e.target.setStyle({ weight: 3, color: '#7c1225', fillOpacity: 0.9 }); 
+                        },
+                        mouseout: function(e) { 
+                            capaEstados.resetStyle(e.target); 
+                        }
                     });
                 }
             }).addTo(map);
 
         } catch (error) {
-            console.error("Error mapa:", error);
+            console.error("Error cargando el mapa de densidad:", error);
+            document.getElementById('mapaUsuarios').innerHTML = `
+                <div style="display:flex; justify-content:center; align-items:center; height:100%; color:#dc3545; flex-direction:column;">
+                    <i class="fas fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
+                    <span>No se pudo cargar el mapa. Verifica tu conexión.</span>
+                </div>
+            `;
         }
     });
 </script>
