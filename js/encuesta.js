@@ -1960,47 +1960,39 @@ async function enviarFormulario(e) {
         if(response.ok) {
             
             // =========================================================
-            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN Y CANDADO (SIN IA)
+            // 🔥 NUEVO: LÓGICA DE FINALIZACIÓN Y CANDADO
             // =========================================================
             
             if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.es_final) {
                 // CASO: SECCIÓN FINAL (SERVICIOS)
                 
-                // 1. Mostrar pantalla de carga general (Ya no menciona a la IA)
                 Swal.fire({
                     title: '¡Cuestionario Completado!',
-                    html: 'Procesando tus respuestas y generando el reporte final...<br><br><b>Por favor, no cierres la ventana.</b>',
+                    text: 'Procesando tus respuestas...',
                     allowOutsideClick: false,
                     showConfirmButton: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
+                    didOpen: () => { Swal.showLoading(); }
                 });
 
                 try {
                     const baseURL = typeof API_URL !== 'undefined' ? API_URL : API_URL_SAVE.replace('/api', '');
                     
-                    // ---------------------------------------------------------
-                    // 🔒 2. CANDADO EN SERVIDOR (Llamada a la API para cerrar)
-                    // ---------------------------------------------------------
+                    // 🔒 1. AQUÍ ESTÁ TU CANDADO EN BD (Llamada a la API para cerrar)
                     await fetch(`${baseURL}/finalizar-cuestionario`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id_usuario: idUsuario })
                     });
                     
-                    // ---------------------------------------------------------
-                    // 🔒 3. CANDADO LOCAL INFALIBLE
-                    // ---------------------------------------------------------
+                    // 🔒 2. AQUÍ ESTÁ TU BLOQUEO LOCAL (El que lee el navegador)
                     localStorage.setItem('encuestaFinalizada', '1');
 
-                    // 4. Redirigir al resumen inmediatamente
+                    // 3. Redirigir al resumen inmediatamente
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
 
                 } catch (errFin) {
-                    console.error("Error en el proceso final (Red):", errFin);
-                    
-                    // AUNQUE FALLE LA RED, PONEMOS EL CANDADO LOCAL POR SEGURIDAD
+                    console.error("Error en el proceso final:", errFin);
+                    // Incluso si falla la red, ponemos el candado local por seguridad
                     localStorage.setItem('encuestaFinalizada', '1');
                     window.location.href = CONFIG_SECCION.siguiente || 'resumen.html';
                 }
@@ -2008,17 +2000,11 @@ async function enviarFormulario(e) {
             } else {
                 // CASO: SECCIÓN NORMAL (De la 1 a la 4)
                 await Swal.fire({
-                    icon: 'success',
-                    title: '¡Guardado!',
-                    timer: 1000,
-                    showConfirmButton: false
+                    icon: 'success', title: '¡Guardado!', timer: 1000, showConfirmButton: false
                 });
 
-                // --- REDIRECCIÓN NORMAL ---
                 if (typeof CONFIG_SECCION !== 'undefined' && CONFIG_SECCION.siguiente) {
                     window.location.href = CONFIG_SECCION.siguiente;
-                } else {
-                    Swal.fire('¡Listo!', 'Proceso completado.', 'success');
                 }
             }
 
