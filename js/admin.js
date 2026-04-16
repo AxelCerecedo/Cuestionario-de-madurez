@@ -152,36 +152,53 @@ function renderizarVistaGlobal() {
 }
 
 // =========================================================
-// 4. LISTA Y DASHBOARD
+// 4. LISTA Y DASHBOARD (ACTUALIZADA: FILTRADA POR ADMINS)
 // =========================================================
 async function cargarListaUsuarios() {
+    // Definimos los correos que NO deben aparecer en la lista
+    const ADMIN_EMAILS = [
+        'jcf_fcg@cultura.gob.mx', 
+        'alberto.colef@gmail.com', 
+        'lunam.liliana.dgtic@gmail.com',
+        'asesordit11@cultura.gob.mx'
+    ];
+
     try {
         const res = await fetch(`${API_URL}/admin/instituciones`);
         const lista = await res.json();
-        console.log("4. Lista de usuarios:", lista);
         
         const ul = document.getElementById('listaUsuarios');
         ul.innerHTML = '';
 
-        lista.forEach(inst => {
+        // Filtrar la lista para quitar a los administradores
+        const listaFiltrada = lista.filter(inst => !ADMIN_EMAILS.includes(inst.correo_contacto));
+
+        listaFiltrada.forEach(inst => {
             const li = document.createElement('li');
             li.className = 'user-item';
-            const iniciales = inst.nombre_usuario.substring(0,2).toUpperCase();
             
-            // Calculamos promedio si usamos 5 secciones
+            // Usamos el nombre de la institución en lugar del nombre de usuario
+            // Si el campo se llama distinto en tu BD, ajusta 'institucion_procedencia'
+            const nombreMostrar = inst.institucion_procedencia || inst.nombre_usuario || "Sin nombre";
+            const iniciales = nombreMostrar.substring(0, 2).toUpperCase();
+            
             const promInst = (inst.puntaje_total / 5).toFixed(1);
 
             li.innerHTML = `
                 <div class="avatar-circle">${iniciales}</div>
                 <div class="user-info">
-                    <span class="user-name">${inst.nombre_usuario}</span>
+                    <span class="user-name">${nombreMostrar}</span>
                     <span class="user-score">${promInst} / 5 pts</span>
                 </div>
             `;
             li.onclick = () => abrirDashboardInstitucion(inst, li);
             ul.appendChild(li);
         });
-    } catch(e) { console.error("Error lista usuarios:", e); }
+        
+        console.log(`4. Lista cargada: ${listaFiltrada.length} instituciones (admins ocultos)`);
+    } catch(e) { 
+        console.error("Error lista usuarios:", e); 
+    }
 }
 
 async function abrirDashboardInstitucion(inst, liElement) {
