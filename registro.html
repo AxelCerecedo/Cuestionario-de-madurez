@@ -329,7 +329,68 @@
                 console.error(error);
                 Swal.fire({ icon: 'error', title: 'Error de red', text: 'Sin conexión al servidor.', confirmButtonColor: '#7c1225' });
             }
+
+            const emailRecuperado = document.getElementById('email').value.trim();
+
+            try {
+                Swal.fire({ title: 'Creando cuenta...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                const response = await fetch(`${API_URL}/auth/registro`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    // Registro exitoso, ahora pedimos el código con un modal
+                    pedirCodigoVerificacion(emailRecuperado);
+                } else {
+                    const data = await response.json();
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.error });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Sin conexión.' });
+            }
+            
         });
+
+        async function pedirCodigoVerificacion(email) {
+    const { value: codigo } = await Swal.fire({
+        title: 'Verifica tu correo',
+        text: `Hemos enviado un código de 6 dígitos a ${email}`,
+        input: 'text',
+        inputPlaceholder: '000000',
+        allowOutsideClick: false,
+        confirmButtonText: 'Verificar',
+        confirmButtonColor: '#7c1225',
+        showLoaderOnConfirm: true,
+        preConfirm: async (codigoIngresado) => {
+            try {
+                const response = await fetch(`${API_URL}/auth/verificar-codigo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, codigo: codigoIngresado })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Código inválido');
+                }
+                return data;
+            } catch (error) {
+                Swal.showValidationMessage(`Error: ${error.message}`);
+            }
+        }
+    });
+
+    if (codigo) {
+        Swal.fire({
+            icon: 'success',
+            title: '¡Cuenta Activada!',
+            text: 'Ya puedes iniciar sesión.',
+            confirmButtonColor: '#7c1225'
+        }).then(() => window.location.href = 'login.html');
+    }
+}
     </script>
 </body>
 </html>

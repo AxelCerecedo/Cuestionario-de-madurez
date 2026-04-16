@@ -1357,6 +1357,75 @@ app.post('/api/generar-analisis-ia', async (req, res) => {
     }
 });
 
+// =========================================================
+//Verificación de correo electrónico con código de 6 dígitos
+// =========================================================
+
+app.post('/auth/registro', async (req, res) => {
+    const { institucion, nombre, email, password, ubicacion, latitud, longitud, tipo_institucion, adscripcion } = req.body;
+
+    try {
+        // 1. Generar código de 6 dígitos
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // 2. Insertar usuario con el código y verificado = 0
+        await db.query(
+            `INSERT INTO usuarios_registrados 
+            (institucion_procedencia, nombre_completo, email, password, ubicacion_texto, latitud, longitud, tipo_institucion, adscripcion, codigo_verificacion, correo_verificado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+            [institucion, nombre, email, password, ubicacion, latitud, longitud, tipo_institucion, adscripcion, codigo]
+        );
+
+        // 3. Enviar el correo con el código
+        const mailOptions = {
+            from: `"Sistema de Diagnóstico" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: 'Código de Verificación',
+            html: `
+                <div style="font-family: sans-serif; text-align: center;">
+                    <h2>¡Ya casi terminas!</h2>
+                    <p>Ingresa el siguiente código en la página de registro para activar tu cuenta:</p>
+                    <h1 style="color: #7c1225; letter-spacing: 5px;">${codigo}</h1>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.json({ message: "Registro exitoso. Código enviado." });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al registrar o enviar el correo." });
+    }
+});
+
+
+
+app.post('/auth/verificar-codigo', async (req, res) => {
+    const { email, codigo } = req.body;
+
+    try {
+        const [rows] = await db.query(
+            'SELECT id FROM usuarios_registrados WHERE email = ? AND codigo_verificacion = ?',
+            [email, codigo]
+        );
+
+        if (rows.length > 0) {
+            // Código correcto: Activar cuenta y borrar el código
+            await db.query(
+                'UPDATE usuarios_registrados SET correo_verificado = 1, codigo_verificacion = NULL WHERE email = ?',
+                [email]
+            );
+            res.json({ success: true, message: "Cuenta verificada." });
+        } else {
+            res.status(400).json({ success: false, error: "Código incorrecto." });
+        }
+    } catch (error) {
+        res.status(500).json({ error: "Error en el servidor." });
+    }
+});
+
 // ==========================
 // 5. INICIAR SERVIDOR
 // ==========================
