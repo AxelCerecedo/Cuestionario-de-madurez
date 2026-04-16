@@ -1031,7 +1031,7 @@ function crearHTMLPregunta(p) {
             input.dataset.idOpcion = opt.id; 
             input.dataset.tipo = 'texto_con_id'; 
             
-            input.placeholder = "Nombre o descripción...";
+            input.placeholder = "Respuesta...";
             input.style.flex = '1'; 
             input.style.padding = '8px';
             input.style.border = '1px solid #ccc';
