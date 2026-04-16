@@ -391,55 +391,49 @@ app.post('/auth/registro', async (req, res) => {
 // RUTA C: LOGIN (CORREGIDA)
 app.post('/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    console.log(`🔑 [LOGIN] Intento de acceso: ${email}`);
 
     try {
-        // 🛑 CAMBIO IMPORTANTE EN LA CONSULTA SQL:
-        // Unimos usuarios con instituciones para obtener el campo 'finalizado'
-        const sql = `
-            SELECT U.id, U.nombre_completo, U.email, U.password, I.finalizado 
-            FROM usuarios_registrados U 
-            LEFT JOIN instituciones I ON U.id = I.id_usuario 
-            WHERE U.email = ? AND U.password = ?
-        `;
-        
-        const [users] = await db.query(sql, [email, password]);
+        // Buscamos al usuario
+        const [rows] = await db.query('SELECT * FROM usuarios_registrados WHERE email = ? AND password = ?', [email, password]);
 
-        if (users.length > 0) {
-            const usuario = users[0];
-            console.log(`   ✅ [LOGIN] Bienvenido ${usuario.nombre_completo} (Finalizado: ${usuario.finalizado})`);
-            
-            const esAdmin = ADMIN_EMAILS.includes(email);
-            const rutaDestino = esAdmin ? 'admin.html' : 'seccion1.html'; 
-
-            res.json({ 
-                message: 'Bienvenido', 
-                redirect: rutaDestino,
-                nombre: usuario.nombre_completo,
-                userId: usuario.id,
-                esAdmin: esAdmin,
-                
-                // 🛑 IMPORTANTE: Enviamos el estado al frontend
-                // Si es null (primera vez que entra), lo ponemos en 0
-                finalizado: usuario.finalizado || 0 
-            });
-
-        } else {
-            console.log('   ⛔ [LOGIN] Credenciales incorrectas.');
-            res.status(401).json({ error: 'Credenciales incorrectas' });
+        if (rows.length === 0) {
+            return res.status(401).json({ error: "Correo o contraseña incorrectos." });
         }
 
-        if (usuarioEncontrado.correo_verificado === 0) {
-    return res.status(403).json({ 
-        error: "Cuenta no verificada", 
-        requiereVerificacion: true, // 👈 Esta es la clave
-        email: usuarioEncontrado.email 
-    });
-}
+        const usuarioEncontrado = rows[0];
+
+        // ==========================================
+        // 🛑 EL NUEVO CANDADO DE VERIFICACIÓN 🛑
+        // (Usamos == 0 por si MySQL lo devuelve como texto "0" o número 0)
+        // ==========================================
+        if (usuarioEncontrado.correo_verificado == 0) {
+            return res.status(403).json({ 
+                error: "Cuenta no verificada", 
+                requiereVerificacion: true, 
+                email: usuarioEncontrado.email 
+            });
+        }
+
+        // ==========================================
+        // ✅ SI PASA EL CANDADO, LO DEJAMOS ENTRAR
+        // ==========================================
+        
+        // (Aquí va la lógica que ya tenías para revisar si es Admin y mandar sus datos)
+        const esAdmin = (usuarioEncontrado.email === 'asesordit11@cultura.gob.mx'); 
+        const rutaDestino = esAdmin ? 'admin.html' : 'seccion1.html';
+
+        res.json({
+            message: "Login exitoso",
+            userId: usuarioEncontrado.id,
+            nombre: usuarioEncontrado.nombre_completo,
+            finalizado: usuarioEncontrado.finalizado,
+            esAdmin: esAdmin,
+            redirect: rutaDestino
+        });
 
     } catch (error) {
-        console.error("❌ [ERROR LOGIN]:", error);
-        res.status(500).json({ error: 'Error del servidor' });
+        console.error("Error en el login:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
 });
 
