@@ -940,8 +940,16 @@ app.post('/finalizar-cuestionario', async (req, res) => {
 // =========================================================
 
 app.get('/api/ubicaciones', async (req, res) => {
+    // 1. LISTA DE ADMINS A EXCLUIR
+    const ADMIN_EMAILS = [
+        'jcf_fcg@cultura.gob.mx', 
+        'alberto.colef@gmail.com', 
+        'lunam.liliana.dgtic@gmail.com',
+        'asesordit11@cultura.gob.mx'
+    ];
+
     try {
-        // 🔥 Nombres de columnas exactamente iguales a tu tabla usuarios_registrados
+        // 2. CONSULTA FILTRADA
         const [ubicaciones] = await db.query(`
             SELECT 
                 u.id AS id_usuario,
@@ -951,12 +959,14 @@ app.get('/api/ubicaciones', async (req, res) => {
                 u.longitud,
                 u.institucion_procedencia AS institucion
             FROM usuarios_registrados u
-            WHERE u.ubicacion_texto IS NOT NULL AND u.ubicacion_texto != ''
-        `);
+            WHERE u.ubicacion_texto IS NOT NULL 
+              AND u.ubicacion_texto != ''
+              AND u.email NOT IN (?) 
+        `, [ADMIN_EMAILS]);
 
         res.json(ubicaciones);
     } catch (error) {
-        console.error("Error al obtener ubicaciones de registro:", error);
+        console.error("Error al obtener ubicaciones filtradas:", error);
         res.status(500).json({ error: "Error al cargar ubicaciones" });
     }
 });
