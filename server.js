@@ -392,6 +392,14 @@ app.post('/auth/registro', async (req, res) => {
 app.post('/auth/login', async (req, res) => {
     const { email, password } = req.body;
 
+    // 1. LISTA DE ADMINS (Correos autorizados para ver el Panel de Administrador)
+    const ADMIN_EMAILS = [
+        'jcf_fcg@cultura.gob.mx', 
+        'alberto.colef@gmail.com', 
+        'lunam.liliana.dgtic@gmail.com',
+        'asesordit11@cultura.gob.mx'
+    ];
+
     try {
         // Buscamos al usuario en la base de datos
         const [rows] = await db.query('SELECT * FROM usuarios_registrados WHERE email = ? AND password = ?', [email, password]);
@@ -403,7 +411,7 @@ app.post('/auth/login', async (req, res) => {
         const usuarioEncontrado = rows[0];
 
         // ==========================================
-        // 🛑 EL NUEVO CANDADO DE VERIFICACIÓN 🛑
+        // 🛑 CANDADO DE VERIFICACIÓN (Nivel Seguridad)
         // ==========================================
         if (usuarioEncontrado.correo_verificado == 0) {
             return res.status(403).json({ 
@@ -414,17 +422,20 @@ app.post('/auth/login', async (req, res) => {
         }
 
         // ==========================================
-        // ✅ SI PASA EL CANDADO -> MOTOR DE REDIRECCIÓN
+        // ✅ MOTOR DE REDIRECCIÓN INTELIGENTE
         // ==========================================
-        const esAdmin = (usuarioEncontrado.email === 'asesordit11@cultura.gob.mx'); 
-        let rutaDestino = 'seccion1.html'; // Ruta por defecto (si no ha contestado nada)
+        
+        // Verificamos si el correo está en nuestra lista de administradores
+        const esAdmin = ADMIN_EMAILS.includes(usuarioEncontrado.email); 
+        
+        let rutaDestino = 'seccion1.html'; // Ruta por defecto para usuarios nuevos
 
         if (esAdmin) {
             rutaDestino = 'admin.html';
         } else if (usuarioEncontrado.finalizado === 1) {
-            rutaDestino = 'seccion1.html'; // Si ya terminó el cuestionario, lo mandamos a la 1 para que vea el candado de "Solo Lectura"
+            rutaDestino = 'seccion1.html'; // Si ya terminó, va a la sección 1 en modo lectura
         } else {
-            // Si está a la mitad, buscamos cuál fue la última pregunta que guardó
+            // Buscamos progreso real en la base de datos para usuarios normales
             const [respuestas] = await db.query(`
                 SELECT MAX(id_pregunta) as ultima_preg 
                 FROM respuestas r 
@@ -434,8 +445,7 @@ app.post('/auth/login', async (req, res) => {
 
             const ultimaPregunta = respuestas[0]?.ultima_preg || 0;
 
-            // ⚠️ Dependiendo del número de pregunta, lo mandamos a su sección correspondiente.
-            // Si agregas más secciones (5, 6, etc.), solo añade más "else if" aquí arriba con sus números.
+            // Mapeo de secciones según el número de pregunta
             if (ultimaPregunta >= 46) {
                 rutaDestino = 'seccion4.html';
             } else if (ultimaPregunta >= 23) {
