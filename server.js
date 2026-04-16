@@ -393,7 +393,7 @@ app.post('/auth/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Buscamos al usuario
+        // Buscamos al usuario en la base de datos
         const [rows] = await db.query('SELECT * FROM usuarios_registrados WHERE email = ? AND password = ?', [email, password]);
 
         if (rows.length === 0) {
@@ -404,7 +404,6 @@ app.post('/auth/login', async (req, res) => {
 
         // ==========================================
         // 🛑 EL NUEVO CANDADO DE VERIFICACIÓN 🛑
-        // (Usamos == 0 por si MySQL lo devuelve como texto "0" o número 0)
         // ==========================================
         if (usuarioEncontrado.correo_verificado == 0) {
             return res.status(403).json({ 
@@ -415,13 +414,40 @@ app.post('/auth/login', async (req, res) => {
         }
 
         // ==========================================
-        // ✅ SI PASA EL CANDADO, LO DEJAMOS ENTRAR
+        // ✅ SI PASA EL CANDADO -> MOTOR DE REDIRECCIÓN
         // ==========================================
-        
-        // (Aquí va la lógica que ya tenías para revisar si es Admin y mandar sus datos)
         const esAdmin = (usuarioEncontrado.email === 'asesordit11@cultura.gob.mx'); 
-        const rutaDestino = esAdmin ? 'admin.html' : 'seccion1.html';
+        let rutaDestino = 'seccion1.html'; // Ruta por defecto (si no ha contestado nada)
 
+        if (esAdmin) {
+            rutaDestino = 'admin.html';
+        } else if (usuarioEncontrado.finalizado === 1) {
+            rutaDestino = 'seccion1.html'; // Si ya terminó el cuestionario, lo mandamos a la 1 para que vea el candado de "Solo Lectura"
+        } else {
+            // Si está a la mitad, buscamos cuál fue la última pregunta que guardó
+            const [respuestas] = await db.query(`
+                SELECT MAX(id_pregunta) as ultima_preg 
+                FROM respuestas r 
+                INNER JOIN instituciones i ON r.id_institucion = i.id_institucion 
+                WHERE i.id_usuario = ?
+            `, [usuarioEncontrado.id]);
+
+            const ultimaPregunta = respuestas[0]?.ultima_preg || 0;
+
+            // ⚠️ Dependiendo del número de pregunta, lo mandamos a su sección correspondiente.
+            // Si agregas más secciones (5, 6, etc.), solo añade más "else if" aquí arriba con sus números.
+            if (ultimaPregunta >= 46) {
+                rutaDestino = 'seccion4.html';
+            } else if (ultimaPregunta >= 23) {
+                rutaDestino = 'seccion3.html';
+            } else if (ultimaPregunta >= 15) {
+                rutaDestino = 'seccion2.html';
+            }
+        }
+
+        // ==========================================
+        // 🚀 RESPUESTA AL NAVEGADOR
+        // ==========================================
         res.json({
             message: "Login exitoso",
             userId: usuarioEncontrado.id,
@@ -1420,21 +1446,38 @@ app.post('/auth/verificar-codigo', async (req, res) => {
 
     try {
         const [rows] = await db.query(
-            'SELECT id FROM usuarios_registrados WHERE email = ? AND codigo_verificacion = ?',
+            'SELECT id, nombre_completo FROM usuarios_registrados WHERE email = ? AND codigo_verificacion = ?',
             [email, codigo]
         );
 
         if (rows.length > 0) {
-            // Código correcto: Activar cuenta y borrar el código
+            const usuario = rows[0];
+
+            // 1. Activamos la cuenta
             await db.query(
-                'UPDATE usuarios_registrados SET correo_verificado = 1, codigo_verificacion = NULL WHERE email = ?',
-                [email]
+                'UPDATE usuarios_registrados SET correo_verificado = 1, codigo_verificacion = NULL WHERE id = ?',
+                [usuario.id]
             );
+
+            // ==========================================
+            // 🔥 SOLUCIÓN 1: CREAR EL EXPEDIENTE INSTITUCIONAL
+            // ==========================================
+            // Revisamos que no exista ya para evitar duplicados
+            const [existeInst] = await db.query('SELECT id_institucion FROM instituciones WHERE id_usuario = ?', [usuario.id]);
+            
+            if (existeInst.length === 0) {
+                await db.query(
+                    'INSERT INTO instituciones (id_usuario, nombre_usuario) VALUES (?, ?)', 
+                    [usuario.id, usuario.nombre_completo]
+                );
+            }
+
             res.json({ success: true, message: "Cuenta verificada." });
         } else {
             res.status(400).json({ success: false, error: "Código incorrecto." });
         }
     } catch (error) {
+        console.error("Error al verificar código:", error);
         res.status(500).json({ error: "Error en el servidor." });
     }
 });
