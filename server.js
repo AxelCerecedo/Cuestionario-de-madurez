@@ -480,15 +480,16 @@ app.post('/auth/login', async (req, res) => {
 // A. OBTENER LISTA DE INSTITUCIONES QUE HAN RESPONDIDO
 app.get('/admin/instituciones', async (req, res) => {
     try {
-        // CORRECCIÓN: Quitamos el "WHERE" para que traiga también a los de 0 puntos.
-        // Y ordenamos por fecha para que los nuevos salgan arriba.
-        const sql = `
-            SELECT id_institucion, nombre_usuario, puntaje_total, fecha_registro 
-            FROM instituciones 
-            ORDER BY fecha_registro DESC
-        `;
-        
-        const [rows] = await db.query(sql);
+        const [rows] = await db.query(`
+            SELECT 
+                i.id_institucion, 
+                i.nombre_usuario, 
+                i.puntaje_total, 
+                u.email AS correo_contacto, 
+                u.institucion_procedencia
+            FROM instituciones i
+            JOIN usuarios_registrados u ON i.id_usuario = u.id
+        `);
         res.json(rows);
     } catch (error) {
         console.error(error);
