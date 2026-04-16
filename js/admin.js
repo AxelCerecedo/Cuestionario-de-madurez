@@ -154,14 +154,14 @@ function renderizarVistaGlobal() {
 // =========================================================
 // 4. LISTA Y DASHBOARD (ACTUALIZADA: FILTRADA POR ADMINS)
 // =========================================================
+
 async function cargarListaUsuarios() {
-    // Definimos los correos que NO deben aparecer en la lista
     const ADMIN_EMAILS = [
         'jcf_fcg@cultura.gob.mx', 
         'alberto.colef@gmail.com', 
         'lunam.liliana.dgtic@gmail.com',
         'asesordit11@cultura.gob.mx'
-    ];
+    ].map(email => email.toLowerCase().trim()); // Limpiamos la lista de admins
 
     try {
         const res = await fetch(`${API_URL}/admin/instituciones`);
@@ -170,24 +170,28 @@ async function cargarListaUsuarios() {
         const ul = document.getElementById('listaUsuarios');
         ul.innerHTML = '';
 
-        // Filtrar la lista para quitar a los administradores
-        const listaFiltrada = lista.filter(inst => !ADMIN_EMAILS.includes(inst.correo_contacto));
+        // Filtramos comparando en minúsculas
+        const listaFiltrada = lista.filter(inst => {
+            const correo = (inst.correo_contacto || "").toLowerCase().trim();
+            return !ADMIN_EMAILS.includes(correo);
+        });
 
         listaFiltrada.forEach(inst => {
             const li = document.createElement('li');
             li.className = 'user-item';
             
-            // Usamos el nombre de la institución en lugar del nombre de usuario
-            // Si el campo se llama distinto en tu BD, ajusta 'institucion_procedencia'
-            const nombreMostrar = inst.institucion_procedencia || inst.nombre_usuario || "Sin nombre";
-            const iniciales = nombreMostrar.substring(0, 2).toUpperCase();
+            // Preferimos el nombre de la Institución, si no, el del Usuario
+            const nombreInstitucion = inst.institucion_procedencia || "Institución no especificada";
+            const nombreResponsable = inst.nombre_usuario || "Sin nombre";
             
+            const iniciales = nombreInstitucion.substring(0, 2).toUpperCase();
             const promInst = (inst.puntaje_total / 5).toFixed(1);
 
             li.innerHTML = `
                 <div class="avatar-circle">${iniciales}</div>
                 <div class="user-info">
-                    <span class="user-name">${nombreMostrar}</span>
+                    <span class="user-name" style="font-weight: bold; color: #7c1225;">${nombreInstitucion}</span>
+                    <span class="user-subname" style="font-size: 0.8em; color: #666; display: block;">Resp: ${nombreResponsable}</span>
                     <span class="user-score">${promInst} / 5 pts</span>
                 </div>
             `;
@@ -195,7 +199,7 @@ async function cargarListaUsuarios() {
             ul.appendChild(li);
         });
         
-        console.log(`4. Lista cargada: ${listaFiltrada.length} instituciones (admins ocultos)`);
+        console.log(`4. Lista cargada: ${listaFiltrada.length} instituciones.`);
     } catch(e) { 
         console.error("Error lista usuarios:", e); 
     }
