@@ -216,7 +216,7 @@ async function abrirDashboardInstitucion(inst, liElement) {
 }
 
 function renderizarDashboardInstitucion(inst, datosSecciones) {
-    document.getElementById('instTitulo').innerText = inst.nombre_usuario;
+    document.getElementById('instTitulo').innerText = inst.institucion_procedencia || inst.nombre_usuario;
     
     // Calcular promedio real para la UI
     const prom = (inst.puntaje_total / 5).toFixed(1);
