@@ -429,6 +429,14 @@ app.post('/auth/login', async (req, res) => {
             res.status(401).json({ error: 'Credenciales incorrectas' });
         }
 
+        if (usuarioEncontrado.correo_verificado === 0) {
+    return res.status(403).json({ 
+        error: "Cuenta no verificada", 
+        requiereVerificacion: true, // 👈 Esta es la clave
+        email: usuarioEncontrado.email 
+    });
+}
+
     } catch (error) {
         console.error("❌ [ERROR LOGIN]:", error);
         res.status(500).json({ error: 'Error del servidor' });
