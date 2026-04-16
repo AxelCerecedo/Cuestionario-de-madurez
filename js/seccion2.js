@@ -33,10 +33,10 @@ const CONFIG_SECCION = {
             tipo: "lista_inputs",
             obligatorio: true,
             opciones: [
-                { id: 1, texto: "Nivel básico:" },
-                { id: 2, texto: "Nivel medio superior:" },
-                { id: 3, texto: "Nivel superior:" },
-                { id: 4, texto: "Posgrado:" }
+                { id: 1, texto: "Nivel básico" },
+                { id: 2, texto: "Nivel medio superior" },
+                { id: 3, texto: "Nivel superior" },
+                { id: 4, texto: "Posgrado" }
             ]
         },
         {
