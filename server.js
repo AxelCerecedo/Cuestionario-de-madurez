@@ -336,44 +336,55 @@ app.post('/guardar-encuesta', async (req, res) => {
 
 // RUTA B: REGISTRO DE USUARIO (CON GEOLOCALIZACIÓN Y NUEVOS CAMPOS)
 app.post('/auth/registro', async (req, res) => {
-    // 1. Recibimos TODOS los campos del frontend
-    const { 
-        institucion, nombre, email, password, 
-        ubicacion, latitud, longitud,
-        tipo_institucion, adscripcion 
-    } = req.body;
-    
-    console.log(`👤 [REGISTRO] Intentando registrar a: ${email}`);
-    if(ubicacion) console.log(`   📍 Ubicación detectada: ${ubicacion} (${latitud}, ${longitud})`);
-
     try {
-        // 2. Verificar si el correo ya existe
-        console.log('   🔍 Verificando existencia del correo...');
-        const [existe] = await db.query('SELECT id FROM usuarios_registrados WHERE email = ?', [email]);
-        
-        if (existe.length > 0) {
-            console.log('   ⚠️ [REGISTRO] El correo ya existe en BD.');
-            return res.status(400).json({ error: 'Este correo ya está registrado.' });
-        }
+        const { institucion, nombre, email, password, ubicacion, latitud, longitud, tipo_institucion, adscripcion } = req.body;
 
-        // 3. Insertar usuario (ACTUALIZADO CON NUEVAS COLUMNAS)
-        console.log('   💾 Insertando nuevo usuario en BD...');
+        console.log(`👤 [REGISTRO] Intentando registrar a: ${email}`);
         
-        const sql = `
+        // 1. Generar código aleatorio de 6 dígitos
+        const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
+
+        console.log('💾 Insertando nuevo usuario en BD...');
+        
+        // 2. Insertamos en la BD (Asegúrate de incluir 'codigo_verificacion' y 'correo_verificado')
+        await db.query(`
             INSERT INTO usuarios_registrados 
-            (institucion_procedencia, nombre_completo, tipo_institucion, adscripcion, email, password, ubicacion_texto, latitud, longitud) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        
-        // Pasamos los valores en el orden exacto de la consulta
-        await db.query(sql, [institucion, nombre, tipo_institucion, adscripcion, email, password, ubicacion, latitud, longitud]);
+            (institucion_procedencia, nombre_completo, email, password, ubicacion_texto, latitud, longitud, tipo_institucion, adscripcion, codigo_verificacion, correo_verificado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`, 
+            [institucion, nombre, email, password, ubicacion, latitud, longitud, tipo_institucion, adscripcion, codigoVerificacion]
+        );
 
-        console.log('   ✅ [REGISTRO] ¡Éxito! Usuario registrado correctamente.');
-        res.json({ message: 'Usuario registrado exitosamente' });
+        // 3. ENVIAR EL CORREO
+        console.log(`✉️ Enviando correo de verificación a: ${email}...`);
+        
+        const mailOptions = {
+            from: `"Sistema de Diagnóstico" <${process.env.EMAIL_USER}>`,
+            to: email, // El correo del usuario que se está registrando
+            subject: 'Código de Verificación - Diagnóstico Institucional',
+            html: `
+                <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+                    <h2 style="color: #333;">¡Hola, ${nombre}!</h2>
+                    <p>Gracias por registrar tu institución. Para activar tu cuenta, ingresa el siguiente código de 6 dígitos en la pantalla de registro:</p>
+                    <div style="margin: 20px auto; padding: 15px; max-width: 250px; background-color: #f4f6f9; border: 2px dashed #7c1225; border-radius: 8px;">
+                        <h1 style="color: #7c1225; letter-spacing: 8px; margin: 0;">${codigoVerificacion}</h1>
+                    </div>
+                    <p style="color: #777; font-size: 0.9em;">Si tú no solicitaste este registro, ignora este mensaje.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        
+        console.log('✅ [REGISTRO] ¡Éxito! Usuario guardado y correo enviado.');
+        
+        // 4. Respondemos al frontend para que abra el modal
+        res.json({ message: "Registro exitoso. Revisa tu correo." });
 
     } catch (error) {
-        console.error("❌ [ERROR REGISTRO]:", error);
-        res.status(500).json({ error: 'Error en el servidor al registrar.' });
+        console.error("❌ Error en registro:", error);
+        
+        // Si el correo falla (por contraseña incorrecta o falta de variables en Render), esto lo atrapará
+        res.status(500).json({ error: "Error interno. No se pudo completar el registro o enviar el correo." });
     }
 });
 
