@@ -261,17 +261,20 @@
                         statusUbicacion.innerHTML = `<i class="fas fa-check-circle"></i> Ubicación validada.`;
                         statusUbicacion.style.color = '#28a745';
                     } else {
-                        statusUbicacion.innerHTML = '<i class="fas fa-exclamation-triangle"></i> No se encontró ubicación exacta, pero se guardará el texto.';
+                        statusUbicacion.innerHTML = '<i class="fas fa-exclamation-triangle"></i> No se encontró ubicación exacta, se guardará el texto.';
                         statusUbicacion.style.color = '#fd7e14';
                     }
                 })
                 .catch(() => statusUbicacion.innerHTML = ''); 
         }
 
-        // Envío del Formulario
+        // ==========================================
+        // FLUJO DE REGISTRO Y VERIFICACIÓN
+        // ==========================================
         document.getElementById('registroForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
+            // 1. Recolectar datos
             const institucion = document.getElementById('institucion').value.trim();
             const nombre = document.getElementById('nombre').value.trim();
             const email = document.getElementById('email').value.trim();
@@ -287,18 +290,13 @@
             const latitud = document.getElementById('latitud').value;
             const longitud = document.getElementById('longitud').value;
 
+            // 2. Validaciones básicas
             if (!institucion || !nombre || !email || !pass1 || !pass2 || !tipo_select || !ubicacion_texto) {
-                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Complete los campos con (*).', confirmButtonColor: '#7c1225' });
+                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Complete los campos con (*).' });
                 return;
             }
-
-            if (tipo_select === 'Otro' && !tipo_otro) {
-                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Especifique el tipo de institución.', confirmButtonColor: '#7c1225' });
-                return;
-            }
-
             if (pass1 !== pass2) {
-                Swal.fire({ icon: 'error', title: 'Error', text: 'Las contraseñas no coinciden.', confirmButtonColor: '#7c1225' });
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Las contraseñas no coinciden.' });
                 return;
             }
 
@@ -308,89 +306,69 @@
                 tipo_institucion: tipo_final, adscripcion
             };
 
+            // 3. Enviar a registro (ÚNICA VEZ)
             try {
-                Swal.fire({ title: 'Creando cuenta...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                Swal.fire({ title: 'Creando cuenta y enviando correo...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
                 const response = await fetch(`${API_URL}/auth/registro`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success', title: '¡Registro Exitoso!', text: 'Redirigiendo...',
-                        confirmButtonColor: '#7c1225', timer: 1500, showConfirmButton: false
-                    }).then(() => window.location.href = 'login.html');
-                } else {
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Problema al registrar.', confirmButtonColor: '#7c1225' });
-                }
-            } catch (error) {
-                console.error(error);
-                Swal.fire({ icon: 'error', title: 'Error de red', text: 'Sin conexión al servidor.', confirmButtonColor: '#7c1225' });
-            }
-
-            const emailRecuperado = document.getElementById('email').value.trim();
-
-            try {
-                Swal.fire({ title: 'Creando cuenta...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                const response = await fetch(`${API_URL}/auth/registro`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify(payload)
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
-                    // Registro exitoso, ahora pedimos el código con un modal
-                    pedirCodigoVerificacion(emailRecuperado);
+                    // Si el servidor guardó al usuario y mandó el correo, abrimos el modal del código
+                    Swal.close(); 
+                    pedirCodigoVerificacion(email);
                 } else {
-                    const data = await response.json();
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.error });
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Problema al registrar.' });
                 }
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Error', text: 'Sin conexión.' });
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Error de red', text: 'Sin conexión al servidor.' });
             }
-            
         });
 
+        // 4. Función del Modal de Verificación
         async function pedirCodigoVerificacion(email) {
-    const { value: codigo } = await Swal.fire({
-        title: 'Verifica tu correo',
-        text: `Hemos enviado un código de 6 dígitos a ${email}`,
-        input: 'text',
-        inputPlaceholder: '000000',
-        allowOutsideClick: false,
-        confirmButtonText: 'Verificar',
-        confirmButtonColor: '#7c1225',
-        showLoaderOnConfirm: true,
-        preConfirm: async (codigoIngresado) => {
-            try {
-                const response = await fetch(`${API_URL}/auth/verificar-codigo`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, codigo: codigoIngresado })
-                });
-                const data = await response.json();
-                if (!data.success) {
-                    throw new Error(data.error || 'Código inválido');
+            const { value: codigo } = await Swal.fire({
+                title: 'Verifica tu correo',
+                text: `Hemos enviado un código de 6 dígitos a ${email}`,
+                input: 'text',
+                inputPlaceholder: 'Ingresa los 6 números',
+                allowOutsideClick: false,
+                confirmButtonText: 'Verificar cuenta',
+                confirmButtonColor: '#7c1225',
+                showLoaderOnConfirm: true,
+                preConfirm: async (codigoIngresado) => {
+                    try {
+                        const response = await fetch(`${API_URL}/auth/verificar-codigo`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: email, codigo: codigoIngresado })
+                        });
+                        const data = await response.json();
+                        if (!data.success) {
+                            throw new Error(data.error || 'Código inválido');
+                        }
+                        return data;
+                    } catch (error) {
+                        Swal.showValidationMessage(`Error: ${error.message}`);
+                    }
                 }
-                return data;
-            } catch (error) {
-                Swal.showValidationMessage(`Error: ${error.message}`);
+            });
+
+            if (codigo) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Cuenta Activada!',
+                    text: 'Ya puedes iniciar sesión.',
+                    confirmButtonColor: '#7c1225'
+                }).then(() => window.location.href = 'login.html');
             }
         }
-    });
-
-    if (codigo) {
-        Swal.fire({
-            icon: 'success',
-            title: '¡Cuenta Activada!',
-            text: 'Ya puedes iniciar sesión.',
-            confirmButtonColor: '#7c1225'
-        }).then(() => window.location.href = 'login.html');
-    }
-}
     </script>
 </body>
 </html>
