@@ -6,6 +6,7 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const session = require('express-session');
 const nodemailer = require('nodemailer');
+const crypto = require('crypto'); 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // ==========================
@@ -22,6 +23,14 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false } 
 }));
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.G_USER, 
+        pass: process.env.G_PASS  
+    }
+});
 
 
 // ==========================
