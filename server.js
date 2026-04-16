@@ -877,28 +877,28 @@ app.post('/finalizar-cuestionario', async (req, res) => {
 });
 
 // =========================================================
-// 📍 ENDPOINT: OBTENER UBICACIONES PARA EL MAPA
+// RUTA: OBTENER UBICACIONES PARA EL MAPA (CORREGIDA)
 // =========================================================
 
 app.get('/api/ubicaciones', async (req, res) => {
     try {
-        const sql = `
+        // 🔥 Nombres de columnas exactamente iguales a tu tabla usuarios_registrados
+        const [ubicaciones] = await db.query(`
             SELECT 
-                u.nombre_completo AS nombre, 
-                u.ubicacion_texto AS ubicacion, 
-                u.latitud, 
+                u.id AS id_usuario,
+                u.nombre_completo AS nombre_usuario,
+                u.ubicacion_texto,
+                u.latitud,
                 u.longitud,
-                COALESCE(i.puntaje_total, 0) AS puntaje
+                u.institucion_procedencia AS institucion
             FROM usuarios_registrados u
-            LEFT JOIN instituciones i ON u.id = i.id_usuario
-            WHERE u.latitud IS NOT NULL AND u.latitud != ''
-        `;
-        
-        const [usuarios] = await db.query(sql);
-        res.json(usuarios);
+            WHERE u.ubicacion_texto IS NOT NULL AND u.ubicacion_texto != ''
+        `);
+
+        res.json(ubicaciones);
     } catch (error) {
-        console.error("Error al obtener mapa:", error);
-        res.status(500).json({ error: 'Error interno' });
+        console.error("Error al obtener ubicaciones de registro:", error);
+        res.status(500).json({ error: "Error al cargar ubicaciones" });
     }
 });
 
