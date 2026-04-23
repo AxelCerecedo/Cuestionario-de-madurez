@@ -112,7 +112,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 13, orden: 13,
-            texto: "Mencione cuáles son las fuentes de financiamiento (marcar todas las correspondientes).",
+            texto: "Mencione las fuentes de financiamiento para el archivo (marcar todas las correspondientes).",
             tipo: "catalogo_multiple",
             obligatorio: true,
             opciones: [
