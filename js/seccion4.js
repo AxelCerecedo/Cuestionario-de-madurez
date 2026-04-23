@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DE LA SECCIÓN 4 (NUEVA ESTRUCTURA)
 // =========================================================
 const CONFIG_SECCION = {
-    seccion: "4. Infraestructura Física y Tecnológica",
+    seccion: "4. Infraestructura física y tecnológica",
     siguiente: "seccion5.html", 
     anterior: "seccion3.html", 
 

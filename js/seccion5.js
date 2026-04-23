@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DE LA SECCIÓN 5 (NUEVA ESTRUCTURA)
 // =========================================================
 const CONFIG_SECCION = {
-    seccion: "5. Servicios al Público",
+    seccion: "5. Servicios al público",
     es_final: true,
     siguiente: "admin.html", // O la página de "Gracias/Cierre" que tengas configurada
     anterior: "seccion4.html", 

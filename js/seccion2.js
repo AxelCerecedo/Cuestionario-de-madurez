@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DE LA SECCIÓN 2 (NUEVA ESTRUCTURA)
 // =========================================================
 const CONFIG_SECCION = {
-    seccion: "2. Recursos Humanos",
+    seccion: "2. Recursos humanos",
     siguiente: "seccion3.html", 
     anterior: "seccion1.html", 
 
@@ -51,19 +51,9 @@ const CONFIG_SECCION = {
                 { id: 4, texto: "Se gestiona capacitación externa" }
             ]
         },
+
         {
             id: 19, orden: 19,
-            texto: "Cuenta con personal capacitado para realizar la evaluación del estado de conservación del acervo.",
-            tipo: "catalogo_unico",
-            obligatorio: true,
-            opciones: [
-                { id: 1, texto: "Sí, contamos con una persona especialista interna" },
-                { id: 2, texto: "No, se contrata a una persona especialista externa" },
-                { id: 3, texto: "Ambas" }
-            ]
-        },
-        {
-            id: 20, orden: 20,
             texto: "Indique las áreas o actividades en las que el personal recibe capacitación.",
             tipo: "catalogo_multiple",
             obligatorio: true,
@@ -81,8 +71,20 @@ const CONFIG_SECCION = {
             ]
         },
         {
+            id: 20, orden: 20,
+            texto: "¿Cuenta con personal capacitado para realizar la evaluación del estado de conservación del acervo?.",
+            tipo: "catalogo_unico",
+            obligatorio: true,
+            opciones: [
+                { id: 1, texto: "Sí, contamos con una persona especialista interna" },
+                { id: 2, texto: "No, se contrata a una persona especialista externa" },
+                { id: 3, texto: "Ambas" },
+                { id: 4, texto: "No se realiza evaluación del estado de conservación del acervo" }
+            ]
+        },
+        {
             id: 21, orden: 21,
-            texto: "Tomando en cuenta el personal total del archivo/institución, ¿cómo evalúa la disposición de personal y su experiencia y formación para la gestión del acervo institucional?",
+            texto: "Tomando en cuenta el personal total del archivo/institución, ¿cómo evalúa la disposición de personal y su experiencia y formación para la gestión del acervo?",
             tipo: "catalogo_unico",
             obligatorio: true,
             graficar: true,
