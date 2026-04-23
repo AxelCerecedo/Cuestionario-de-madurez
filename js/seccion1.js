@@ -129,7 +129,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 14, orden: 14,
-            texto: "Tomando en cuenta su misión, visión y sus objetivos institucionales, ¿cómo evalúa la gestión institucional de su archivo/institución?",
+            texto: "Tomando en cuenta su misión, visión y sus objetivos, ¿cómo evalúa la gestión institucional de su archivo?",
             tipo: "catalogo_unico",
             obligatorio: true,
             graficar: true,
