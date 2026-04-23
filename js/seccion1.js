@@ -59,7 +59,7 @@ const CONFIG_SECCION = {
         },
         {
             id: 8, orden: 8,
-            texto: "¿Cuenta con algún proceso formal para registrar la salida de objetos del acervo (considere salidas temporales y/o definitivas)?",
+            texto: "¿Cuenta con algún proceso formal para registrar la salida de objetos del acervo? (considere salidas temporales y/o definitivas)",
             tipo: "catalogo_unico",
             obligatorio: true,
             opciones: [
