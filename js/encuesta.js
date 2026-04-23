@@ -179,9 +179,10 @@ function crearHTMLPregunta(p) {
     div.className = 'pregunta-box';
 
     // --- LABEL PRINCIPAL ---
-    const label = document.createElement('label');
+   const label = document.createElement('label');
     label.className = 'titulo-pregunta';
-    label.innerHTML = `${p.orden}. ${p.texto} ${p.obligatorio ? '<span style="color:red">*</span>' : ''}`;
+    // Eliminamos la lógica del span con el asterisco rojo
+    label.innerHTML = `${p.orden}. ${p.texto}`; 
     div.appendChild(label);
 
     if (p.ayuda) {
