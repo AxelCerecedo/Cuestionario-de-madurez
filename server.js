@@ -395,8 +395,7 @@ app.post('/auth/login', async (req, res) => {
     // 1. LISTA DE ADMINS (Correos autorizados para ver el Panel de Administrador)
     const ADMIN_EMAILS = [
         'jcf_fcg@cultura.gob.mx', 
-        'alberto.colef@gmail.com', 
-        'lunam.liliana.dgtic@gmail.com',
+        'alberto.colef@gmail.com',
         'asesordit11@cultura.gob.mx'
     ];
 
