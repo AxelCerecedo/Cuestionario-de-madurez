@@ -85,11 +85,11 @@ const CONFIG_SECCION = {
             obligatorio: true,
             graficar: true,
             opciones: [
-                { id: 1, texto: "Incipiente", ayuda: "La consulta es limitada y no existe reglamento formal de acceso. La atención a las personas usuarias es informal. No se cuenta con registro sistemático de estadísticas de uso." },
-                { id: 2, texto: "Básico estructural", ayuda: "La consulta está formalizada, aunque sin evaluación sistemática de impacto. Se cuenta con registro de consultas, pero se lleva de manera manual y no se cuenta con métricas de análisis." },
-                { id: 3, texto: "Intermedio", ayuda: "Los servicios de consulta y reproducción operan con regularidad y criterios definidos. Se cuenta con registros manuales y/o electrónicos y estadísticas de uso." },
-                { id: 4, texto: "Consolidado", ayuda: "Existe oferta activa de servicios educativos y de vinculación pública. Hay actividades de difusión regulares y se cuenta con registro sistemático de usuarios." },
-                { id: 5, texto: "Avanzado", ayuda: "El archivo cuenta con estrategia integral de acceso abierto y vinculación pública. Servicios consolidados y eficientes. Hay medios de consulta digital que facilitan la gestión de servicios. Se cuenta con registros sistemático de estadísticas y usuarios." }
+                { id: 1, texto: "Incipiente", ayuda: "La consulta es limitada y no existe un reglamento formal de acceso. La atención a las personas usuarias se realiza de manera informal. No se cuenta con un registro sistemático de estadísticas de uso." },
+                { id: 2, texto: "Básico estructural", ayuda: "La consulta está formalizada, aunque no se evalúa su impacto de manera sistemática. Se lleva un registro de solicitudes, principalmente manual, sin métricas que permitan su análisis." },
+                { id: 3, texto: "Intermedio", ayuda: "Los servicios de consulta y reproducción operan de forma regular bajo criterios definidos. Se dispone de registros, ya sean manuales o electrónicos, así como de estadísticas de uso que permiten cierto nivel de seguimiento." },
+                { id: 4, texto: "Consolidado", ayuda: "Existe una oferta activa de servicios educativos y de vinculación con públicos. Se realizan actividades de difusión de manera regular y se cuenta con un registro sistemático de personas usuarias." },
+                { id: 5, texto: "Avanzado", ayuda: "La institución implementa una estrategia integral de acceso abierto y vinculación pública. Los servicios están consolidados y funcionan de manera eficiente. Se dispone de herramientas digitales que facilitan la consulta y gestión de servicios, junto con sistemas de registro y análisis de estadísticas de uso y perfiles de usuarios." }
             ]
         }
     ]
